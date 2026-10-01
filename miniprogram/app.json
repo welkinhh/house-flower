@@ -1,0 +1,14 @@
+{
+  "pages": [
+    "pages/flower/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "House花生",
+    "navigationBarBackgroundColor": "#f8f4ee",
+    "backgroundColor": "#f8f4ee"
+  },
+  "style": "v2",
+  "componentFramework": "glass-easel",
+  "lazyCodeLoading": "requiredComponents"
+}

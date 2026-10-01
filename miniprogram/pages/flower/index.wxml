@@ -1,0 +1,613 @@
+<view class="app-shell mode-{{mode}}">
+
+  <!-- 顶部导航：返回 + 居中标题 -->
+  <view wx:if="{{mode !== 'home' && mode !== 'inspirationList' && mode !== 'works' && mode !== 'generationResult'}}" class="topbar">
+    <button class="back-button" bindtap="goBack" aria-label="返回">
+      <view class="icon-back"></view>
+    </button>
+    <text class="page-title">{{topCaption}}</text>
+  </view>
+
+  <!-- ============ 1. 首页（整屏铺满，卡片压在底部） ============ -->
+  <view wx:if="{{mode === 'home'}}" class="home-screen">
+    <image class="home-bg" src="{{homeHero}}" mode="aspectFill" />
+    <view class="home-veil"></view>
+    <view class="hero-head">
+      <text class="hero-brand">House花生</text>
+      <view class="hero-slogan">
+        <text>把生活的点滴</text>
+        <text>一路生花</text>
+      </view>
+    </view>
+
+    <view class="home-entries">
+      <button wx:for="{{homeEntries}}" wx:key="id" class="hcard" data-id="{{item.id}}" bindtap="openEntry">
+        <view class="hcard-frame"><image src="{{item.path}}" mode="aspectFill" /></view>
+        <view class="hcard-copy">
+          <text class="hcard-title">{{item.title}}</text>
+          <text class="hcard-note">{{item.note}}</text>
+        </view>
+        <view class="hcard-arrow">→</view>
+      </button>
+    </view>
+  </view>
+
+  <!-- ============ 2. 拾光成花 ============ -->
+  <view wx:if="{{mode === 'inspiration'}}" class="screen">
+    <view class="copy-block slim">
+      <text class="screen-desc strong">选一张照片，变成一束花</text>
+    </view>
+
+    <button class="upload-card {{inspirationPath ? 'has-image' : ''}}" bindtap="chooseInspiration" disabled="{{generating || generationResumePending}}">
+      <image wx:if="{{inspirationPath}}" src="{{inspirationPath}}" mode="aspectFit" class="upload-photo" />
+      <view wx:else class="upload-empty">
+        <view class="photo-upload-icon">
+          <view class="photo-icon-sun"></view>
+          <view class="photo-icon-mountain"></view>
+          <view class="photo-icon-plus">＋</view>
+        </view>
+        <text class="upload-text">上传相册图片</text>
+      </view>
+      <view wx:if="{{inspirationPath}}" class="change-chip" catchtap="chooseInspiration">更换图片</view>
+    </button>
+
+    <view class="section-head">
+      <text class="section-title">灵感示例</text>
+    </view>
+    <view class="ex-list">
+      <button wx:for="{{inspirationExamples}}" wx:key="id" class="ex-row" data-path="{{item.path}}" data-label="{{item.title}}" bindtap="chooseInspirationSample">
+        <image class="ex-img" src="{{item.path}}" mode="aspectFill" />
+        <view class="ex-link"><text>→</text></view>
+        <image class="ex-img result" src="{{item.resultPath}}" mode="aspectFill" />
+        <view class="ex-tx">
+          <text class="ex-title">{{item.title}}</text>
+          <text class="ex-desc">{{item.description}}</text>
+        </view>
+      </button>
+    </view>
+    <text wx:if="{{inspirationMessage}}" class="status-message">{{inspirationMessage}}</text>
+    <button class="btn primary main-action progress-action {{generating || generationResumePending ? 'is-generating' : ''}}" bindtap="applyInspiration" disabled="{{!inspirationPath || generating}}">
+      <view class="progress-action-content">
+        <view class="progress-action-head">
+          <text class="progress-action-title">{{generating ? generationProgressLabel : generationResumePending ? '继续查看生成进度' : '变成一束花'}}</text>
+          <text wx:if="{{(generating || generationResumePending) && generationProgressMode === 'determinate'}}" class="progress-action-value">{{generationProgressPercent}}%</text>
+          <view wx:elif="{{generating || generationResumePending}}" class="progress-action-live"><view class="progress-action-dot"></view><text>后台处理中</text></view>
+          <view wx:else class="icon-arrow">→</view>
+        </view>
+        <view wx:if="{{generating || generationResumePending}}" class="progress-action-track">
+          <view class="progress-action-fill {{generationProgressMode === 'indeterminate' ? 'is-indeterminate' : ''}}" style="{{generationProgressFillStyle}}"></view>
+        </view>
+        <text wx:if="{{generating || generationResumePending}}" class="progress-action-note">{{generationProgressNote}}</text>
+      </view>
+    </button>
+  </view>
+
+  <!-- ============ 3. 生成结果 ============ -->
+  <view wx:if="{{mode === 'generationResult'}}" class="screen generated-screen">
+    <image class="generated-full-image" src="{{generationPreviewPath}}" mode="aspectFit" bindtap="previewImage" data-path="{{generationPreviewPath}}" />
+    <view class="generated-top-actions">
+      <button class="result-icon-button" bindtap="goBack" aria-label="返回"><view class="icon-back"></view></button>
+      <button class="result-icon-button download-result-button" bindtap="downloadGeneratedImage" aria-label="下载图片"><view class="download-glyph">↓</view></button>
+    </view>
+    <view wx:if="{{generationDemo}}" class="generated-demo-tag">示例效果</view>
+    <view class="generated-info-card">
+      <image wx:if="{{generationSourcePath}}" class="generated-source-thumb" src="{{generationSourcePath}}" mode="aspectFit" bindtap="previewImage" data-path="{{generationSourcePath}}" />
+      <view class="generated-info-copy">
+        <input class="generated-name-input" maxlength="24" value="{{bouquetTitle}}" bindinput="updateBouquetTitle" placeholder="给这束花取个名字" />
+        <text class="generated-date">{{generationDateLabel}}</text>
+      </view>
+    </view>
+    <view class="generated-action-row">
+      <button class="btn outline" bindtap="recognizeGeneratedBouquet" disabled="{{generationDemo}}">识别花材清单</button>
+      <button class="btn primary" bindtap="saveGeneratedWork"><view class="save-icon"></view>保存到作品集</button>
+    </view>
+  </view>
+
+  <!-- ============ 4. 识花成单 ============ -->
+  <view wx:if="{{mode === 'recognition'}}" class="screen">
+    <view class="copy-block slim">
+      <text class="screen-desc strong">看看这束花用了什么花材</text>
+    </view>
+
+    <button class="upload-card {{replicaPath ? 'has-image' : ''}}" bindtap="chooseReplica" disabled="{{identifying}}">
+      <image wx:if="{{replicaPath}}" src="{{replicaPath}}" mode="aspectFit" class="upload-photo" />
+      <view wx:else class="upload-empty">
+        <view class="photo-upload-icon">
+          <view class="photo-icon-sun"></view>
+          <view class="photo-icon-mountain"></view>
+          <view class="photo-icon-plus">＋</view>
+        </view>
+        <text class="upload-text">上传相册图片</text>
+      </view>
+      <view wx:if="{{replicaPath}}" class="change-chip" catchtap="chooseReplica">更换图片</view>
+    </button>
+
+    <view class="section-head">
+      <text class="section-title">灵感示例</text>
+    </view>
+    <view class="ex-list">
+      <button wx:for="{{recognitionExamples}}" wx:key="id" class="ex-row" data-id="{{item.id}}" data-path="{{item.path}}" bindtap="chooseReplicaSample">
+        <image class="ex-img wide" src="{{item.path}}" mode="aspectFill" />
+        <view class="ex-tx">
+          <text class="ex-title">{{item.label}}</text>
+          <text class="ex-desc">{{item.description}}</text>
+        </view>
+      </button>
+    </view>
+    <text wx:if="{{!visionAvailable}}" class="recognition-unavailable-note">识花模型暂未开通；选择示例可预览清单。</text>
+    <text wx:if="{{replicaMessage}}" class="status-message">{{replicaMessage}}</text>
+    <button class="btn primary main-action" bindtap="replicaAction" disabled="{{!replicaPath || identifying || (!visionAvailable && !replicaSampleId)}}">
+      {{identifying ? recognitionStageLabel : replicaSampleId ? '查看示例清单' : visionAvailable ? '生成清单' : '识花模型暂未开通'}}
+      <view wx:if="{{!identifying && (visionAvailable || replicaSampleId)}}" class="icon-arrow">→</view>
+    </button>
+  </view>
+
+  <!-- ============ 5. 调整清单（识花结果） ============ -->
+  <view wx:if="{{mode === 'recognitionResult'}}" class="screen">
+    <view class="adjust-top">
+      <image class="adjust-photo" src="{{replicaPath}}" mode="aspectFit" bindtap="previewImage" data-path="{{replicaPath}}" />
+      <view class="adjust-copy">
+        <text class="adjust-name">原照片</text>
+        <text class="adjust-note">轻触查看；遮挡部分可能无法识别</text>
+      </view>
+      <button class="chip-button" bindtap="replicaAgain">重新识别</button>
+    </view>
+
+    <view class="section-head">
+      <text class="section-title">花材清单（{{replicaCandidates.length}} 种）</text>
+      <button class="link-button" bindtap="addCandidate">＋ 添加漏识花材</button>
+    </view>
+    <view wx:if="{{replicaDemo}}" class="demo-list-note">示例清单 · 仅供版式预览</view>
+
+    <view class="material-head">
+      <text>花图</text><text>名称</text><text>颜色</text><text>数量</text>
+    </view>
+    <scroll-view scroll-y enhanced show-scrollbar="false" class="material-list">
+      <view wx:for="{{replicaCandidates}}" wx:key="id" class="material-row">
+        <view class="material-thumb">
+          <image wx:if="{{item.assetPath}}" src="{{item.assetPath}}" mode="aspectFit" />
+          <view wx:else class="list-color-mark" style="background: {{item.swatch}}"></view>
+        </view>
+        <text class="material-name" data-index="{{index}}" data-field="name" bindtap="editCandidateText">{{item.name}}</text>
+        <text class="material-sub" data-index="{{index}}" data-field="colorLabel" bindtap="editCandidateText">{{item.colorLabel}}</text>
+        <view class="material-controls">
+          <view class="stepper">
+            <button class="step-btn" data-index="{{index}}" data-delta="-1" bindtap="stepCandidateQuantity">−</button>
+            <text class="step-num" data-index="{{index}}" bindtap="editCandidateQuantity">{{item.confirmed ? item.quantity + item.unit : item.quantityLabel}}</text>
+            <button class="step-btn" data-index="{{index}}" data-delta="1" bindtap="stepCandidateQuantity">＋</button>
+          </view>
+          <button class="row-delete" data-index="{{index}}" bindtap="removeCandidate">×</button>
+        </view>
+      </view>
+      <view wx:if="{{!replicaCandidates.length}}" class="material-empty">还没有识别结果</view>
+    </scroll-view>
+    <text class="estimate-note">数量仅供参考，请按实物确认；点名称可修改花材信息。</text>
+
+    <view class="action-row material-actions {{replicaDemo ? 'demo-only' : ''}}">
+      <button wx:if="{{!replicaDemo}}" class="btn outline" bindtap="saveReplicaWork"><view class="save-icon"></view>保存到作品集</button>
+      <button class="btn primary" bindtap="downloadMaterials">导出清单</button>
+    </view>
+  </view>
+
+  <!-- ============ 6. 花映生活（场景融合编辑） ============ -->
+  <view wx:if="{{mode === 'scene'}}" class="screen">
+    <view class="scene-chips">
+      <button class="scene-chip" bindtap="chooseBouquet" disabled="{{sceneGenerating}}">
+        <image wx:if="{{sceneBouquetPath}}" src="{{sceneBouquetPath}}" mode="aspectFit" class="chip-thumb" />
+        <view wx:else class="chip-thumb chip-empty">＋</view>
+        <view class="chip-copy">
+          <text class="chip-label">{{sceneBouquetPath ? '更换花束' : '上传花束'}}</text>
+          <text class="chip-value">{{sceneBouquetPath ? '轻触更换' : '从手机相册选择图片'}}</text>
+        </view>
+      </button>
+      <button class="scene-chip" bindtap="chooseScene" disabled="{{sceneGenerating}}">
+        <image wx:if="{{scenePath}}" src="{{scenePath}}" mode="aspectFit" class="chip-thumb" />
+        <view wx:else class="chip-thumb chip-empty">＋</view>
+        <view class="chip-copy">
+          <text class="chip-label">{{scenePath ? '更换场景图' : '上传场景图'}}</text>
+          <text class="chip-value">{{scenePath ? sceneTitle : '从相册选择场景'}}</text>
+        </view>
+      </button>
+    </view>
+    <view class="scene-board" id="scene-board">
+      <image wx:if="{{scenePath}}" class="scene-background" src="{{scenePath}}" mode="aspectFit" />
+      <view wx:else class="scene-empty"><text>先选择一个生活场景</text></view>
+      <image wx:if="{{sceneBouquetPath}}" class="scene-bouquet-overlay" src="{{sceneBouquetPath}}" mode="aspectFit" style="{{sceneBouquetStyle}}" bindtouchstart="onSceneBouquetTouchStart" bindtouchmove="onSceneBouquetTouchMove" bindtouchend="onSceneBouquetTouchEnd" bindtouchcancel="onSceneBouquetTouchEnd" />
+      <text wx:if="{{sceneBouquetPath}}" class="drag-hint">拖动调整位置</text>
+    </view>
+
+    <view wx:if="{{sceneBouquetPath}}" class="scene-scale-control">
+      <view class="scene-scale-head"><text>花束大小</text><text class="scene-scale-value">{{sceneScaleLabel}}</text><text class="scene-scale-hint">双指也可缩放</text></view>
+      <slider class="scene-scale-slider" min="32" max="145" step="1" value="{{sceneScalePercent}}" activeColor="#a56f70" backgroundColor="#e6ddd3" block-color="#a56f70" block-size="18" disabled="{{sceneGenerating}}" bindchanging="changeSceneScale" bindchange="changeSceneScale" />
+    </view>
+
+    <view class="section-head">
+      <text class="section-title">选择空间模板</text>
+    </view>
+    <scroll-view scroll-x enhanced show-scrollbar="false" class="scene-strip">
+      <view class="scene-list">
+        <button wx:for="{{sceneOptions}}" wx:key="id" class="scene-option {{selectedSceneId === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="chooseScenePreset" disabled="{{sceneGenerating}}">
+          <image src="{{item.path}}" mode="aspectFill" />
+          <text>{{item.name}}</text>
+          <view wx:if="{{selectedSceneId === item.id}}" class="scene-check">✓</view>
+        </button>
+      </view>
+    </scroll-view>
+
+    <text wx:if="{{sceneMessage}}" class="status-message">{{sceneMessage}}</text>
+    <button class="btn primary bottom-action progress-action {{sceneGenerating ? 'is-generating' : ''}}" bindtap="composeScene" disabled="{{!scenePath || !sceneBouquetPath || sceneGenerating}}">
+      <view class="progress-action-content">
+        <view class="progress-action-head">
+          <text class="progress-action-title">{{sceneGenerating ? generationProgressLabel : '生成场景效果'}}</text>
+          <text wx:if="{{sceneGenerating && generationProgressMode === 'determinate'}}" class="progress-action-value">{{generationProgressPercent}}%</text>
+          <text wx:elif="{{sceneGenerating}}" class="progress-action-live">创作中</text>
+          <view wx:else class="icon-arrow">→</view>
+        </view>
+        <view wx:if="{{sceneGenerating}}" class="progress-action-track">
+          <view class="progress-action-fill {{generationProgressMode === 'indeterminate' ? 'is-indeterminate' : ''}}" style="{{generationProgressFillStyle}}"></view>
+        </view>
+        <text wx:if="{{sceneGenerating}}" class="progress-action-note">{{generationProgressNote}}</text>
+      </view>
+    </button>
+  </view>
+
+  <!-- ============ 7. 场景融合结果 ============ -->
+  <scroll-view wx:if="{{mode === 'sceneResult'}}" class="screen scroll-area" scroll-y enhanced show-scrollbar="false">
+    <image class="hero-image tall" src="{{sceneResultPath}}" mode="aspectFit" bindtap="previewImage" data-path="{{sceneResultPath}}" />
+    <view class="scene-caption">
+      <text class="scene-name">{{sceneTitle}} · 花映生活</text>
+      <text class="scene-sub">花束已融入所选空间，轻触图片可放大查看</text>
+    </view>
+    <view class="action-row">
+      <button class="btn outline" bindtap="returnToScene">重新调整</button>
+      <button class="btn primary" bindtap="downloadSceneImage">下载效果图</button>
+    </view>
+    <button class="link-save" bindtap="saveScene">保存到作品集</button>
+  </scroll-view>
+
+  <!-- ============ 8. 灵感 ============ -->
+  <view wx:if="{{mode === 'inspirationList'}}" class="screen inspiration-screen">
+    <view class="bn-wrap">
+      <swiper class="bn-swiper" autoplay circular interval="3500" duration="420" current="{{bannerCurrent}}" bindchange="onBannerChange">
+        <swiper-item wx:for="{{inspirationBanners}}" wx:key="id">
+          <view class="bn" data-id="{{item.caseId}}" bindtap="openInspirationCase">
+            <image src="{{item.path}}" mode="aspectFill" />
+            <view class="bn-veil"></view>
+            <view class="bn-tx">
+              <text class="bn-title">{{item.title}}</text>
+              <text class="bn-sub">{{item.sub}}</text>
+            </view>
+          </view>
+        </swiper-item>
+      </swiper>
+      <view class="bn-dots">
+        <view wx:for="{{inspirationBanners}}" wx:key="id" wx:for-index="dotIndex" class="bn-dot {{bannerCurrent === dotIndex ? 'on' : ''}}"></view>
+      </view>
+    </view>
+
+    <view class="insp-tabs">
+      <button wx:for="{{inspirationCategories}}" wx:key="id" class="insp-tab {{inspirationCategory === item.id ? 'active' : ''}}" data-id="{{item.id}}" bindtap="selectInspirationCategory">{{item.label}}</button>
+    </view>
+
+    <scroll-view scroll-y enhanced show-scrollbar="false" class="insp-feed">
+      <view class="wf-grid">
+        <button wx:for="{{inspirationItems}}" wx:key="id" class="wf-card" data-id="{{item.id}}" bindtap="openInspirationCase">
+          <view class="wf-img-frame"><image src="{{item.path}}" mode="aspectFill" /></view>
+          <view class="wf-tx">
+            <text class="wf-name">{{item.title}}</text>
+            <text class="wf-cat">{{item.categoryLabel}}</text>
+          </view>
+        </button>
+      </view>
+      <view wx:if="{{!inspirationItems.length}}" class="material-empty">这个分类还没有内容，换一个看看</view>
+    </scroll-view>
+  </view>
+
+  <!-- 灵感详情：模糊背景 + 成品大图 + 保存作品 -->
+  <view wx:if="{{showInspirationDetail}}" class="modal-mask inspiration-detail-mask" catchtap="closeInspirationDetail">
+    <view class="detail-card" catchtap="stopPropagation">
+      <button class="modal-close detail-close" bindtap="closeInspirationDetail" aria-label="关闭">×</button>
+      <image class="detail-image" src="{{selectedInspiration.resultPath}}" mode="aspectFit" bindtap="previewImage" data-path="{{selectedInspiration.resultPath}}" />
+      <view class="detail-copy">
+        <text class="detail-kicker">{{selectedInspiration.categoryLabel}}</text>
+        <text class="detail-title">{{selectedInspiration.title}}</text>
+        <text class="detail-desc">{{selectedInspiration.description}}</text>
+        <view class="detail-actions">
+          <button class="btn outline" bindtap="generateInspirationList"><view class="list-icon"></view>生成清单</button>
+          <button class="btn primary" bindtap="saveInspirationToWorks" disabled="{{selectedInspiration.saved}}"><view class="save-icon"></view>{{selectedInspiration.saved ? '已保存到作品集' : '保存到作品集'}}</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- ============ 9. 我的作品 ============ -->
+  <view wx:if="{{mode === 'works'}}" class="screen works-screen">
+    <view class="works-header">
+      <view class="avatar-button" bindtap="openSettings">
+        <image class="avatar-image" src="{{userProfile.avatarUrl}}" mode="aspectFill" />
+      </view>
+      <view class="header-copy">
+        <text class="header-name">{{userProfile.name}}</text>
+        <text class="header-id">ID {{userProfile.id}}</text>
+      </view>
+      <button wx:if="{{selectingWorks}}" class="header-action" bindtap="toggleWorkSelectionMode">取消</button>
+      <view wx:else class="header-uses">
+        <text class="uses-label">今日剩余次数</text>
+        <text class="uses-num">{{remainingUses}}</text>
+      </view>
+    </view>
+    <!-- 下划线 tab：作品集 / 花历 -->
+    <view class="line-tabs">
+      <button class="line-tab {{worksView === 'collection' ? 'active' : ''}}" data-id="collection" bindtap="selectWorksTab">作品集</button>
+      <button class="line-tab {{worksView === 'calendar' ? 'active' : ''}}" data-id="calendar" bindtap="selectWorksTab">花历</button>
+    </view>
+
+    <!-- 作品集 -->
+    <view wx:if="{{worksView === 'collection'}}" class="collection-view">
+      <scroll-view scroll-y enhanced show-scrollbar="false" class="works-scroll" bindscrolltolower="loadMoreWorks">
+        <view wx:if="{{recentTasks.length}}" class="recovery-list">
+          <view class="recovery-heading-row"><text class="recovery-heading">创作进度</text><text wx:if="{{recentTasks.length > 2}}" class="recovery-scroll-hint">滑动查看更多</text></view>
+          <scroll-view scroll-y enhanced show-scrollbar="false" class="recovery-scroll {{recentTasks.length > 2 ? 'scroll-limited' : ''}}">
+            <view wx:for="{{recentTasks}}" wx:key="taskId" class="recovery-row">
+              <view class="recovery-indicator {{item.status === 'succeeded' ? 'complete' : ''}}"></view>
+              <view class="recovery-copy"><text>{{item.title}} · {{item.statusLabel}}</text><text>{{item.status === 'succeeded' ? '请在 24 小时内保存到作品集' : item.status === 'reconciling' ? '系统正在核对结果与使用次数' : '任务会在后台继续处理'}}</text></view>
+              <button class="recovery-open" data-id="{{item.taskId}}" bindtap="openRecentTask" disabled="{{resumingTaskId === item.taskId}}">{{resumingTaskId === item.taskId ? '连接中' : item.status === 'succeeded' ? '查看' : '恢复'}}</button>
+            </view>
+          </scroll-view>
+        </view>
+        <view wx:if="{{visibleWorks.length}}" class="works-grid">
+          <view wx:for="{{visibleWorks}}" wx:key="id" class="work-card {{item.selected ? 'selected' : ''}}">
+            <view class="work-image-wrap" data-index="{{index}}" bindtap="openWork" bindlongpress="workLongPress">
+              <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" class="work-image" />
+              <view wx:else class="work-image-empty"><text>House花生</text></view>
+              <view class="work-veil"></view>
+              <view class="work-tx">
+                <text class="work-title">{{item.title}}</text>
+                <text class="work-date">{{item.dateLabel}}</text>
+              </view>
+              <view wx:if="{{selectingWorks}}" class="work-select-mark {{item.selected ? 'on' : ''}}">✓</view>
+            </view>
+          </view>
+        </view>
+        <view wx:else class="works-empty">
+          <text class="empty-title">从第一束花开始</text>
+          <text class="empty-sub">保存的花束、场景和清单会留在这里。</text>
+        </view>
+        <view wx:if="{{cloudWorksLoading || cloudWorksHasMore}}" class="works-load-note">{{cloudWorksLoading ? '正在加载作品…' : '继续上滑加载更多'}}</view>
+      </scroll-view>
+
+      <view wx:if="{{selectingWorks}}" class="select-bar">
+        <text class="select-count">已选 {{selectedWorkIds.length}} 件</text>
+        <view class="select-actions">
+          <button class="link-button" bindtap="toggleSelectAllWorks">{{selectedWorkIds.length === visibleWorks.length ? '取消全选' : '全选'}}</button>
+          <button class="delete-button" bindtap="deleteSelectedWorks" disabled="{{!selectedWorkIds.length}}">删除</button>
+        </view>
+      </view>
+    </view>
+
+    <!-- 花历 -->
+    <view wx:if="{{worksView === 'calendar'}}" class="calendar-view">
+      <view class="month-bar">
+        <button class="month-nav" bindtap="previousMonth">‹</button>
+        <view class="month-choice">
+          <button class="month-year-button" bindtap="showCalendarPicker">{{calendarYearLabel}}年</button>
+          <button class="month-number-button" bindtap="showCalendarPicker">{{calendarMonthNumber}}月</button>
+        </view>
+        <button class="month-nav" bindtap="nextMonth">›</button>
+      </view>
+      <view class="weekdays">
+        <text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text>
+      </view>
+      <view class="calendar-grid">
+        <view wx:for="{{calendarDays}}" wx:key="dateKey" class="cal-cell {{item.selected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.inMonth ? '' : 'is-blank'}}" data-date="{{item.dateKey}}" bindtap="selectCalendarDate">
+          <text class="cal-num">{{item.inMonth ? item.day : ''}}</text>
+          <image wx:if="{{item.inMonth && item.previewPath}}" class="cal-thumb" src="{{item.previewPath}}" mode="aspectFill" />
+          <view wx:if="{{item.inMonth && item.hasEvent}}" class="cal-event"></view>
+        </view>
+      </view>
+
+      <scroll-view scroll-y enhanced show-scrollbar="false" class="date-works">
+        <view class="dw-head">
+          <text class="dw-date">{{selectedDateLabel}}</text>
+          <view class="dw-head-actions">
+            <text class="dw-count">{{selectedDateWorks.length}} 件作品</text>
+            <button class="dw-add-date" bindtap="addImportantDate">＋ 记日子</button>
+          </view>
+        </view>
+        <view wx:for="{{selectedDateEvents}}" wx:key="id" class="date-event-row" data-id="{{item.id}}" bindtap="editImportantDate">
+          <view class="date-event-dot"></view>
+          <text class="date-event-title">{{item.title}}</text>
+          <text wx:if="{{item.repeatYearly}}" class="date-event-repeat">每年</text>
+          <text class="date-event-edit">编辑 ›</text>
+        </view>
+        <view wx:for="{{selectedDateWorks}}" wx:key="id" class="dw-card" data-id="{{item.id}}" bindtap="openCalendarWork">
+          <image class="dw-thumb" src="{{item.previewPath}}" mode="aspectFill" />
+          <view class="dw-copy">
+            <text class="dw-title">{{item.title}}</text>
+            <text class="dw-meta">{{item.dateLabel}} · {{item.kindLabel}}</text>
+            <text class="dw-go">查看作品 →</text>
+          </view>
+        </view>
+        <view wx:if="{{!selectedDateWorks.length}}" class="calendar-empty">这一天还没有保存作品</view>
+      </scroll-view>
+    </view>
+  </view>
+
+  <view wx:if="{{showCalendarPicker}}" class="modal-mask calendar-picker-mask" catchtap="cancelCalendarPicker">
+    <view class="month-picker-card" catchtap="stopPropagation">
+      <view class="month-picker-head">
+        <button bindtap="cancelCalendarPicker">取消</button>
+        <text>选择年月</text>
+        <button class="month-picker-confirm" bindtap="confirmCalendarPicker">确定</button>
+      </view>
+      <picker-view class="month-picker-view" indicator-style="height: 44px;" value="{{calendarPickerValue}}" bindchange="changeCalendarPicker">
+        <picker-view-column><view wx:for="{{calendarYears}}" wx:key="*this" class="month-picker-item">{{item}}年</view></picker-view-column>
+        <picker-view-column><view wx:for="{{calendarMonths}}" wx:key="*this" class="month-picker-item">{{item}}月</view></picker-view-column>
+      </picker-view>
+    </view>
+  </view>
+
+  <!-- ============ 10. 设置 ============ -->
+  <view wx:if="{{mode === 'settings'}}" class="screen settings-screen">
+    <view class="settings-card">
+      <button class="settings-avatar" bindtap="chooseAvatar">
+        <image src="{{userProfile.avatarUrl}}" mode="aspectFill" />
+        <view class="avatar-edit">更换</view>
+      </button>
+      <text class="settings-hint">点头像可更换头像</text>
+
+      <label class="editor-field">
+        <text>名称</text>
+        <input value="{{userProfile.name}}" bindinput="updateProfileName" maxlength="24" placeholder-class="title-placeholder" />
+      </label>
+      <view class="settings-id">
+        <text>ID</text>
+        <text>{{userProfile.id}}</text>
+      </view>
+
+      <button class="settings-row feedback-button" open-type="feedback">
+        <text>意见反馈</text>
+        <text class="chev">›</text>
+      </button>
+
+      <button class="btn primary settings-save" bindtap="saveProfile">保存</button>
+      <button class="btn outline settings-sync" bindtap="syncLocalWorks">同步本机作品</button>
+      <button wx:if="{{isAdmin}}" class="btn outline settings-sync" bindtap="openAdminPanel">运营数据</button>
+      <button class="settings-danger" bindtap="deleteAccount">删除账号</button>
+    </view>
+  </view>
+
+  <!-- ============ 11. 运营数据 ============ -->
+  <view wx:if="{{mode === 'admin'}}" class="screen admin-screen">
+    <view class="admin-range-row">
+      <text class="section-title">近 {{adminRange}} 天</text>
+      <view class="admin-range-tabs">
+        <button class="admin-range {{adminRange === 7 ? 'active' : ''}}" data-range="7" bindtap="selectAdminRange">7 天</button>
+        <button class="admin-range {{adminRange === 30 ? 'active' : ''}}" data-range="30" bindtap="selectAdminRange">30 天</button>
+        <button class="admin-range {{adminRange === 90 ? 'active' : ''}}" data-range="90" bindtap="selectAdminRange">90 天</button>
+      </view>
+    </view>
+    <view wx:if="{{adminSummary}}" class="admin-scroll">
+      <view class="admin-grid">
+        <view class="admin-card"><text>新增用户</text><text class="admin-number">{{adminSummary.overview.newUsers}}</text></view>
+        <view class="admin-card"><text>活跃用户</text><text class="admin-number">{{adminSummary.overview.activeUsers}}</text></view>
+        <view class="admin-card"><text>AI 任务</text><text class="admin-number">{{adminSummary.overview.aiTasks}}</text></view>
+        <view class="admin-card"><text>成功任务</text><text class="admin-number">{{adminSummary.overview.aiSucceeded}}</text></view>
+        <view class="admin-card"><text>保存花束</text><text class="admin-number">{{adminSummary.overview.savedWorks}}</text></view>
+        <view class="admin-card"><text>保存清单</text><text class="admin-number">{{adminSummary.overview.savedLists}}</text></view>
+        <view class="admin-card"><text>订阅授权</text><text class="admin-number">{{adminSummary.overview.subscriptionAccepts}}</text></view>
+        <view class="admin-card"><text>提醒发送</text><text class="admin-number">{{adminSummary.overview.notificationsSent}}</text></view>
+      </view>
+      <view class="admin-section">
+        <view class="section-head"><text class="section-title">AI 使用情况</text><text class="section-note">成功 / 失败</text></view>
+        <view wx:for="{{adminSummary.taskByType}}" wx:key="type" class="admin-line"><text>{{item.type}}</text><text>{{item.total}}</text><text class="admin-muted">{{item.succeeded}} / {{item.failed}}</text></view>
+      </view>
+      <view class="admin-section">
+        <view class="section-head"><text class="section-title">灵感偏好</text><text class="section-note">点击与使用次数</text></view>
+        <view wx:for="{{adminSummary.preferences}}" wx:key="key" class="admin-line"><text>{{item.key}}</text><text class="admin-number-small">{{item.count}}</text></view>
+        <text wx:if="{{!adminSummary.preferences.length}}" class="admin-muted">暂无足够数据</text>
+      </view>
+      <text wx:if="{{adminSummary.truncated}}" class="admin-muted">数据量较大，当前显示最近一部分记录。</text>
+    </view>
+    <view wx:else class="admin-loading">正在读取运营数据…</view>
+  </view>
+
+  <!-- ============ 11. 作品详情 ============ -->
+  <view wx:if="{{mode === 'workDetail' && currentWork}}" class="screen work-detail-screen">
+    <scroll-view scroll-y enhanced show-scrollbar="false" class="detail-scroll">
+      <image wx:if="{{currentWork.previewPath}}" class="hero-image square-output" src="{{currentWork.previewPath}}" mode="aspectFit" bindtap="openWorkImageViewer" />
+      <view class="detail-heading">
+        <text class="detail-title">{{currentWork.title}}</text>
+        <text class="detail-sub">{{currentWork.kindLabel}} · {{currentWork.dateLabel}}</text>
+        <button class="detail-more" bindtap="workMore" aria-label="更多作品操作">···</button>
+      </view>
+      <view wx:if="{{currentWork.showSource}}" class="source-block">
+        <view class="section-head">
+          <text class="section-title">灵感来源</text>
+          <text class="section-note">轻触查看原图</text>
+        </view>
+        <image class="source-image" src="{{currentWork.sourcePath}}" mode="aspectFit" bindtap="previewImage" data-path="{{currentWork.sourcePath}}" />
+      </view>
+      <view class="work-note-block">
+        <view class="section-head"><text class="section-title">作品备注</text><text class="section-note">{{currentWork.noteLength || 0}}/100</text></view>
+        <textarea class="work-note-input" value="{{currentWork.note}}" maxlength="100" placeholder="写下这束花的灵感，最多100字" bindinput="updateWorkNote" bindblur="saveWorkNote" />
+      </view>
+      <view wx:if="{{currentWork.rows.length}}" class="saved-materials">
+        <view class="section-head">
+          <text class="section-title">花材清单</text>
+          <text class="section-note">点数量可微调</text>
+        </view>
+        <view class="material-head"><text>花图</text><text>名称</text><text>颜色</text><text>数量</text></view>
+        <view wx:for="{{currentWork.rows}}" wx:key="id" class="material-row">
+          <view class="material-thumb">
+            <image wx:if="{{item.assetPath}}" src="{{item.assetPath}}" mode="aspectFit" />
+            <view wx:else class="list-color-mark" style="background: {{item.swatch}}"></view>
+          </view>
+          <text class="material-name" data-index="{{index}}" data-field="name" data-saved="true" bindtap="editCandidateText">{{item.name}}</text>
+          <text class="material-sub" data-index="{{index}}" data-field="colorLabel" data-saved="true" bindtap="editCandidateText">{{item.colorLabel}}</text>
+          <button class="quantity-chip" data-index="{{index}}" bindtap="editSavedQuantity">
+            {{item.confirmed ? item.quantity + item.unit : item.quantityLabel}}
+          </button>
+        </view>
+        <text class="estimate-note">照片估算结果；点击数量可微调。</text>
+      </view>
+    </scroll-view>
+    <view class="action-row">
+      <button wx:if="{{currentWork.rows.length}}" class="btn outline" bindtap="downloadSavedMaterials"><view class="list-icon"></view>导出清单</button>
+      <button wx:else class="btn outline" bindtap="recognizeSavedWork"><view class="list-icon"></view>生成清单</button>
+      <button class="btn primary" bindtap="downloadWorkImage"><view class="download-glyph">↓</view>下载图片</button>
+    </view>
+  </view>
+
+  <view wx:if="{{showWorkImageViewer && currentWork}}" class="modal-mask work-image-viewer" catchtap="closeWorkImageViewer">
+    <button class="modal-close viewer-close" bindtap="closeWorkImageViewer" aria-label="关闭">×</button>
+    <image class="viewer-image" src="{{currentWork.previewPath}}" mode="aspectFit" catchtap="stopPropagation" />
+  </view>
+
+  <!-- ============ 弹层：重要日子编辑 ============ -->
+  <view wx:if="{{showEventEditor}}" class="modal-mask" catchtap="closeEventEditor">
+    <view class="editor-card" catchtap="stopPropagation">
+      <view class="editor-head">
+        <text class="editor-title">{{editingEventId ? '编辑重要日子' : '添加重要日子'}}</text>
+        <button class="modal-close plain" bindtap="closeEventEditor">×</button>
+      </view>
+      <label class="editor-field">
+        <text>名称</text>
+        <input value="{{eventTitle}}" bindinput="updateEventTitle" placeholder="生日、纪念日……" maxlength="30" placeholder-class="title-placeholder" />
+      </label>
+      <label class="editor-field">
+        <text>日期</text>
+        <input value="{{eventDate}}" bindinput="updateEventDate" placeholder="YYYY-MM-DD" maxlength="10" placeholder-class="title-placeholder" />
+      </label>
+      <label class="editor-field">
+        <text>备注</text>
+        <input value="{{eventNote}}" bindinput="updateEventNote" placeholder="写一句提醒自己的话" maxlength="60" placeholder-class="title-placeholder" />
+      </label>
+      <label class="editor-field row">
+        <text>每年重复</text>
+        <switch checked="{{eventRepeats}}" bindchange="toggleEventRepeat" color="#bd7d7d" />
+      </label>
+      <picker mode="selector" range="{{eventWorkLabels}}" value="{{eventWorkIndex}}" bindchange="chooseEventWork">
+        <view class="editor-picker">
+          <text>关联作品</text>
+          <text class="picker-value">{{eventWorkLabels[eventWorkIndex] || '不关联'}}</text>
+        </view>
+      </picker>
+      <view class="action-row">
+        <button wx:if="{{editingEventId}}" class="btn outline" bindtap="deleteImportantDate">删除</button>
+        <button wx:if="{{subscriptionTemplates.date}}" class="btn outline" bindtap="requestDateSubscription">订阅提醒</button>
+        <button class="btn primary" bindtap="saveImportantDate">保存日子</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 底部导航：常驻（创作页不消失） -->
+  <view wx:if="{{mode === 'home' || mode === 'inspirationList' || mode === 'works' || mode === 'inspiration' || mode === 'recognition' || mode === 'scene'}}" class="bottom-nav" aria-label="House花生导航">
+    <button wx:for="{{navItems}}" wx:key="id" class="nav-item {{item.active ? 'active' : ''}}" data-id="{{item.id}}" bindtap="changeTab">
+      <view class="nav-icon nav-{{item.glyph}}"></view>
+      <text>{{item.label}}</text>
+    </button>
+  </view>
+
+  <canvas id="export-canvas" type="2d" class="export-canvas" aria-hidden="true"></canvas>
+</view>

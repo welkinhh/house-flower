@@ -1,0 +1,76 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "huasheng-d1gevhc4b9cc370ca",
+  "functionRoot": "./cloudfunctions",
+  "functions": [
+    {
+      "name": "flowerBackend",
+      "dir": "./cloudfunctions/flowerBackend",
+      "handler": "index.main",
+      "runtime": "Nodejs20.19",
+      "timeout": 120,
+      "memorySize": 512,
+      "installDependency": true,
+      "envVariables": {
+        "AI_RESOURCES_ENABLED": "true",
+        "AI_VISION_ENABLED": "false"
+      }
+    },
+    {
+      "name": "flowerTaskWorker",
+      "dir": "./cloudfunctions/flowerTaskWorker",
+      "handler": "index.main",
+      "runtime": "Nodejs20.19",
+      "timeout": 900,
+      "memorySize": 1024,
+      "installDependency": true,
+      "envVariables": {
+        "AI_RESOURCES_ENABLED": "true",
+        "AI_VISION_ENABLED": "false",
+        "AI_IMAGE_PROVIDER": "hunyuan-image",
+        "AI_IMAGE_MODEL": "HY-Image-v3.0-I2I-ToB-v1.0.1",
+        "TCB_ENV": "huasheng-d1gevhc4b9cc370ca",
+        "ENV_ID": "huasheng-d1gevhc4b9cc370ca"
+      },
+      "triggers": [
+        {
+          "name": "taskSweep",
+          "type": "timer",
+          "config": "0 */1 * * * * *"
+        }
+      ]
+    },
+    {
+      "name": "houseflowerMaintenance",
+      "dir": "./cloudfunctions/houseflowerMaintenance",
+      "handler": "index.main",
+      "runtime": "Nodejs20.19",
+      "timeout": 300,
+      "memorySize": 512,
+      "installDependency": true,
+      "triggers": [
+        {
+          "name": "dailyMaintenance",
+          "type": "timer",
+          "config": "0 0 * * * * *"
+        }
+      ]
+    },
+    {
+      "name": "houseflowerNotification",
+      "dir": "./cloudfunctions/houseflowerNotification",
+      "handler": "index.main",
+      "runtime": "Nodejs20.19",
+      "timeout": 120,
+      "memorySize": 512,
+      "installDependency": true,
+      "triggers": [
+        {
+          "name": "notificationSweep",
+          "type": "timer",
+          "config": "0 */5 * * * * *"
+        }
+      ]
+    }
+  ]
+}

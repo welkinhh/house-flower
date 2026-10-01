@@ -1,0 +1,5 @@
+node_modules/
+npm-debug.log*
+miniprogram/miniprogram_npm/
+project.private.config.json
+.workbuddy/

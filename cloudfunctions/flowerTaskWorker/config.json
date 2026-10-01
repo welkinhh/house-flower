@@ -1,0 +1,9 @@
+{
+  "triggers": [
+    {
+      "name": "taskSweep",
+      "type": "timer",
+      "config": "0 */1 * * * * *"
+    }
+  ]
+}

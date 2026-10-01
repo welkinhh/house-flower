@@ -1,0 +1,167 @@
+export type WorkKind = 'bouquet' | 'scene' | 'materials'
+export type WorkRecord = {
+  id: string
+  kind: WorkKind
+  kindLabel?: string
+  title: string
+  previewPath: string
+  sourcePath?: string
+  fileID?: string
+  createdAt: number
+  dateKey?: string
+  dateLabel?: string
+  sourceKey?: string
+  rows?: any[]
+  status?: 'draft' | 'confirmed'
+  note?: string
+  [key: string]: any
+}
+export type ImportantDate = {
+  id: string
+  title: string
+  date: string
+  note: string
+  repeatYearly: boolean
+  workId: string
+  cloudDateId?: string
+  cloudWorkId?: string
+  cloudSyncPending?: boolean
+}
+
+export const WORKS_KEY = 'houseflower.works'
+export const DATES_KEY = 'houseflower.dates'
+export const PROFILE_KEY = 'houseflower.profile'
+export const USES_KEY = 'houseflower.remainingUses'
+export const DEFAULT_USES = 10
+
+export function dayKey(date: Date): string {
+  return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
+}
+
+export function dateFromKey(key: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ''))
+  if (!match) return null
+  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
+  return date.getFullYear() === Number(match[1]) && date.getMonth() + 1 === Number(match[2]) && date.getDate() === Number(match[3]) ? date : null
+}
+
+export function formatDateLabel(value: number): string {
+  const date = new Date(Number(value) || Date.now())
+  return date.getFullYear() + '.' + String(date.getMonth() + 1).padStart(2, '0') + '.' + String(date.getDate()).padStart(2, '0')
+}
+
+export function migrateMiniProgramAssetPath(value: string): string {
+  return String(value || '')
+    .replace(/^(\/assets\/editorial\/[a-zA-Z0-9_-]+)\.webp$/i, '$1.jpg')
+    .replace(/^\/assets\/materials\/([a-zA-Z0-9_-]+)\.(?:webp|jpg)$/i, '/assets/materials-ui/$1.jpg')
+}
+
+export function kindLabel(kind: string): string {
+  return kind === 'scene' ? '场景' : kind === 'materials' ? '清单' : '花束'
+}
+
+export function readWorks(): WorkRecord[] {
+  try {
+    const current = wx.getStorageSync(WORKS_KEY)
+    if (Array.isArray(current)) {
+      const migrated = current.map((work: WorkRecord) => ({
+        ...work,
+        previewPath: migrateMiniProgramAssetPath(work.previewPath),
+        sourcePath: migrateMiniProgramAssetPath(String(work.sourcePath || '')),
+        rows: Array.isArray(work.rows) ? work.rows.map((row: any) => ({ ...row, assetPath: migrateMiniProgramAssetPath(String(row.assetPath || '')) })) : work.rows,
+      }))
+      if (JSON.stringify(migrated) !== JSON.stringify(current)) wx.setStorageSync(WORKS_KEY, migrated)
+      return migrated
+    }
+    const oldWorks = wx.getStorageSync('flower.works')
+    const oldDownloads = wx.getStorageSync('flower.downloadedLists')
+    const migrated: WorkRecord[] = []
+    if (Array.isArray(oldWorks)) oldWorks.forEach((old: any) => {
+      const kind: WorkKind = old.sourceType === 'scene' ? 'scene' : old.sourceType === 'replica' || old.type === 'downloaded' ? 'materials' : 'bouquet'
+      const createdAt = Number(old.createdAt) || Date.now()
+      migrated.push({
+        ...old,
+        id: String(old.id || createdAt + '-' + migrated.length),
+        kind,
+        title: String(old.title || (kind === 'materials' ? '花材清单' : kind === 'scene' ? '场景花作' : '一束花')),
+        previewPath: String(old.previewPath || old.sourceOriginalPath || ''),
+        sourcePath: String(old.sourcePath || old.sourceOriginalPath || ''),
+        createdAt,
+        dateKey: dayKey(new Date(createdAt)),
+        status: kind === 'materials' ? 'draft' : undefined,
+        rows: kind === 'materials' ? (old.rows || []).map((row: any) => ({
+          ...row,
+          quantityMin: row.quantityMin ?? (Number(row.quantity) || null),
+          quantityMax: row.quantityMax ?? (Number(row.quantity) || null),
+          quantityLabel: row.quantityLabel || '约' + Number(row.quantity || 0) + (row.unit || '支'),
+          unit: row.unit || '支',
+          confirmed: Boolean(row.confirmed),
+        })) : old.rows,
+      })
+    })
+    if (Array.isArray(oldDownloads)) oldDownloads.forEach((old: any) => {
+      const createdAt = Number(old.createdAt) || Date.now()
+      migrated.push({
+        ...old, id: String(old.id || createdAt + '-' + migrated.length), kind: 'materials',
+        title: String(old.title || '材料清单'), previewPath: String(old.previewPath || ''),
+        createdAt, dateKey: dayKey(new Date(createdAt)), rows: old.rows || [], status: 'draft',
+      })
+    })
+    if (migrated.length) wx.setStorageSync(WORKS_KEY, migrated)
+    return migrated
+  } catch { return [] }
+}
+
+export function readDates(): ImportantDate[] {
+  try {
+    const dates = wx.getStorageSync(DATES_KEY)
+    return Array.isArray(dates) ? dates : []
+  } catch { return [] }
+}
+
+export function saveWork(work: WorkRecord): WorkRecord[] {
+  const current = readWorks()
+  const match = work.sourceKey ? current.find((item) => item.sourceKey === work.sourceKey) : undefined
+  const saved = {
+    ...work,
+    id: match ? match.id : work.id,
+    createdAt: match ? match.createdAt : work.createdAt,
+    dateKey: match ? (match.dateKey || dayKey(new Date(match.createdAt))) : (work.dateKey || dayKey(new Date(work.createdAt))),
+  }
+  const works = [saved, ...current.filter((item) => item.id !== saved.id)]
+  wx.setStorageSync(WORKS_KEY, works)
+  return works
+}
+
+function eventOccurs(event: ImportantDate, key: string): boolean {
+  if (event.date === key) return true
+  const base = dateFromKey(event.date)
+  const current = dateFromKey(key)
+  return Boolean(event.repeatYearly && base && current && base.getMonth() === current.getMonth() && base.getDate() === current.getDate())
+}
+
+export function buildCalendar(month: string, works: WorkRecord[], dates: ImportantDate[], selectedDate: string): Record<string, any> {
+  const parts = String(month || dayKey(new Date()).slice(0, 7)).split('-').map(Number)
+  const year = parts[0]
+  const monthIndex = parts[1] - 1
+  const first = new Date(year, monthIndex, 1)
+  const start = new Date(year, monthIndex, 1 - first.getDay())
+  const calendarDays: any[] = []
+  const todayKey = dayKey(new Date())
+  for (let index = 0; index < 42; index += 1) {
+    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index)
+    const key = dayKey(date)
+    const matching = works.filter((work) => (work.dateKey || dayKey(new Date(work.createdAt))) === key)
+    calendarDays.push({
+      dateKey: key, day: date.getDate(), inMonth: date.getMonth() === monthIndex,
+      previewPath: matching[0] && matching[0].previewPath || '',
+      workCount: matching.length, hasEvent: dates.some((event) => eventOccurs(event, key)),
+      selected: key === selectedDate, isToday: key === todayKey,
+    })
+  }
+  return {
+    calendarMonthLabel: year + '年' + (monthIndex + 1) + '月',
+    calendarDays,
+    selectedDateWorks: works.filter((work) => (work.dateKey || dayKey(new Date(work.createdAt))) === selectedDate),
+  }
+}

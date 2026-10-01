@@ -1,0 +1,98 @@
+[
+  {
+    "id": "bouquet-home",
+    "sourcePath": "flower-assets/editorial/source/bouquet-home.png",
+    "assetPath": "/assets/editorial/bouquet-home.jpg",
+    "sourceWidth": 1448,
+    "sourceHeight": 1086,
+    "size": 38806
+  },
+  {
+    "id": "bouquet-ivory-sample",
+    "sourcePath": "flower-assets/editorial/source/bouquet-ivory-sample.png",
+    "assetPath": "/assets/editorial/bouquet-ivory-sample.jpg",
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "size": 39767
+  },
+  {
+    "id": "bouquet-peach-sample",
+    "sourcePath": "flower-assets/editorial/source/bouquet-peach-sample.png",
+    "assetPath": "/assets/editorial/bouquet-peach-sample.jpg",
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "size": 47156
+  },
+  {
+    "id": "inspiration-garden",
+    "sourcePath": "flower-assets/editorial/source/inspiration-garden.png",
+    "assetPath": "/assets/editorial/inspiration-garden.jpg",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254,
+    "size": 81351
+  },
+  {
+    "id": "scene-living",
+    "sourcePath": "flower-assets/editorial/source/scene-living.png",
+    "assetPath": "/assets/editorial/scene-living.jpg",
+    "sourceWidth": 1448,
+    "sourceHeight": 1086,
+    "size": 26071
+  },
+  {
+    "id": "scene-dining",
+    "sourcePath": "flower-assets/editorial/source/scene-dining.png",
+    "assetPath": "/assets/editorial/scene-dining.jpg",
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "size": 31113
+  },
+  {
+    "id": "scene-cafe",
+    "sourcePath": "flower-assets/editorial/source/scene-cafe.png",
+    "assetPath": "/assets/editorial/scene-cafe.jpg",
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "size": 36930
+  },
+  {
+    "id": "scene-wedding",
+    "sourcePath": "flower-assets/editorial/source/scene-wedding.png",
+    "assetPath": "/assets/editorial/scene-wedding.jpg",
+    "sourceWidth": 1086,
+    "sourceHeight": 1448,
+    "size": 32194
+  },
+  {
+    "id": "scene-bedroom",
+    "sourcePath": "flower-assets/editorial/source/scene-bedroom.png",
+    "assetPath": "/assets/editorial/scene-bedroom.jpg",
+    "sourceWidth": 1448,
+    "sourceHeight": 1086,
+    "size": 29425
+  },
+  {
+    "id": "scene-entryway",
+    "sourcePath": "flower-assets/editorial/source/scene-entryway.png",
+    "assetPath": "/assets/editorial/scene-entryway.jpg",
+    "sourceWidth": 1448,
+    "sourceHeight": 1086,
+    "size": 30233
+  },
+  {
+    "id": "film-poster-sample",
+    "sourcePath": "flower-assets/editorial/source/film-poster-sample.png",
+    "assetPath": "/assets/editorial/film-poster-sample.jpg",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254,
+    "size": 37893
+  },
+  {
+    "id": "album-cover-sample",
+    "sourcePath": "flower-assets/editorial/source/album-cover-sample.png",
+    "assetPath": "/assets/editorial/album-cover-sample.jpg",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254,
+    "size": 49513
+  }
+]

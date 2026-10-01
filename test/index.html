@@ -1,0 +1,1728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>花作 · UI 原型</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-page: #F5F0EB;
+      --bg-screen: #FAF8F6;
+      --bg-card: #FFFFFF;
+      --text-primary: #4A3F3A;
+      --text-secondary: #9B8E85;
+      --accent: #B88A7A;
+      --accent-dark: #A67C6B;
+      --border: #EBE3DD;
+      --shadow: 0 8px 32px rgba(74, 63, 58, 0.10);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg-page);
+      color: var(--text-primary);
+      padding: 40px 24px;
+      line-height: 1.5;
+    }
+
+    .prototype-header {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+
+    .prototype-header h1 {
+      font-size: 32px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+    }
+
+    .prototype-header p {
+      font-size: 15px;
+      color: var(--text-secondary);
+    }
+
+    .section-title {
+      width: 100%;
+      font-size: 18px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin: 32px 0 16px;
+      padding-left: 8px;
+      border-left: 3px solid var(--accent);
+    }
+
+    .phones-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(390px, 1fr));
+      gap: 40px 32px;
+      max-width: 1800px;
+      margin: 0 auto;
+    }
+
+    .phone-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .phone-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .phone-frame {
+      width: 375px;
+      height: 812px;
+      background: var(--bg-screen);
+      border-radius: 44px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      border: 10px solid #FFFFFF;
+    }
+
+    .status-bar {
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .status-bar .time {
+      width: 50px;
+    }
+
+    .status-bar .icons {
+      display: flex;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .nav-bar {
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-screen);
+    }
+
+    .nav-back,
+    .nav-more {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      font-size: 20px;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+
+    .nav-title {
+      font-size: 17px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .screen-content {
+      height: calc(100% - 44px - 48px);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .screen-content.has-bottom-nav {
+      height: calc(100% - 44px - 48px - 64px);
+    }
+
+    /* Common Components */
+    .page-title {
+      font-size: 24px;
+      font-weight: 500;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px 20px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-primary:active {
+      background: var(--accent-dark);
+    }
+
+    .btn-outline {
+      width: 100%;
+      padding: 12px 16px;
+      background: #fff;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 2px 12px rgba(74, 63, 58, 0.04);
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .section-header h3 {
+      font-size: 16px;
+      font-weight: 500;
+    }
+
+    .section-header span {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Screen 1: Photo Recognition */
+    .screen-upload {
+      padding: 24px 20px;
+    }
+
+    .upload-area {
+      width: 100%;
+      aspect-ratio: 1;
+      background: linear-gradient(135deg, #FDFBFA 0%, #F5EDEA 100%);
+      border: 1.5px dashed var(--border);
+      border-radius: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin: 20px 0;
+      position: relative;
+    }
+
+    .upload-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+      margin-bottom: 12px;
+    }
+
+    .upload-area p {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .sample-section {
+      margin-top: 8px;
+    }
+
+    .sample-section h3 {
+      font-size: 15px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .sample-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .sample-item {
+      aspect-ratio: 1;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #f0e8e4;
+    }
+
+    .sample-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Screen 2: Recognition Result */
+    .result-image {
+      width: 100%;
+      aspect-ratio: 1.1;
+      border-radius: 24px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .result-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .retry-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      background: rgba(255,255,255,0.95);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      color: var(--text-primary);
+    }
+
+    .flower-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .flower-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: #fff;
+      border-radius: 16px;
+    }
+
+    .flower-item img {
+      width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      object-fit: cover;
+    }
+
+    .flower-info {
+      flex: 1;
+    }
+
+    .flower-info h4 {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .flower-info p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .flower-qty {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* Screen 3: Inspiration Generation */
+    .insp-upload {
+      width: 100%;
+      height: 160px;
+      border-radius: 20px;
+      overflow: hidden;
+      position: relative;
+      margin: 16px 0;
+    }
+
+    .insp-upload img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .insp-upload .upload-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.3);
+    }
+
+    .upload-pill {
+      background: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .generated-bouquet {
+      width: 100%;
+      aspect-ratio: 1.1;
+      border-radius: 24px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+
+    .generated-bouquet img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .color-palette {
+      display: flex;
+      gap: 10px;
+      margin: 12px 0 20px;
+    }
+
+    .color-dot {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    /* Screen 4: Scene Preview */
+    .scene-preview {
+      width: 100%;
+      aspect-ratio: 1.1;
+      border-radius: 24px;
+      overflow: hidden;
+      margin: 16px 0;
+      position: relative;
+    }
+
+    .scene-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .scene-tag {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background: rgba(255,255,255,0.95);
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .scene-thumbs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .scene-thumb {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid transparent;
+    }
+
+    .scene-thumb.active {
+      border-color: var(--accent);
+    }
+
+    .scene-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Screen 5: Inspiration Feed */
+    .feed-tabs {
+      display: flex;
+      gap: 16px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+
+    .feed-tab {
+      font-size: 14px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      padding-bottom: 8px;
+      border-bottom: 2px solid transparent;
+    }
+
+    .feed-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .feed-list {
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .feed-card {
+      background: #fff;
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .feed-card img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+    }
+
+    .feed-card-body {
+      padding: 14px;
+    }
+
+    .feed-card-body h4 {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 4px;
+    }
+
+    .feed-card-body p {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    .feed-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .feed-colors {
+      display: flex;
+      gap: 6px;
+    }
+
+    .feed-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+    }
+
+    .feed-actions {
+      display: flex;
+      gap: 12px;
+    }
+
+    .feed-actions span {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    /* Screen 6: My Works */
+    .works-tabs {
+      display: flex;
+      gap: 20px;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .works-tab {
+      font-size: 14px;
+      color: var(--text-secondary);
+      padding-bottom: 8px;
+      border-bottom: 2px solid transparent;
+    }
+
+    .works-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .works-grid {
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .work-card {
+      background: #fff;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .work-card img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+    }
+
+    .work-card-info {
+      padding: 10px;
+    }
+
+    .work-card-info h4 {
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .work-card-info p {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    /* Screen 7: Home */
+    .home-screen {
+      padding: 0;
+    }
+
+    .home-hero {
+      padding: 32px 24px;
+      background: linear-gradient(180deg, #FDF9F7 0%, #F5EEEB 100%);
+    }
+
+    .home-hero h1 {
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .home-hero p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .hero-bouquet {
+      width: 100%;
+      max-height: 320px;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 24px rgba(74, 63, 58, 0.12));
+    }
+
+    .home-actions {
+      padding: 20px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .home-action-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .home-action-card img {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+
+    .home-action-card h4 {
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    .home-action-card p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .bottom-nav {
+      height: 64px;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      background: #fff;
+      border-top: 1px solid var(--border);
+      padding-bottom: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item-icon {
+      font-size: 22px;
+    }
+
+    /* Screen 8 & 9: Flower Selection */
+    .creation-progress {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      padding: 16px 0;
+    }
+
+    .progress-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .progress-dot {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+      background: #F0E8E4;
+      color: var(--text-secondary);
+    }
+
+    .progress-step.active .progress-dot {
+      background: var(--text-primary);
+      color: #fff;
+    }
+
+    .progress-step span {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .progress-step.active span {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .bouquet-preview {
+      width: 100%;
+      height: 280px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(180deg, #FDF9F7 0%, #F5EEEB 100%);
+      margin-bottom: 16px;
+    }
+
+    .bouquet-preview img {
+      max-width: 80%;
+      max-height: 90%;
+      object-fit: contain;
+      filter: drop-shadow(0 12px 24px rgba(74, 63, 58, 0.12));
+    }
+
+    .preview-actions {
+      position: absolute;
+      right: 20px;
+      top: 120px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .preview-action-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #fff;
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+
+    .selection-tabs {
+      display: flex;
+      gap: 20px;
+      padding: 0 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .selection-tab {
+      font-size: 14px;
+      color: var(--text-secondary);
+      padding-bottom: 8px;
+      border-bottom: 2px solid transparent;
+    }
+
+    .selection-tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--accent);
+      font-weight: 500;
+    }
+
+    .selection-grid {
+      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .selection-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .selection-item-img {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 2px solid transparent;
+      background: #F5EEEB;
+    }
+
+    .selection-item.active .selection-item-img {
+      border-color: var(--text-primary);
+    }
+
+    .selection-item-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .selection-item span {
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .selection-item.active span {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .color-section {
+      padding: 0 20px;
+    }
+
+    .color-section h4 {
+      font-size: 14px;
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+
+    .color-options {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .color-option {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    }
+
+    .color-option.active {
+      box-shadow: 0 0 0 2px var(--text-primary);
+    }
+
+    /* Screen 10: Completion */
+    .completion-screen {
+      padding: 24px 20px;
+      text-align: center;
+    }
+
+    .completion-bouquet {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 28px;
+      overflow: hidden;
+      margin: 24px 0;
+      background: linear-gradient(180deg, #FDF9F7 0%, #F5EEEB 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .completion-bouquet img {
+      max-width: 80%;
+      max-height: 80%;
+      object-fit: contain;
+      filter: drop-shadow(0 16px 32px rgba(74, 63, 58, 0.14));
+    }
+
+    .completion-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-dark {
+      width: 100%;
+      padding: 14px 20px;
+      background: #4A3F3A;
+      color: #fff;
+      border: none;
+      border-radius: 24px;
+      font-size: 15px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    /* Screen 11: Material List */
+    .material-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding: 20px 20px 12px;
+    }
+
+    .material-header h2 {
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .material-header span {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .material-list {
+      padding: 0 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .material-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: #fff;
+      border-radius: 16px;
+    }
+
+    .material-item img {
+      width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+
+    .material-info {
+      flex: 1;
+    }
+
+    .material-info h4 {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .material-info p {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .material-qty {
+      font-size: 13px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    .material-actions {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .footer-note {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-header">
+    <h1>花作 · 功能与内容页面</h1>
+    <p>让灵感落地，让美好发生 — 用不同的方式，遇见花的更多可能</p>
+  </div>
+
+  <div class="section-title">01 看图识花 — 06 我的页面</div>
+  <div class="phones-container">
+    <!-- Screen 1: 看图识花 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">01 看图识花</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">看图识花</div>
+          <button class="nav-more">⋯</button>
+        </div>
+        <div class="screen-content">
+          <div class="screen-upload">
+            <h1 class="page-title">用一张照片<br>识别花材</h1>
+            <p class="page-subtitle">上传或拍摄你喜欢的花束<br>识别其中的花材，生成详细材料清单</p>
+            <div class="upload-area">
+              <div class="upload-icon">📷</div>
+              <p>点击上传图片<br>或直接拍摄</p>
+            </div>
+            <div class="sample-section">
+              <h3>试试这些图片</h3>
+              <div class="sample-grid">
+                <div class="sample-item"><img src="../flower-assets/editorial/source/bouquet-ivory-sample.png" alt=""></div>
+                <div class="sample-item"><img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt=""></div>
+                <div class="sample-item"><img src="../flower-assets/editorial/source/bouquet-home.png" alt=""></div>
+              </div>
+            </div>
+            <button class="btn-primary" style="margin-top: 24px;">开始识别 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 2: 识花结果 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">02 识花结果</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">识花结果</div>
+          <button class="nav-more">⋯</button>
+        </div>
+        <div class="screen-content">
+          <div style="padding: 16px 20px;">
+            <div class="result-image">
+              <img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+              <button class="retry-btn">↻ 重新识别</button>
+            </div>
+            <div class="section-header">
+              <h3>识别到的花材（7种）</h3>
+              <span></span>
+            </div>
+            <div class="flower-list">
+              <div class="flower-item">
+                <img src="../flower-assets/materials/source/rose_001.png" alt="">
+                <div class="flower-info">
+                  <h4>粉色玫瑰</h4>
+                  <p>数量：5枝</p>
+                </div>
+                <span class="flower-qty">5枝</span>
+              </div>
+              <div class="flower-item">
+                <img src="../flower-assets/materials/source/tulip_001.png" alt="">
+                <div class="flower-info">
+                  <h4>白色洋桔梗</h4>
+                  <p>数量：4枝</p>
+                </div>
+                <span class="flower-qty">4枝</span>
+              </div>
+              <div class="flower-item">
+                <img src="../flower-assets/materials/source/peony_001.png" alt="">
+                <div class="flower-info">
+                  <h4>粉色康乃馨</h4>
+                  <p>数量：3枝</p>
+                </div>
+                <span class="flower-qty">3枝</span>
+              </div>
+              <div class="flower-item">
+                <img src="../flower-assets/materials/source/daisy_001.png" alt="">
+                <div class="flower-info">
+                  <h4>白色满天星</h4>
+                  <p>数量：2枝</p>
+                </div>
+                <span class="flower-qty">2枝</span>
+              </div>
+              <div class="flower-item">
+                <img src="../flower-assets/materials/source/greenery_001.png" alt="">
+                <div class="flower-info">
+                  <h4>尤加利叶</h4>
+                  <p>数量：3枝</p>
+                </div>
+                <span class="flower-qty">3枝</span>
+              </div>
+            </div>
+            <div class="btn-row" style="margin-top: 16px;">
+              <button class="btn-primary">⬇ 下载材料清单</button>
+              <button class="btn-outline">✎ 转为可编辑花束</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 3: 灵感生花 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">03 灵感生花</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">灵感生花</div>
+          <button class="nav-more">⋯</button>
+        </div>
+        <div class="screen-content">
+          <div style="padding: 20px;">
+            <h1 class="page-title">从一张图片，<br>生成一束花</h1>
+            <p class="page-subtitle">上传专辑封面、电影海报、插画等<br>让花作根据色彩与氛围，为你生成专属花束</p>
+            <div class="insp-upload">
+              <img src="../flower-assets/editorial/source/inspiration-garden.png" alt="">
+              <div class="upload-overlay">
+                <div class="upload-pill">⊕ 选择图片</div>
+              </div>
+            </div>
+            <div class="generated-bouquet">
+              <img src="../flower-assets/editorial/source/bouquet-ivory-sample.png" alt="">
+            </div>
+            <div class="section-header">
+              <h3>提取色彩</h3>
+              <span></span>
+            </div>
+            <div class="color-palette">
+              <div class="color-dot" style="background: #E8C4C4;"></div>
+              <div class="color-dot" style="background: #D4A5A5;"></div>
+              <div class="color-dot" style="background: #B8C4B8;"></div>
+              <div class="color-dot" style="background: #C9B8A8;"></div>
+              <div class="color-dot" style="background: #E8D8D0;"></div>
+            </div>
+            <button class="btn-primary">生成同款花束 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 4: 场景试花 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">04 场景试花</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">场景试花</div>
+          <button class="nav-more">⋯</button>
+        </div>
+        <div class="screen-content">
+          <div style="padding: 20px;">
+            <h1 class="page-title">把花放进生活场景</h1>
+            <p class="page-subtitle">选择不同的空间，预览花束在真实场景中的效果<br>找到最适合你的摆放灵感</p>
+            <div class="scene-preview">
+              <img src="../flower-assets/editorial/source/scene-living.png" alt="">
+              <div class="scene-tag">🏠 客厅效果 ▾</div>
+            </div>
+            <div class="scene-thumbs">
+              <div class="scene-thumb active"><img src="../flower-assets/editorial/source/scene-living.png" alt=""></div>
+              <div class="scene-thumb"><img src="../flower-assets/editorial/source/scene-dining.png" alt=""></div>
+              <div class="scene-thumb"><img src="../flower-assets/editorial/source/scene-cafe.png" alt=""></div>
+              <div class="scene-thumb"><img src="../flower-assets/editorial/source/scene-wedding.png" alt=""></div>
+            </div>
+            <button class="btn-primary">应用到此场景 →</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 5: 灵感页面 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">05 灵感页面</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">灵感</div>
+          <button class="nav-more">⋯</button>
+        </div>
+        <div class="feed-tabs">
+          <div class="feed-tab active">推荐</div>
+          <div class="feed-tab">艺术灵感</div>
+          <div class="feed-tab">电影</div>
+          <div class="feed-tab">音乐</div>
+          <div class="feed-tab">自然</div>
+          <div class="feed-tab">生活</div>
+        </div>
+        <div class="screen-content has-bottom-nav">
+          <div class="feed-list">
+            <div class="feed-card">
+              <img src="../flower-assets/editorial/source/inspiration-garden.png" alt="">
+              <div class="feed-card-body">
+                <h4>莫奈花园</h4>
+                <p>源自莫奈的花园世界，温柔梦幻，像走进一幅油画</p>
+                <div class="feed-meta">
+                  <div class="feed-colors">
+                    <div class="feed-color" style="background: #E8C4C4;"></div>
+                    <div class="feed-color" style="background: #B8C4B8;"></div>
+                    <div class="feed-color" style="background: #D4A5A5;"></div>
+                  </div>
+                  <div class="feed-actions">
+                    <span>♡</span>
+                    <span>⋮</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="feed-card">
+              <img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+              <div class="feed-card-body">
+                <h4>电影灵感</h4>
+                <p>从经典电影中提取的情感与氛围</p>
+                <div class="feed-meta">
+                  <div class="feed-colors">
+                    <div class="feed-color" style="background: #D4A5A5;"></div>
+                    <div class="feed-color" style="background: #C9B8A8;"></div>
+                    <div class="feed-color" style="background: #B8C4B8;"></div>
+                  </div>
+                  <div class="feed-actions">
+                    <span>♡</span>
+                    <span>⋮</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item">
+            <span class="nav-item-icon">✎</span>
+            <span>创作</span>
+          </div>
+          <div class="nav-item active">
+            <span class="nav-item-icon">✦</span>
+            <span>灵感</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">👤</span>
+            <span>我的</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 6: 我的页面 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">06 我的页面</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">我的作品</div>
+          <button class="nav-more">⋯</button>
+        </div>
+        <div class="works-tabs">
+          <div class="works-tab active">全部作品</div>
+          <div class="works-tab">已保存</div>
+          <div class="works-tab">已下载材料清单</div>
+        </div>
+        <div class="screen-content has-bottom-nav">
+          <div class="works-grid">
+            <div class="work-card">
+              <img src="../flower-assets/editorial/source/bouquet-home.png" alt="">
+              <div class="work-card-info">
+                <h4>春日柔光</h4>
+                <p>2024.05.12</p>
+              </div>
+            </div>
+            <div class="work-card">
+              <img src="../flower-assets/editorial/source/bouquet-ivory-sample.png" alt="">
+              <div class="work-card-info">
+                <h4>莫奈的花园</h4>
+                <p>2024.04.28</p>
+              </div>
+            </div>
+            <div class="work-card">
+              <img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+              <div class="work-card-info">
+                <h4>橙色日落</h4>
+                <p>2024.04.16</p>
+              </div>
+            </div>
+            <div class="work-card">
+              <img src="../flower-assets/editorial/source/bouquet-home.png" alt="">
+              <div class="work-card-info">
+                <h4>电影时光</h4>
+                <p>2024.04.05</p>
+              </div>
+            </div>
+            <div class="work-card">
+              <img src="../flower-assets/editorial/source/bouquet-ivory-sample.png" alt="">
+              <div class="work-card-info">
+                <h4>奶油午后</h4>
+                <p>2024.03.23</p>
+              </div>
+            </div>
+            <div class="work-card">
+              <img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+              <div class="work-card-info">
+                <h4>森林来信</h4>
+                <p>2024.03.10</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item">
+            <span class="nav-item-icon">✎</span>
+            <span>创作</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">✦</span>
+            <span>灵感</span>
+          </div>
+          <div class="nav-item active">
+            <span class="nav-item-icon">👤</span>
+            <span>我的</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">07 创作首页 — 11 材料清单</div>
+  <div class="phones-container">
+    <!-- Screen 7: 创作首页 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">07 创作首页</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <div class="nav-title">花作</div>
+          <div style="display: flex; gap: 12px;">
+            <button class="nav-more" style="width: auto;">⋯</button>
+            <button class="nav-more" style="width: auto;">◎</button>
+          </div>
+        </div>
+        <div class="screen-content has-bottom-nav home-screen">
+          <div class="home-hero">
+            <h1>把灵感，<br>做成一束花</h1>
+            <p>生活里的每一种情绪<br>都值得被花看见</p>
+            <img class="hero-bouquet" src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+          </div>
+          <div class="home-actions">
+            <div class="home-action-card">
+              <img src="../flower-assets/materials/source/tulip_001.png" alt="">
+              <h4>自由创作</h4>
+              <p>从零开始创作属于你的花束</p>
+            </div>
+            <div class="home-action-card">
+              <img src="../flower-assets/editorial/source/bouquet-ivory-sample.png" alt="">
+              <h4>看图识花</h4>
+              <p>识别并分析花材</p>
+            </div>
+            <div class="home-action-card">
+              <img src="../flower-assets/editorial/source/inspiration-garden.png" alt="">
+              <h4>灵感生花</h4>
+              <p>从图片获取灵感生成专属花束</p>
+            </div>
+            <div class="home-action-card">
+              <img src="../flower-assets/editorial/source/scene-living.png" alt="">
+              <h4>场景试花</h4>
+              <p>预览真实效果</p>
+            </div>
+          </div>
+        </div>
+        <div class="bottom-nav">
+          <div class="nav-item active">
+            <span class="nav-item-icon">✎</span>
+            <span>创作</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">✦</span>
+            <span>灵感</span>
+          </div>
+          <div class="nav-item">
+            <span class="nav-item-icon">👤</span>
+            <span>我的</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 8: 主花选择 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">08 主花选择</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">花作</div>
+          <div style="display: flex; gap: 12px;">
+            <button class="nav-more" style="width: auto;">⋯</button>
+            <button class="nav-more" style="width: auto;">◎</button>
+          </div>
+        </div>
+        <div class="creation-progress">
+          <div class="progress-step active">
+            <div class="progress-dot">1</div>
+            <span>主花</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">2</div>
+            <span>次花</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">3</div>
+            <span>叶材</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">4</div>
+            <span>包装</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">5</div>
+            <span>装饰</span>
+          </div>
+        </div>
+        <div class="screen-content">
+          <div class="bouquet-preview">
+            <img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+            <div class="preview-actions">
+              <button class="preview-action-btn">↺</button>
+              <button class="preview-action-btn">↻</button>
+              <button class="preview-action-btn">🗑</button>
+            </div>
+          </div>
+          <div class="selection-tabs">
+            <div class="selection-tab active">主花</div>
+            <div class="selection-tab">次花</div>
+            <div class="selection-tab">叶材</div>
+            <div class="selection-tab">包装</div>
+            <div class="selection-tab">装饰</div>
+          </div>
+          <div class="selection-grid">
+            <div class="selection-item active">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/rose_001.png" alt=""></div>
+              <span>玫瑰</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/tulip_001.png" alt=""></div>
+              <span>郁金香</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/peony_001.png" alt=""></div>
+              <span>洋牡丹</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/hydrangea_001.png" alt=""></div>
+              <span>绣球</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/daisy_001.png" alt=""></div>
+              <span>小雏菊</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 9: 颜色选择 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">09 颜色选择</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">花作</div>
+          <div style="display: flex; gap: 12px;">
+            <button class="nav-more" style="width: auto;">⋯</button>
+            <button class="nav-more" style="width: auto;">◎</button>
+          </div>
+        </div>
+        <div class="creation-progress">
+          <div class="progress-step active">
+            <div class="progress-dot">1</div>
+            <span>主花</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">2</div>
+            <span>次花</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">3</div>
+            <span>叶材</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">4</div>
+            <span>包装</span>
+          </div>
+          <div class="progress-step">
+            <div class="progress-dot">5</div>
+            <span>装饰</span>
+          </div>
+        </div>
+        <div class="screen-content">
+          <div class="bouquet-preview">
+            <img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+            <div class="preview-actions">
+              <button class="preview-action-btn">↺</button>
+              <button class="preview-action-btn">↻</button>
+              <button class="preview-action-btn">🗑</button>
+            </div>
+          </div>
+          <div class="selection-tabs">
+            <div class="selection-tab active">主花</div>
+            <div class="selection-tab">次花</div>
+            <div class="selection-tab">叶材</div>
+            <div class="selection-tab">包装</div>
+            <div class="selection-tab">装饰</div>
+          </div>
+          <div class="selection-grid">
+            <div class="selection-item active">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/rose_001.png" alt=""></div>
+              <span>玫瑰</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/tulip_001.png" alt=""></div>
+              <span>郁金香</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/peony_001.png" alt=""></div>
+              <span>洋牡丹</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/hydrangea_001.png" alt=""></div>
+              <span>绣球</span>
+            </div>
+            <div class="selection-item">
+              <div class="selection-item-img"><img src="../flower-assets/materials/source/daisy_001.png" alt=""></div>
+              <span>小雏菊</span>
+            </div>
+          </div>
+          <div class="color-section">
+            <h4>玫瑰 · 颜色 <span style="float: right; font-size: 12px; color: var(--text-secondary); font-weight: normal;">收起 ▴</span></h4>
+            <div class="color-options">
+              <div class="color-option active" style="background: #E8A5A5;"></div>
+              <div class="color-option" style="background: #F5F0EB;"></div>
+              <div class="color-option" style="background: #C85555;"></div>
+              <div class="color-option" style="background: #F5E6D0;"></div>
+              <div class="color-option" style="background: #F5D08A;"></div>
+              <div class="color-option" style="background: #C8A8D8;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 10: 完成预览 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">10 完成预览</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">花作</div>
+          <div style="display: flex; gap: 12px;">
+            <button class="nav-more" style="width: auto;">⋯</button>
+            <button class="nav-more" style="width: auto;">◎</button>
+          </div>
+        </div>
+        <div class="screen-content">
+          <div class="completion-screen">
+            <div class="completion-bouquet">
+              <img src="../flower-assets/editorial/source/bouquet-peach-sample.png" alt="">
+            </div>
+            <div style="font-family: serif; font-size: 18px; color: var(--text-secondary); margin-bottom: 24px;">花作</div>
+            <div class="completion-actions">
+              <button class="btn-dark">⬆ 保存作品</button>
+              <button class="btn-outline">📋 查看材料清单</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Screen 11: 材料清单 -->
+    <div class="phone-wrapper">
+      <div class="phone-label">11 材料清单</div>
+      <div class="phone-frame">
+        <div class="status-bar">
+          <span class="time">9:41</span>
+          <div class="icons">📶 🔋</div>
+        </div>
+        <div class="nav-bar">
+          <button class="nav-back">←</button>
+          <div class="nav-title">花作</div>
+          <div style="display: flex; gap: 12px;">
+            <button class="nav-more" style="width: auto;">⋯</button>
+            <button class="nav-more" style="width: auto;">◎</button>
+          </div>
+        </div>
+        <div class="screen-content">
+          <div class="material-header">
+            <h2>材料清单</h2>
+            <span>共 8 种材料</span>
+          </div>
+          <div class="material-list">
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/rose_001.png" alt="">
+              <div class="material-info">
+                <h4>玫瑰</h4>
+                <p>粉色</p>
+              </div>
+              <span class="material-qty">6 支</span>
+            </div>
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/tulip_001.png" alt="">
+              <div class="material-info">
+                <h4>郁金香</h4>
+                <p>粉色</p>
+              </div>
+              <span class="material-qty">4 支</span>
+            </div>
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/peony_001.png" alt="">
+              <div class="material-info">
+                <h4>洋牡丹</h4>
+                <p>香槟色</p>
+              </div>
+              <span class="material-qty">3 支</span>
+            </div>
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/daisy_001.png" alt="">
+              <div class="material-info">
+                <h4>小雏菊</h4>
+                <p>白色</p>
+              </div>
+              <span class="material-qty">5 支</span>
+            </div>
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/greenery_001.png" alt="">
+              <div class="material-info">
+                <h4>尤加利</h4>
+                <p>银叶</p>
+              </div>
+              <span class="material-qty">4 支</span>
+            </div>
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/greenery_002.png" alt="">
+              <div class="material-info">
+                <h4>蜡梅</h4>
+                <p>白色</p>
+              </div>
+              <span class="material-qty">3 支</span>
+            </div>
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/packaging_001.png" alt="">
+              <div class="material-info">
+                <h4>雾面韩素纸</h4>
+                <p>米白色</p>
+              </div>
+              <span class="material-qty">2 张</span>
+            </div>
+            <div class="material-item">
+              <img src="../flower-assets/materials/source/packaging_004.png" alt="">
+              <div class="material-info">
+                <h4>雪梨纱</h4>
+                <p>浅粉色</p>
+              </div>
+              <span class="material-qty">1.5 米</span>
+            </div>
+          </div>
+          <div class="material-actions">
+            <button class="btn-dark">⬇ 下载材料清单</button>
+            <button class="btn-outline">✎ 转为可编辑花束</button>
+          </div>
+          <p class="footer-note">管理你已保存的花束和下载的材料清单</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

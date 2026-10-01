@@ -1,0 +1,1931 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>花作 · V3</title>
+<style>
+/* ============ 设计令牌 ============ */
+:root{
+  --paper:#FAF8F3;        /* 温暖骨白 */
+  --paper-2:#F5F1E8;      /* 纸张米白 */
+  --paper-3:#EFEADD;      /* 更深的纸面 */
+  --ink:#302B27;          /* 深墨棕 */
+  --ink-2:#7A7268;        /* 暖灰棕 */
+  --ink-3:#A79E92;        /* 弱化 */
+  --moss:#89927D;         /* 品牌强调：鼠尾草绿 */
+  --moss-2:#6F7863;
+  --rose:#C08E86;         /* 枯玫瑰 */
+  --clay:#B0705F;         /* 陶土（仅用于破坏性操作） */
+  --flax:#D9CFBB;         /* 亚麻 */
+  --line:#E4DED2;         /* 发丝线 */
+  --line-2:#D8D1C2;
+  --serif:"Songti SC","STSong","Noto Serif SC","Source Han Serif SC","SimSun",serif;
+  --sans:-apple-system,"PingFang SC","Microsoft YaHei","Helvetica Neue",sans-serif;
+  --ease:cubic-bezier(.32,.72,.28,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{background:#22201D;overflow:hidden;font-family:var(--sans);color:var(--ink);
+  -webkit-font-smoothing:antialiased;}
+
+/* ============ 舞台与机身 ============ */
+#stage{position:absolute;left:50%;top:50%;width:390px;height:844px;margin:-422px 0 0 -195px;transform-origin:center;}
+.phone{position:relative;width:100%;height:100%;background:var(--paper);overflow:hidden;
+  border-radius:26px;border:1px solid #DED6C6;
+  box-shadow:0 30px 70px rgba(0,0,0,.5),0 2px 10px rgba(0,0,0,.24);
+  display:flex;flex-direction:column;font-size:15px;}
+/* 纸张颗粒 */
+.phone::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:400;opacity:.05;
+  mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");}
+
+/* ============ 屏幕与转场 ============ */
+.screens{position:relative;flex:1;min-height:0;display:flex;flex-direction:column;}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;background:var(--paper);}
+.screen.on{display:flex;}
+.screen.fwd{animation:pageIn .34s var(--ease) both;}
+.screen.back{animation:pageBack .34s var(--ease) both;}
+@keyframes pageIn{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+@keyframes pageBack{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+
+/* ============ 排版工具 ============ */
+.eyebrow{font-size:.58em;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-3);font-weight:500;}
+.display{font-family:var(--serif);font-weight:400;letter-spacing:.02em;}
+.h-page{font-family:var(--serif);font-size:1.5em;letter-spacing:.06em;font-weight:400;}
+.h-sec{font-family:var(--serif);font-size:1.12em;letter-spacing:.05em;font-weight:400;}
+.body{font-size:.92em;line-height:1.75;color:var(--ink-2);}
+.meta{font-size:.76em;color:var(--ink-3);letter-spacing:.04em;}
+.hr{height:1px;background:var(--line);border:0;}
+
+/* ============ 顶栏 ============ */
+.topbar{flex:0 0 auto;height:52px;display:flex;align-items:center;padding:0 16px;position:relative;}
+.topbar .bk{width:28px;height:28px;display:flex;align-items:center;justify-content:center;margin-left:-8px;}
+.topbar .bk svg{width:15px;height:15px;stroke:var(--ink);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.topbar .bk:active{opacity:.5;}
+.topbar .tt{position:absolute;left:50%;transform:translateX(-50%);font-family:var(--serif);
+  font-size:1.02em;letter-spacing:.18em;white-space:nowrap;}
+.topbar .tt-l{position:static;transform:none;}
+.capsule{margin-left:auto;width:76px;height:26px;border:1px solid rgba(48,43,39,.13);border-radius:13px;
+  background:rgba(255,255,255,.5);display:flex;align-items:center;flex:0 0 auto;}
+.capsule i{flex:1;text-align:center;font-style:normal;font-size:.72em;color:var(--ink-2);letter-spacing:.06em;}
+.capsule i+i{border-left:1px solid rgba(48,43,39,.1);}
+
+/* ============ 底部导航 ============ */
+.tabbar{flex:0 0 auto;height:58px;border-top:1px solid var(--line);background:rgba(250,248,243,.96);
+  display:flex;padding-bottom:6px;}
+.tabbar .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  color:var(--ink-3);}
+.tabbar .tab svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}
+.tabbar .tab span{font-size:.68em;letter-spacing:.12em;}
+.tabbar .tab:active{opacity:.55;}
+.tabbar .tab.on{color:var(--ink);}
+.tabbar .tab.on svg{stroke-width:1.7;}
+
+/* ============ 按钮 ============ */
+.btn{height:46px;border-radius:3px;display:flex;align-items:center;justify-content:center;gap:8px;
+  font-size:.94em;letter-spacing:.1em;border:0;font-family:var(--sans);flex:0 0 auto;white-space:nowrap;}
+.btn:active{opacity:.72;}
+.btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.btn-pri{background:var(--ink);color:#F7F4EE;}
+.btn-sec{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line-2);}
+.btn-moss{background:var(--moss);color:#FBFAF6;}
+.btn[disabled]{opacity:.32;}
+.btn-row{display:flex;gap:10px;}
+.btn-row .btn{flex:1;min-width:0;}
+.tlink{font-size:.84em;color:var(--ink-2);letter-spacing:.06em;text-align:center;}
+.tlink:active{opacity:.5;}
+.tlink.danger{color:var(--clay);}
+.tlink u{text-underline-offset:4px;text-decoration-thickness:1px;}
+
+/* ============ 首页（全屏花图 + 悬浮入口） ============ */
+.home{position:absolute;inset:0;overflow:hidden;background:var(--paper);}
+.home-bg{position:absolute;inset:0;background:radial-gradient(122% 86% at 50% 104%,#EDE6D8 0%,var(--paper) 60%);}
+.home-bg svg{position:absolute;left:50%;top:41%;transform:translate(-50%,-50%);height:74%;width:auto;max-width:150%;}
+.home-veil{position:absolute;left:0;right:0;bottom:0;height:66%;
+  background:linear-gradient(to bottom,rgba(250,248,243,0) 0%,rgba(250,248,243,.5) 30%,rgba(250,248,243,.9) 66%,var(--paper) 100%);}
+.home-in{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;}
+.home-top{flex:0 0 auto;display:flex;align-items:baseline;padding:22px 22px 0;}
+.home-top .wm{font-family:var(--serif);font-size:1.32em;letter-spacing:.34em;}
+.home-top .eb{margin-left:auto;}
+.home-copy{flex:0 0 auto;margin-top:auto;padding:0 24px;}
+.home-copy.wide{padding-bottom:4px;}
+.home-copy h1{font-family:var(--serif);font-size:2.02em;line-height:1.42;letter-spacing:.05em;font-weight:400;}
+.home-copy p{margin-top:11px;font-size:.86em;line-height:1.8;color:var(--ink-2);letter-spacing:.04em;}
+.home-cta{flex:0 0 auto;padding:20px 22px 0;}
+.home-cta .btn{width:100%;height:50px;box-shadow:0 10px 26px rgba(48,43,39,.14);}
+.home-entries{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:11px;padding:22px 22px 16px;}
+.hcard{position:relative;background:rgba(255,255,255,.8);border:1px solid rgba(228,222,210,.92);border-radius:3px;
+  padding:15px 14px 16px;min-height:86px;overflow:hidden;
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);}
+.hcard:active{background:rgba(255,255,255,.95);}
+.hcard .no{position:absolute;right:11px;top:11px;font-size:.58em;letter-spacing:.14em;color:var(--ink-3);}
+.hcard b{display:block;font-family:var(--serif);font-size:1.04em;font-weight:400;letter-spacing:.05em;}
+.hcard span{display:block;font-size:.72em;color:var(--ink-2);margin-top:7px;line-height:1.6;letter-spacing:.02em;max-width:82%;}
+.hcard .th{position:absolute;right:-8px;bottom:-12px;width:62px;height:62px;font-style:normal;opacity:.85;pointer-events:none;}
+.hcard .th svg{width:100%;height:100%;display:block;}
+.tabbar.glass{background:rgba(250,248,243,.74);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top-color:rgba(228,222,210,.7);}
+
+/* ============ 创作台 ============ */
+.studio-canvas{flex:1;min-height:0;position:relative;overflow:hidden;
+  background:radial-gradient(112% 82% at 50% 88%,#F1ECE1 0%,var(--paper) 58%);}
+.studio-canvas svg.bq{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:88%;height:96%;animation:bqIn .5s var(--ease) both;}
+@keyframes bqIn{from{opacity:.35;transform:translate(-50%,-48%) scale(.985)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.studio-empty{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:18px;padding:0 40px;text-align:center;}
+.studio-empty svg{width:96px;height:120px;stroke:var(--line-2);fill:none;stroke-width:1.1;stroke-linecap:round;}
+.studio-empty p{font-size:.86em;color:var(--ink-3);line-height:1.9;letter-spacing:.05em;}
+.tools{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;
+  border:1px solid var(--line);border-radius:3px;background:rgba(250,248,243,.9);overflow:hidden;}
+.tools i{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line);}
+.tools i:last-child{border-bottom:0;}
+.tools i svg{width:16px;height:16px;fill:none;stroke:var(--ink-2);stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;}
+.tools i:active{background:var(--paper-2);}
+.tools i.off{opacity:.3;}
+.tools i.txt{font-style:normal;font-size:.6em;letter-spacing:.04em;color:var(--ink-2);line-height:1.25;text-align:center;padding:2px;}
+
+.selstrip{flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:10px 16px;
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--paper-2);
+  overflow-x:auto;min-height:46px;}
+.selstrip::-webkit-scrollbar{display:none;}
+.selstrip .hint{font-size:.76em;color:var(--ink-3);letter-spacing:.04em;white-space:nowrap;}
+.chip{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:5px 10px 5px 7px;
+  border:1px solid var(--line-2);border-radius:2px;background:var(--paper);font-size:.76em;letter-spacing:.03em;}
+.chip .dt{width:9px;height:9px;border-radius:50%;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(48,43,39,.09);}
+.chip .q{color:var(--ink-3);font-size:.92em;}
+.chip:active{background:var(--paper-3);}
+
+.drawer{flex:0 0 auto;background:var(--paper);display:flex;flex-direction:column;
+  border-top:1px solid var(--line);max-height:47%;}
+.dtabs{flex:0 0 auto;display:flex;padding:0 8px;border-bottom:1px solid var(--line);overflow-x:auto;}
+.dtabs::-webkit-scrollbar{display:none;}
+.dtabs span{flex:0 0 auto;padding:12px 12px 11px;font-size:.86em;color:var(--ink-3);letter-spacing:.08em;
+  position:relative;}
+.dtabs span.on{color:var(--ink);}
+.dtabs span.on::after{content:"";position:absolute;left:12px;right:12px;bottom:-1px;height:1.5px;background:var(--moss);}
+.dtabs span:active{opacity:.6;}
+.dhead{flex:0 0 auto;display:flex;align-items:center;padding:14px 16px 10px;gap:10px;}
+.dhead .bk2{font-size:.78em;color:var(--ink-2);letter-spacing:.04em;display:flex;align-items:center;gap:5px;}
+.dhead .bk2:active{opacity:.5;}
+.dhead .bk2 svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.dhead b{font-family:var(--serif);font-size:1.06em;font-weight:400;letter-spacing:.06em;}
+.dbody{flex:1;min-height:0;overflow-y:auto;padding:0 14px 14px;}
+.dbody::-webkit-scrollbar{display:none;}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.opt{border:1px solid transparent;border-radius:2px;padding:6px 4px 8px;text-align:center;background:var(--paper-2);}
+.opt svg{width:100%;height:62px;display:block;}
+.opt em{display:block;font-style:normal;font-size:.74em;color:var(--ink-2);margin-top:6px;letter-spacing:.03em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.opt.on{border-color:var(--moss);background:var(--paper);}
+.opt.on em{color:var(--ink);}
+.opt:active{opacity:.7;}
+/* 调整态 */
+.adj-name{font-family:var(--serif);font-size:1.5em;letter-spacing:.06em;font-weight:400;}
+.adj-en{margin-top:7px;}
+.adj-block{margin-top:22px;}
+.adj-label{display:flex;align-items:baseline;gap:8px;margin-bottom:12px;}
+.adj-label b{font-size:.86em;font-weight:500;letter-spacing:.08em;}
+.adj-label span{font-size:.72em;color:var(--ink-3);}
+.swatches{display:flex;flex-wrap:wrap;gap:14px;}
+.sw{text-align:center;width:52px;}
+.sw i{display:block;width:38px;height:38px;border-radius:50%;margin:0 auto;
+  box-shadow:inset 0 0 0 1px rgba(48,43,39,.1);position:relative;}
+.sw.on i::after{content:"";position:absolute;inset:-5px;border:1.5px solid var(--moss);border-radius:50%;}
+.sw em{display:block;font-style:normal;font-size:.68em;color:var(--ink-3);margin-top:8px;letter-spacing:.02em;}
+.sw.on em{color:var(--ink);}
+.sw:active{opacity:.6;}
+.qty{display:flex;align-items:center;gap:0;border:1px solid var(--line-2);border-radius:2px;width:132px;}
+.qty i{width:42px;height:38px;display:flex;align-items:center;justify-content:center;font-style:normal;
+  font-size:1.05em;color:var(--ink-2);}
+.qty i:active{background:var(--paper-2);}
+.qty b{flex:1;text-align:center;font-size:.94em;font-weight:500;border-left:1px solid var(--line);border-right:1px solid var(--line);height:38px;line-height:38px;}
+.studio-foot{flex:0 0 auto;padding:12px 16px 16px;border-top:1px solid var(--line);background:var(--paper);}
+.studio-foot .fh{font-size:.74em;color:var(--ink-3);letter-spacing:.05em;margin-bottom:10px;text-align:center;}
+.studio-foot .fh.ok{color:var(--moss-2);}
+.studio-foot .btn{width:100%;}
+
+/* ============ 创作台：流程条 + 材料抽屉 ============ */
+.steps{flex:0 0 auto;display:flex;padding:15px 16px 7px;}
+.step{flex:1;display:flex;flex-direction:column;align-items:center;gap:7px;position:relative;}
+.step::before{content:"";position:absolute;top:4px;left:calc(-50% + 11px);width:calc(100% - 22px);height:1px;background:var(--line);}
+.step:first-child::before{display:none;}
+.step .dot{width:9px;height:9px;border-radius:50%;background:var(--paper);border:1px solid var(--line-2);position:relative;z-index:1;}
+.step span{font-size:.78em;color:var(--ink-3);letter-spacing:.05em;}
+.step.done .dot{background:#C7BEAE;border-color:#C7BEAE;}
+.step.done::before{background:#C7BEAE;}
+.step.done span{color:var(--ink-2);}
+.step.on .dot{background:var(--moss);border-color:var(--moss);box-shadow:0 0 0 4px rgba(137,146,125,.16);}
+.step.on span{color:var(--ink);font-weight:600;}
+.step.on::before{background:#C7BEAE;}
+.step:active{opacity:.55;}
+.wb{flex:0 0 auto;background:var(--paper);border-top:1px solid var(--line);display:flex;flex-direction:column;}
+.wb-head{flex:0 0 auto;display:flex;align-items:baseline;gap:8px;padding:14px 16px 11px;}
+.wb-head b{font-family:var(--serif);font-size:1.06em;font-weight:400;letter-spacing:.06em;}
+.wb-head .tipx{margin-left:auto;font-size:.7em;color:var(--ink-3);letter-spacing:.03em;text-align:right;}
+.wb-head .bk2{font-family:var(--sans);font-size:.78em;color:var(--ink-2);display:flex;align-items:center;gap:5px;letter-spacing:.04em;}
+.wb-head .bk2 svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+.wb-head .bk2:active{opacity:.5;}
+.wb-scroll{flex:0 0 auto;display:flex;gap:10px;padding:0 16px 6px;overflow-x:auto;}
+.wb-scroll::-webkit-scrollbar{display:none;}
+.fchip{flex:0 0 auto;width:74px;text-align:center;}
+.fchip .th{display:block;width:74px;height:74px;border-radius:2px;background:var(--paper-2);border:1px solid transparent;overflow:hidden;position:relative;}
+.fchip .th svg{width:100%;height:100%;display:block;}
+.fchip.on .th{border-color:var(--moss);}
+.fchip em{display:block;font-style:normal;font-size:.72em;color:var(--ink-2);margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.fchip.on em{color:var(--ink);}
+.fchip .cn{position:absolute;right:4px;top:4px;min-width:15px;height:15px;border-radius:8px;background:var(--moss);
+  color:#FBFAF7;font-size:.62em;font-style:normal;display:flex;align-items:center;justify-content:center;padding:0 3px;}
+.fchip:active{opacity:.62;}
+.wb-adj{flex:0 0 auto;padding:0 16px 6px;max-height:34vh;overflow-y:auto;}
+.wb-adj::-webkit-scrollbar{display:none;}
+.wb-tip{flex:0 0 auto;text-align:center;font-size:.72em;color:var(--ink-3);letter-spacing:.05em;padding:11px 16px 0;}
+.wb-foot{flex:0 0 auto;display:flex;gap:10px;padding:13px 16px 18px;}
+.wb-foot .btn{flex:1;min-width:0;}
+/* ============ 作品结果 ============ */
+.res-hero{flex:1;min-height:0;position:relative;
+  background:radial-gradient(110% 80% at 50% 92%,#F0EBDF 0%,var(--paper) 60%);}
+.res-hero svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:82%;height:94%;
+  animation:resIn .6s var(--ease) both;}
+@keyframes resIn{from{opacity:0;transform:translate(-50%,-47%) scale(.97)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+.res-mark{position:absolute;left:0;right:0;bottom:14px;text-align:center;font-family:var(--serif);
+  font-size:.86em;letter-spacing:.5em;color:var(--ink-3);padding-left:.5em;}
+.res-info{flex:0 0 auto;padding:20px 24px 0;text-align:center;}
+.res-info h2{font-family:var(--serif);font-size:1.5em;letter-spacing:.08em;font-weight:400;
+  animation:upIn .5s var(--ease) .1s both;}
+.res-info .meta{margin-top:9px;animation:upIn .5s var(--ease) .16s both;}
+@keyframes upIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.res-acts{flex:0 0 auto;padding:22px 22px 14px;display:flex;flex-direction:column;gap:10px;}
+.res-links{flex:0 0 auto;display:flex;justify-content:center;gap:22px;padding:4px 0 16px;}
+
+/* ============ 材料清单 ============ */
+.mat-head{flex:0 0 auto;display:flex;gap:14px;align-items:center;padding:18px 22px 16px;border-bottom:1px solid var(--line);}
+.mat-head .th{width:56px;height:70px;flex:0 0 auto;background:var(--paper-2);border-radius:2px;overflow:hidden;}
+.mat-head .th svg{width:100%;height:100%;}
+.mat-head h2{font-family:var(--serif);font-size:1.32em;letter-spacing:.07em;font-weight:400;}
+.mat-head .meta{margin-top:7px;}
+.mat-body{flex:1;min-height:0;overflow-y:auto;padding:0 22px;}
+.mat-body::-webkit-scrollbar{display:none;}
+.mat-group{padding:18px 0 4px;}
+.mat-group>.eyebrow{display:block;margin-bottom:6px;}
+.mrow{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid var(--line);}
+.mrow:last-child{border-bottom:0;}
+.mrow .dot{width:16px;height:16px;border-radius:50%;flex:0 0 auto;box-shadow:inset 0 0 0 1px rgba(48,43,39,.1);}
+.mrow .nm{flex:1;min-width:0;font-size:.94em;letter-spacing:.02em;}
+.mrow .cl{font-size:.78em;color:var(--ink-3);flex:0 0 auto;}
+.mrow .qt{font-size:.84em;color:var(--ink-2);flex:0 0 auto;min-width:52px;text-align:right;}
+.mrow .unsure{font-size:.64em;color:var(--moss-2);border:1px solid rgba(137,146,125,.4);
+  border-radius:2px;padding:1px 5px;margin-left:6px;letter-spacing:.04em;}
+.mat-note{padding:14px 0 6px;font-size:.76em;color:var(--ink-3);line-height:1.85;letter-spacing:.03em;}
+.mat-foot{flex:0 0 auto;padding:14px 22px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
+
+/* ============ 上传类页面 ============ */
+.pg-head{flex:0 0 auto;padding:22px 24px 0;}
+.pg-head h2{font-family:var(--serif);font-size:1.62em;line-height:1.5;letter-spacing:.05em;font-weight:400;}
+.pg-head p{margin-top:12px;font-size:.84em;line-height:1.85;color:var(--ink-2);letter-spacing:.03em;}
+.drop{flex:1;min-height:120px;margin:24px 22px 0;border:1px solid var(--line-2);border-radius:3px;
+  background:var(--paper-2);position:relative;overflow:hidden;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;}
+.drop:active{background:var(--paper-3);}
+.drop svg.ic{width:34px;height:34px;stroke:var(--ink-3);fill:none;stroke-width:1.2;stroke-linecap:round;stroke-linejoin:round;}
+.drop b{font-size:.94em;font-weight:500;letter-spacing:.06em;color:var(--ink);}
+.drop span{font-size:.76em;color:var(--ink-3);letter-spacing:.03em;line-height:1.8;}
+.drop img.pv{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;}
+.drop img.pv+*{display:none;}
+.drop.has img.pv{display:block;}
+.drop.has svg.ic,.drop.has b,.drop.has span{display:none;}
+.drop .chg{position:absolute;left:0;right:0;bottom:0;padding:10px;font-size:.78em;color:#fff;
+  background:linear-gradient(transparent,rgba(48,43,39,.62));letter-spacing:.06em;display:none;}
+.drop.has .chg{display:block;}
+.up-alt{flex:0 0 auto;display:flex;justify-content:center;gap:26px;padding:16px 22px 0;}
+.up-foot{flex:0 0 auto;padding:18px 22px 20px;}
+.up-foot .btn{width:100%;}
+/* 灵感示例 */
+.examples{flex:0 0 auto;padding:22px 22px 0;}
+.examples .eyebrow{display:block;margin-bottom:12px;}
+.ex-row{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);}
+.ex-row .a,.ex-row .b{width:44px;height:56px;flex:0 0 auto;border-radius:2px;overflow:hidden;background:var(--paper-2);}
+.ex-row .a svg,.ex-row .b svg{width:100%;height:100%;display:block;}
+.ex-row .ln{flex:0 0 auto;width:22px;height:1px;background:var(--line-2);position:relative;}
+.ex-row .ln::after{content:"";position:absolute;right:0;top:-2.5px;width:5px;height:5px;
+  border-top:1px solid var(--line-2);border-right:1px solid var(--line-2);transform:rotate(45deg);}
+.ex-row .tx{flex:1;min-width:0;}
+.ex-row .tx b{display:block;font-family:var(--serif);font-size:.94em;font-weight:400;letter-spacing:.05em;}
+.ex-row .tx span{display:block;font-size:.7em;color:var(--ink-3);margin-top:4px;}
+.ex-row:active{opacity:.55;}
+
+/* ============ 识花结果 ============ */
+.id-img{flex:0 0 auto;height:196px;margin:18px 22px 0;background:var(--paper-2);border-radius:3px;overflow:hidden;position:relative;}
+.id-img img,.id-img svg{width:100%;height:100%;object-fit:cover;display:block;}
+.id-cap{flex:0 0 auto;display:flex;align-items:baseline;justify-content:space-between;padding:14px 22px 0;}
+.id-list{flex:1;min-height:0;overflow-y:auto;padding:0 22px;}
+.id-list::-webkit-scrollbar{display:none;}
+
+/* ============ 灵感结果 ============ */
+.ins-flow{flex:1;min-height:0;overflow-y:auto;padding:0 22px;}
+.ins-flow::-webkit-scrollbar{display:none;}
+.ins-src{margin-top:18px;height:150px;border-radius:3px;overflow:hidden;background:var(--paper-2);position:relative;}
+.ins-src img,.ins-src svg{width:100%;height:100%;object-fit:cover;display:block;}
+.ins-arrow{display:flex;flex-direction:column;align-items:center;padding:16px 0;color:var(--line-2);}
+.ins-arrow i{width:1px;height:18px;background:var(--line-2);display:block;}
+.ins-arrow svg{width:13px;height:13px;stroke:var(--ink-3);fill:none;stroke-width:1.3;stroke-linecap:round;stroke-linejoin:round;margin-top:-1px;}
+.ins-colors{display:flex;align-items:center;gap:9px;justify-content:center;padding:2px 0;}
+.ins-colors i{width:22px;height:22px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(48,43,39,.09);
+  animation:dotIn .5s var(--ease) both;}
+@keyframes dotIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
+.ins-hero{margin-top:14px;height:290px;position:relative;border-radius:3px;overflow:hidden;
+  background:radial-gradient(110% 80% at 50% 92%,#F0EBDF 0%,var(--paper-2) 60%);}
+.ins-hero svg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:86%;height:96%;
+  animation:resIn .7s var(--ease) both;}
+.ins-foot{flex:0 0 auto;padding:16px 22px 18px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
+
+/* ============ 场景试花 ============ */
+.sc-pick{flex:0 0 auto;display:flex;gap:10px;padding:18px 22px 0;}
+.sc-slot{flex:1;min-width:0;border:1px solid var(--line-2);border-radius:3px;background:var(--paper-2);
+  overflow:hidden;position:relative;}
+.sc-slot:active{background:var(--paper-3);}
+.sc-slot .pv{height:64px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;}
+.sc-slot .pv svg,.sc-slot .pv img{width:100%;height:100%;object-fit:cover;display:block;}
+.sc-slot .pv.none{color:var(--ink-3);}
+.sc-slot .pv.none svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.2;}
+.sc-slot .lb{padding:8px 10px 9px;font-size:.72em;color:var(--ink-2);letter-spacing:.04em;
+  border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.sc-slot .lb b{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc-slot .lb u{color:var(--moss-2);text-underline-offset:3px;flex:0 0 auto;}
+.sc-stage{flex:1;min-height:150px;margin:14px 22px 0;border-radius:3px;overflow:hidden;position:relative;
+  background:var(--paper-3);touch-action:none;}
+.sc-stage .bg{position:absolute;inset:0;}
+.sc-stage .bg svg,.sc-stage .bg img{width:100%;height:100%;object-fit:cover;display:block;}
+.sc-stage .fl{position:absolute;transform:translate(-50%,-50%);touch-action:none;}
+.sc-stage .fl svg{width:100%;height:100%;display:block;filter:drop-shadow(0 10px 16px rgba(60,48,36,.24));}
+.sc-stage .ph-old{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:10px;color:var(--ink-3);font-size:.8em;letter-spacing:.05em;text-align:center;line-height:1.9;padding:0 20px;}
+.sc-stage .ph-old svg{width:26px;height:26px;stroke:var(--line-2);fill:none;stroke-width:1.2;}
+.sc-hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);white-space:nowrap;
+  font-size:.72em;color:#fff;background:rgba(48,43,39,.5);border-radius:2px;padding:6px 12px;letter-spacing:.06em;
+  transition:opacity .6s ease;z-index:3;}
+.sc-hint.gone{opacity:0;}
+.sc-size{flex:0 0 auto;display:flex;align-items:center;gap:12px;padding:14px 22px 0;}
+.sc-size .eyebrow{flex:0 0 auto;}
+.sc-size input{flex:1;-webkit-appearance:none;appearance:none;height:1px;background:var(--line-2);outline:0;}
+.sc-size input::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;
+  background:var(--moss);box-shadow:0 0 0 3px rgba(137,146,125,.16);}
+.sc-size b{flex:0 0 auto;font-size:.76em;color:var(--ink-3);font-weight:400;min-width:30px;text-align:right;}
+.sc-rooms{flex:0 0 auto;display:flex;gap:8px;padding:14px 22px 0;overflow-x:auto;}
+.sc-rooms::-webkit-scrollbar{display:none;}
+.sc-room{flex:0 0 auto;width:62px;text-align:center;}
+.sc-room .pv{width:62px;height:44px;border-radius:2px;overflow:hidden;border:1px solid transparent;background:var(--paper-2);}
+.sc-room .pv svg{width:100%;height:100%;display:block;}
+.sc-room.on .pv{border-color:var(--moss);}
+.sc-room em{display:block;font-style:normal;font-size:.68em;color:var(--ink-3);margin-top:6px;letter-spacing:.02em;}
+.sc-room.on em{color:var(--ink);}
+.sc-foot{flex:0 0 auto;padding:16px 22px 18px;}
+.sc-foot .btn{width:100%;}
+/* 场景合成结果 */
+.sc-res{flex:1;min-height:0;background:#2A2521;position:relative;overflow:hidden;}
+.sc-res img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;animation:resIn .6s var(--ease) both;}
+.sc-res .cap{position:absolute;left:0;right:0;bottom:0;padding:36px 22px 18px;
+  background:linear-gradient(transparent,rgba(30,26,22,.72));}
+.sc-res .cap b{display:block;font-family:var(--serif);font-size:1.1em;color:#F6F2EA;font-weight:400;letter-spacing:.08em;}
+.sc-res .cap span{display:block;font-size:.74em;color:rgba(246,242,234,.6);margin-top:7px;letter-spacing:.04em;}
+.sc-res-foot{flex:0 0 auto;padding:14px 22px 18px;background:var(--paper);display:flex;flex-direction:column;gap:10px;}
+
+/* ============ 灵感画册 ============ */
+.gal-head{flex:0 0 auto;padding:22px 22px 0;}
+.gal-head h2{font-family:var(--serif);font-size:1.62em;letter-spacing:.08em;font-weight:400;}
+.gal-head p{margin-top:10px;font-size:.82em;color:var(--ink-2);letter-spacing:.03em;}
+.gal-tabs{flex:0 0 auto;display:flex;gap:20px;padding:18px 22px 0;overflow-x:auto;border-bottom:1px solid var(--line);}
+.gal-tabs::-webkit-scrollbar{display:none;}
+.gal-tabs span{flex:0 0 auto;padding-bottom:11px;font-size:.84em;color:var(--ink-3);letter-spacing:.06em;position:relative;}
+.gal-tabs span.on{color:var(--ink);}
+.gal-tabs span.on::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1.5px;background:var(--moss);}
+.gal-tabs span:active{opacity:.6;}
+.gal-body{flex:1;min-height:0;overflow-y:auto;padding:16px 18px 20px;display:flex;gap:9px;align-items:flex-start;}
+.gal-body>.empty{flex:1;}
+.gal-col{flex:1;min-width:0;}
+.gal-body::-webkit-scrollbar{display:none;}
+.gi{break-inside:avoid;margin-bottom:10px;animation:upIn .5s var(--ease) both;}
+.gi .im{width:100%;border-radius:2px;overflow:hidden;background:var(--paper-2);display:block;}
+.gi .im svg{width:100%;height:auto;display:block;}
+.gi b{display:block;font-family:var(--serif);font-size:.78em;font-weight:400;letter-spacing:.03em;margin-top:8px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.gi span{display:block;font-size:.62em;color:var(--ink-3);margin-top:4px;letter-spacing:.02em;}
+.gi:active{opacity:.6;}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  padding:0 40px;text-align:center;}
+.empty svg{width:52px;height:70px;stroke:var(--line-2);fill:none;stroke-width:1.1;stroke-linecap:round;}
+.empty p{font-size:.84em;color:var(--ink-3);line-height:1.95;letter-spacing:.04em;}
+.empty .btn{margin-top:6px;padding:0 26px;height:42px;}
+
+/* ============ 我的花作 ============ */
+.wk-head{flex:0 0 auto;padding:18px 22px 14px;}
+.credit{margin-left:auto;text-align:right;}
+.credit b{display:block;font-family:var(--serif);font-size:1.56em;line-height:1;letter-spacing:.02em;font-weight:400;}
+.credit span{display:block;font-size:.66em;color:var(--ink-3);margin-top:7px;letter-spacing:.16em;}
+.wk-head .top{display:flex;align-items:baseline;}
+.wk-head h2{font-family:var(--serif);font-size:1.62em;letter-spacing:.08em;font-weight:400;}
+.wk-head .eb{margin-left:auto;}
+.wk-head .meta{margin-top:11px;}
+.wk-body{flex:1;min-height:0;overflow-y:auto;padding:4px 22px 22px;display:flex;gap:12px;align-items:flex-start;}
+.wk-body>.empty{flex:1;}
+.wk-col{flex:1;min-width:0;}
+.wk-body::-webkit-scrollbar{display:none;}
+.wk{break-inside:avoid;margin-bottom:14px;animation:upIn .5s var(--ease) both;}
+.wk .im{width:100%;border-radius:2px;overflow:hidden;background:var(--paper-2);display:block;position:relative;}
+.wk .im svg,.wk .im img{position:absolute;inset:0;width:100%;height:100%;display:block;object-fit:cover;}
+.wk b{display:block;font-family:var(--serif);font-size:.92em;font-weight:400;letter-spacing:.04em;margin-top:9px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wk span{display:block;font-size:.68em;color:var(--ink-3);margin-top:5px;letter-spacing:.05em;}
+.wk:active{opacity:.6;}
+
+/* ============ 浮层通用 ============ */
+.ov{position:absolute;inset:0;z-index:300;display:flex;flex-direction:column;}
+.ov.in{animation:ovIn .3s var(--ease) both;}
+.ov.out{animation:ovOut .24s var(--ease) forwards;pointer-events:none;}
+@keyframes ovIn{from{opacity:0}to{opacity:1}}
+@keyframes ovOut{to{opacity:0}}
+.ov-bg{position:absolute;inset:0;}
+/* 作品详情（沉浸） */
+.wd{background:#2A2521;}
+.wd .bar{flex:0 0 auto;display:flex;align-items:center;padding:16px;}
+.wd .x{width:30px;height:30px;display:flex;align-items:center;justify-content:center;}
+.wd .x svg{width:15px;height:15px;stroke:#F2EDE4;fill:none;stroke-width:1.4;stroke-linecap:round;}
+.wd .x:active{opacity:.5;}
+.wd .eb{margin-left:auto;color:rgba(242,237,228,.42);}
+.wd .fig{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:0 26px;}
+.wd .fig svg{width:100%;height:auto;max-height:100%;animation:figIn .55s var(--ease) .06s both;}
+@keyframes figIn{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.wd .ttl{flex:0 0 auto;padding:20px 26px 0;text-align:center;animation:upIn .5s var(--ease) .14s both;}
+.wd .ttl h3{font-family:var(--serif);font-size:1.42em;color:#F6F2EA;letter-spacing:.09em;font-weight:400;}
+.wd .ttl .meta{margin-top:10px;color:rgba(242,237,228,.46);}
+.wd .acts{flex:0 0 auto;margin:20px 26px 0;border-top:1px solid rgba(242,237,228,.15);}
+.wd .ar{display:flex;align-items:center;gap:12px;padding:15px 0;border-bottom:1px solid rgba(242,237,228,.11);
+  color:#F2EDE4;font-size:.92em;letter-spacing:.07em;}
+.wd .ar svg{width:16px;height:16px;stroke:rgba(242,237,228,.6);fill:none;stroke-width:1.4;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;}
+.wd .ar .ar2{margin-left:auto;width:6px;height:6px;border-top:1px solid rgba(242,237,228,.4);
+  border-right:1px solid rgba(242,237,228,.4);transform:rotate(45deg);}
+.wd .ar:active{opacity:.55;}
+.wd .del{flex:0 0 auto;padding:18px 0 26px;text-align:center;font-size:.82em;color:rgba(224,160,148,.72);letter-spacing:.08em;}
+.wd .del:active{opacity:.5;}
+/* 灵感详情 */
+.gd{background:#2A2521;}
+.gd .fig{padding:0 22px;}
+.gd .fig .im{width:100%;border-radius:3px;overflow:hidden;animation:figIn .55s var(--ease) .06s both;}
+.gd .fig .im svg{width:100%;height:auto;display:block;}
+.gd .pal{display:flex;gap:8px;justify-content:center;margin-top:16px;animation:upIn .5s var(--ease) .2s both;}
+.gd .pal i{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(255,255,255,.16);}
+.gd .desc{padding:0 30px;font-size:.82em;color:rgba(242,237,228,.62);line-height:1.95;text-align:center;
+  letter-spacing:.04em;margin-top:14px;animation:upIn .5s var(--ease) .24s both;}
+.gd .cta{padding:22px 26px 26px;display:flex;flex-direction:column;gap:10px;}
+.gd .cta .btn-pri{background:#F6F2EA;color:#2A2521;}
+.gd .cta .btn-sec{color:#F2EDE4;box-shadow:inset 0 0 0 1px rgba(242,237,228,.28);}
+/* 底部选择表 */
+.sheet-mask{position:absolute;inset:0;background:rgba(48,43,39,.34);z-index:310;animation:ovIn .24s ease both;}
+.sheet-mask.out{animation:ovOut .2s ease forwards;pointer-events:none;}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:6px 6px 0 0;
+  max-height:72%;display:flex;flex-direction:column;animation:sheetIn .34s var(--ease) both;z-index:2;}
+@keyframes sheetIn{from{transform:translateY(100%)}to{transform:none}}
+.sheet .sh-h{flex:0 0 auto;padding:18px 22px 12px;display:flex;align-items:baseline;}
+.sheet .sh-h b{font-family:var(--serif);font-size:1.1em;font-weight:400;letter-spacing:.07em;}
+.sheet .sh-h span{margin-left:auto;font-size:.74em;color:var(--ink-3);}
+.sheet .sh-b{flex:1;min-height:0;overflow-y:auto;padding:0 22px 8px;}
+.sheet .sh-b::-webkit-scrollbar{display:none;}
+.shr{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);}
+.shr:last-child{border-bottom:0;}
+.shr .th{width:38px;height:46px;flex:0 0 auto;border-radius:2px;overflow:hidden;background:var(--paper-2);}
+.shr .th svg{width:100%;height:100%;display:block;}
+.shr .tx{flex:1;min-width:0;}
+.shr .tx b{display:block;font-size:.9em;font-weight:400;letter-spacing:.03em;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.shr .tx span{display:block;font-size:.72em;color:var(--ink-3);margin-top:5px;}
+.shr .ck{flex:0 0 auto;width:16px;height:16px;position:relative;}
+.shr .ck svg{width:16px;height:16px;stroke:var(--moss);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;}
+.shr:active{opacity:.55;}
+.sheet .sh-x{flex:0 0 auto;padding:12px 22px 20px;border-top:1px solid var(--line);}
+/* 确认弹窗 */
+.mask{position:absolute;inset:0;background:rgba(48,43,39,.36);z-index:320;
+  display:flex;align-items:center;justify-content:center;padding:0 34px;animation:ovIn .22s ease both;}
+.mask.out{animation:ovOut .2s ease forwards;pointer-events:none;}
+.dlg{width:100%;background:var(--paper);border-radius:4px;padding:26px 22px 18px;text-align:center;
+  box-shadow:0 20px 50px rgba(0,0,0,.26);animation:dlgIn .28s var(--ease) both;}
+@keyframes dlgIn{from{opacity:0;transform:scale(.95) translateY(8px)}to{opacity:1;transform:none}}
+.dlg h4{font-family:var(--serif);font-size:1.16em;letter-spacing:.07em;font-weight:400;}
+.dlg p{margin-top:12px;font-size:.82em;color:var(--ink-2);line-height:1.85;letter-spacing:.03em;}
+.dlg .acts{display:flex;gap:10px;margin-top:22px;}
+.dlg .acts .btn{flex:1;height:42px;font-size:.88em;}
+.dlg .btn-danger{background:var(--clay);color:#FBF7F4;}
+/* 加载态 */
+.load{position:absolute;inset:0;z-index:330;background:rgba(250,248,243,.97);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;padding:0 46px;
+  animation:ovIn .3s ease both;}
+.load.out{animation:ovOut .3s ease forwards;}
+.load .petal{width:38px;height:38px;position:relative;}
+.load .petal svg{width:100%;height:100%;stroke:var(--moss);fill:none;stroke-width:1;stroke-linecap:round;
+  animation:petalDrift 3.4s ease-in-out infinite;}
+@keyframes petalDrift{0%,100%{transform:translateY(0) rotate(-6deg);opacity:.62}
+  50%{transform:translateY(-9px) rotate(8deg);opacity:1}}
+.load .txt{font-size:.9em;color:var(--ink-2);letter-spacing:.09em;text-align:center;line-height:1.9;
+  min-height:2.6em;transition:opacity .34s ease;}
+.load .txt.fade{opacity:0;}
+.load .bar{width:104px;height:1px;background:var(--line);position:relative;overflow:hidden;}
+.load .bar i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--moss);transition:width .4s linear;}
+/* Toast */
+.toast{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:340;
+  background:var(--paper);border:1px solid var(--line-2);border-radius:2px;color:var(--ink);
+  padding:11px 18px;font-size:.82em;letter-spacing:.06em;white-space:nowrap;max-width:84%;
+  box-shadow:0 8px 24px rgba(48,43,39,.13);animation:tIn .3s var(--ease) both;display:flex;align-items:center;gap:9px;}
+.toast svg{width:14px;height:14px;stroke:var(--moss);fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto;}
+.toast.out{animation:tOut .3s var(--ease) forwards;}
+@keyframes tIn{from{opacity:0;transform:translate(-50%,8px)}to{opacity:1;transform:translateX(-50%)}}
+@keyframes tOut{to{opacity:0;transform:translate(-50%,6px)}}
+
+input[type=file]{display:none;}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;}
+}
+</style>
+</head>
+<body>
+
+<div id="stage">
+ <div class="phone" id="phone">
+  <div class="screens">
+   <div class="screen on" id="screen">
+    <!-- 无脚本兜底骨架 -->
+    <div class="home-top"><span class="wm display">花作</span><span class="eyebrow eb">FLORAL STUDIO</span></div>
+    <div class="home-hero"></div>
+    <div class="home-copy"><h1>把灵感，<br>做成一束花。</h1><p>不认识花材，也能搭出一束成立的花。</p></div>
+    <div class="home-cta"><div class="btn btn-pri">开始创作</div></div>
+   </div>
+  </div>
+  <input type="file" id="file" accept="image/*">
+ </div>
+</div>
+
+<script>
+window.addEventListener('error',function(e){
+  var s=document.getElementById('screen');
+  if(s&&s.getAttribute('data-boot')!=='1'){
+    s.innerHTML='<div class="empty"><p>页面脚本异常<br>'+(e.message||'未知错误')+'</p></div>';
+  }
+},true);
+</script>
+
+<script>
+(function(){
+'use strict';
+
+/* ==========================================================
+   1. 花材库
+   ========================================================== */
+var LIB={
+  main:[
+    {id:'rose',name:'玫瑰',en:'ROSE',type:'rose',colors:[{n:'豆沙粉',c:'#C99B9B'},{n:'象牙白',c:'#EFE7DC'},{n:'砖红',c:'#A85248'},{n:'香槟',c:'#DDC49C'},{n:'鹅黄',c:'#E3C87E'}]},
+    {id:'tulip',name:'郁金香',en:'TULIP',type:'tulip',colors:[{n:'浅粉',c:'#E0A6A8'},{n:'奶白',c:'#F0EAE0'},{n:'紫罗兰',c:'#9C8CB4'},{n:'杏黄',c:'#E6BE7C'}]},
+    {id:'peony',name:'洋牡丹',en:'RANUNCULUS',type:'peony',colors:[{n:'珊瑚粉',c:'#E2A79A'},{n:'奶白',c:'#F1E9DD'},{n:'香槟',c:'#DEC79F'}]},
+    {id:'hydrangea',name:'绣球',en:'HYDRANGEA',type:'hydrangea',colors:[{n:'雾蓝',c:'#9FAEC4'},{n:'藕粉',c:'#D7A6AC'},{n:'灰白',c:'#E8E4DC'}]},
+    {id:'lily',name:'百合',en:'LILY',type:'lily',colors:[{n:'纯白',c:'#F3EEE5'},{n:'浅粉',c:'#E5B7B4'}]}
+  ],
+  second:[
+    {id:'daisy',name:'小雏菊',en:'DAISY',type:'daisy',colors:[{n:'白',c:'#F4F0E7'},{n:'浅黄',c:'#EBD9A2'}]},
+    {id:'star',name:'满天星',en:"BABY'S BREATH",type:'star',colors:[{n:'白',c:'#F6F2EA'},{n:'粉',c:'#E7C4C6'}]},
+    {id:'plum',name:'蜡梅',en:'WINTERSWEET',type:'plum',colors:[{n:'蜜黄',c:'#E3C774'}]},
+    {id:'berry',name:'雪果',en:'SNOWBERRY',type:'berry',colors:[{n:'白',c:'#F2EEE6'},{n:'淡紫',c:'#C6BCD2'}]},
+    {id:'stock',name:'紫罗兰',en:'STOCK',type:'stock',colors:[{n:'雾紫',c:'#A79BC0'},{n:'奶白',c:'#EFE9DF'}]}
+  ],
+  leaf:[
+    {id:'eucalyptus',name:'尤加利',en:'EUCALYPTUS',type:'eucalyptus',colors:[{n:'银绿',c:'#9FAE9B'}]},
+    {id:'fern',name:'排草',en:'FERN',type:'fern',colors:[{n:'深绿',c:'#7E8F72'}]},
+    {id:'ruscus',name:'绿铃草',en:'RUSCUS',type:'ruscus',colors:[{n:'黄绿',c:'#A9B58C'}]}
+  ],
+  wrap:[
+    {id:'han',name:'韩素纸',en:'MATTE PAPER',type:'wrap',colors:[{n:'米白',c:'#EDE5D7'},{n:'浅灰',c:'#DFDCD4'},{n:'豆沙',c:'#E3CFC9'}]},
+    {id:'gauze',name:'雪梨纱',en:'TISSUE',type:'wrap',colors:[{n:'雾粉',c:'#EFDAD6'},{n:'米白',c:'#F1ECE2'}]},
+    {id:'kraft',name:'牛皮纸',en:'KRAFT',type:'wrap',colors:[{n:'亚麻',c:'#D8C6A8'},{n:'深棕',c:'#C0A888'}]},
+    {id:'cotton',name:'雾面纸',en:'COTTON',type:'wrap',colors:[{n:'象牙',c:'#F2EDE3'}]}
+  ],
+  deco:[
+    {id:'ribbon',name:'丝带',en:'RIBBON',type:'ribbon',colors:[{n:'豆沙粉',c:'#C99B9B'},{n:'苔绿',c:'#89927D'},{n:'亚麻',c:'#D9CFBB'}]},
+    {id:'card',name:'贺卡',en:'CARD',type:'card',colors:[{n:'米白',c:'#F2EDE3'}]},
+    {id:'light',name:'灯串',en:'LIGHTS',type:'light',colors:[{n:'暖光',c:'#EBD9A8'}]}
+  ]
+};
+var CATS=['main','second','leaf','wrap','deco'];
+var CATNAME={main:'主花',second:'次花',leaf:'叶材',wrap:'包装',deco:'装饰'};
+var LIMIT={main:2,second:3,leaf:2,wrap:1,deco:2};
+var MAXQ={main:9,second:9,leaf:6,wrap:1,deco:3};
+
+function findDef(cat,id){
+  var arr=LIB[cat]||[];
+  for(var i=0;i<arr.length;i++) if(arr[i].id===id) return arr[i];
+  return null;
+}
+function findDefAny(id){
+  for(var i=0;i<CATS.length;i++){var d=findDef(CATS[i],id); if(d) return {cat:CATS[i],def:d};}
+  return null;
+}
+function colorName(def,hex){
+  for(var i=0;i<def.colors.length;i++) if(def.colors[i].c.toLowerCase()===String(hex).toLowerCase()) return def.colors[i].n;
+  return def.colors[0].n;
+}
+
+/* ==========================================================
+   2. 绘图工具
+   ========================================================== */
+function rng(seed){var s=(seed||1)>>>0;return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296;};}
+function rgb(h){h=String(h).replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];
+  return [parseInt(h.slice(0,2),16)||0,parseInt(h.slice(2,4),16)||0,parseInt(h.slice(4,6),16)||0];}
+function mix(h,amt){var c=rgb(h),t=amt>0?[255,253,248]:[48,43,39],k=Math.abs(amt),o='#';
+  for(var i=0;i<3;i++){var v=Math.round(c[i]+(t[i]-c[i])*k);o+=(v<16?'0':'')+v.toString(16);}return o;}
+function f2(n){return Math.round(n*100)/100;}
+
+/* ---- 单朵花 ---- */
+function bloom(type,r,c,R){
+  var d=mix(c,-.16),l=mix(c,.2),s='';
+  var i,a,n;
+  if(type==='rose'||type==='peony'){
+    s+='<circle r="'+f2(r)+'" fill="'+c+'"/>';
+    n=type==='peony'?9:6;
+    for(i=0;i<n;i++){a=i*(360/n)+(R?R()*24:0);
+      s+='<g transform="rotate('+f2(a)+')"><ellipse cx="0" cy="'+f2(-r*.5)+'" rx="'+f2(r*.42)+'" ry="'+f2(r*.34)+'" fill="'+(i%2?l:mix(c,.08))+'" opacity=".85"/></g>';}
+    s+='<circle r="'+f2(r*.34)+'" fill="'+mix(c,.12)+'"/>';
+    for(i=0;i<4;i++){a=i*90+35;
+      s+='<g transform="rotate('+a+')"><path d="M0,'+f2(-r*.06)+' q'+f2(r*.2)+','+f2(-r*.22)+' 0,'+f2(-r*.34)+'" fill="none" stroke="'+d+'" stroke-width="'+f2(r*.07)+'" opacity=".7"/></g>';}
+    s+='<circle r="'+f2(r*.11)+'" fill="'+d+'" opacity=".75"/>';
+  }else if(type==='tulip'){
+    s+='<path d="M'+f2(-r*.72)+','+f2(r*.3)+' C'+f2(-r*.92)+','+f2(-r*.42)+' '+f2(-r*.4)+','+f2(-r*1.02)+' 0,'+f2(-r*.56)+' C'+f2(r*.4)+','+f2(-r*1.02)+' '+f2(r*.92)+','+f2(-r*.42)+' '+f2(r*.72)+','+f2(r*.3)+' C'+f2(r*.4)+','+f2(r*.74)+' '+f2(-r*.4)+','+f2(r*.74)+' '+f2(-r*.72)+','+f2(r*.3)+' Z" fill="'+c+'"/>';
+    s+='<path d="M0,'+f2(-r*.56)+' C'+f2(-r*.2)+','+f2(-r*.2)+' '+f2(-r*.2)+','+f2(r*.3)+' 0,'+f2(r*.6)+' C'+f2(r*.2)+','+f2(r*.3)+' '+f2(r*.2)+','+f2(-r*.2)+' 0,'+f2(-r*.56)+' Z" fill="'+l+'" opacity=".55"/>';
+    s+='<path d="M'+f2(-r*.72)+','+f2(r*.3)+' C'+f2(-r*.5)+','+f2(r*.6)+' '+f2(r*.5)+','+f2(r*.6)+' '+f2(r*.72)+','+f2(r*.3)+'" fill="none" stroke="'+d+'" stroke-width="'+f2(r*.06)+'" opacity=".5"/>';
+  }else if(type==='hydrangea'){
+    n=15;
+    for(i=0;i<n;i++){var rr=R?R():((i*37)%100)/100;var ang=rr*6.283,rad=r*(.28+((i*53)%70)/100*.72);
+      var x=f2(Math.cos(ang)*rad),y=f2(Math.sin(ang)*rad*.92),pr=r*.2;
+      s+='<g transform="translate('+x+','+y+')">';
+      for(var k=0;k<4;k++){s+='<g transform="rotate('+(k*90+20)+')"><ellipse cx="0" cy="'+f2(-pr*.72)+'" rx="'+f2(pr*.5)+'" ry="'+f2(pr*.62)+'" fill="'+(k%2?l:c)+'" opacity=".92"/></g>';}
+      s+='<circle r="'+f2(pr*.18)+'" fill="'+mix(c,.3)+'"/></g>';}
+  }else if(type==='lily'){
+    for(i=0;i<6;i++){a=i*60;
+      s+='<g transform="rotate('+a+')"><path d="M0,0 C'+f2(r*.3)+','+f2(-r*.5)+' '+f2(r*.16)+','+f2(-r*1.02)+' 0,'+f2(-r*1.1)+' C'+f2(-r*.16)+','+f2(-r*1.02)+' '+f2(-r*.3)+','+f2(-r*.5)+' 0,0 Z" fill="'+(i%2?l:c)+'"/></g>';}
+    for(i=0;i<5;i++){a=i*72+18;
+      s+='<g transform="rotate('+a+')"><line x1="0" y1="0" x2="0" y2="'+f2(-r*.5)+'" stroke="'+mix(c,-.28)+'" stroke-width="'+f2(r*.05)+'"/><circle cx="0" cy="'+f2(-r*.54)+'" r="'+f2(r*.08)+'" fill="'+mix(c,-.34)+'"/></g>';}
+  }else if(type==='daisy'){
+    n=14;
+    for(i=0;i<n;i++){a=i*(360/n);
+      s+='<g transform="rotate('+a+')"><ellipse cx="0" cy="'+f2(-r*.62)+'" rx="'+f2(r*.14)+'" ry="'+f2(r*.42)+'" fill="'+c+'" stroke="'+mix(c,-.14)+'" stroke-width=".6" opacity=".96"/></g>';}
+    s+='<circle r="'+f2(r*.26)+'" fill="#E2C274"/><circle r="'+f2(r*.16)+'" fill="'+mix('#E2C274',-.18)+'"/>';
+  }else if(type==='star'){
+    n=26;
+    for(i=0;i<n;i++){var rr2=R?R():((i*61)%100)/100;var ang2=rr2*6.283,rad2=r*(.15+((i*47)%85)/100*.85);
+      s+='<circle cx="'+f2(Math.cos(ang2)*rad2)+'" cy="'+f2(Math.sin(ang2)*rad2*.92)+'" r="'+f2(r*(.07+((i*29)%40)/100*.07))+'" fill="'+(i%3?c:l)+'" stroke="'+mix(c,-.1)+'" stroke-width=".4" opacity=".95"/>';}
+  }else if(type==='plum'){
+    n=7;
+    for(i=0;i<n;i++){var rr3=R?R():((i*43)%100)/100;var ang3=rr3*6.283,rad3=r*(.2+((i*67)%80)/100*.78);
+      var x3=f2(Math.cos(ang3)*rad3),y3=f2(Math.sin(ang3)*rad3*.9);
+      s+='<g transform="translate('+x3+','+y3+')">';
+      for(var k2=0;k2<5;k2++){s+='<g transform="rotate('+(k2*72)+')"><circle cx="0" cy="'+f2(-r*.14)+'" r="'+f2(r*.1)+'" fill="'+(k2%2?l:c)+'"/></g>';}
+      s+='<circle r="'+f2(r*.05)+'" fill="'+mix(c,-.3)+'"/></g>';}
+  }else if(type==='berry'){
+    n=9;
+    for(i=0;i<n;i++){var rr4=R?R():((i*53)%100)/100;var ang4=rr4*6.283,rad4=r*(.18+((i*71)%82)/100*.8);
+      s+='<circle cx="'+f2(Math.cos(ang4)*rad4)+'" cy="'+f2(Math.sin(ang4)*rad4*.9)+'" r="'+f2(r*.22)+'" fill="'+(i%2?c:l)+'"/>';}
+  }else if(type==='stock'){
+    n=11;
+    for(i=0;i<n;i++){var yy=f2(-r*.9+i*(r*1.8/(n-1))),xx=f2((i%2?1:-1)*r*.22*(1-Math.abs(i-(n-1)/2)/((n-1)/2)*.5));
+      s+='<g transform="translate('+xx+','+yy+')">';
+      for(var k3=0;k3<4;k3++){s+='<g transform="rotate('+(k3*90+25)+')"><ellipse cx="0" cy="'+f2(-r*.16)+'" rx="'+f2(r*.13)+'" ry="'+f2(r*.16)+'" fill="'+(k3%2?l:c)+'"/></g>';}
+      s+='<circle r="'+f2(r*.06)+'" fill="'+mix(c,.32)+'"/></g>';}
+  }
+  return s;
+}
+
+/* ---- 叶材 ---- */
+function leafy(type,len,c,R){
+  var s='',i;
+  if(type==='eucalyptus'){
+    s+='<path d="M0,0 Q'+f2(len*.16)+','+f2(-len*.5)+' 0,'+f2(-len)+'" fill="none" stroke="'+mix(c,-.2)+'" stroke-width="1.6" stroke-linecap="round"/>';
+    for(i=1;i<=7;i++){var t=i/7,y=f2(-len*t*.98),x=f2(len*.16*Math.sin(Math.PI*t)*.5);
+      var sd=(i%2?1:-1),rr=len*.15*(1-t*.28);
+      s+='<ellipse cx="'+f2(x+sd*rr*.85)+'" cy="'+y+'" rx="'+f2(rr)+'" ry="'+f2(rr*.82)+'" fill="'+(i%2?c:mix(c,.1))+'" opacity=".95"/>';}
+  }else if(type==='fern'){
+    s+='<path d="M0,0 Q'+f2(-len*.1)+','+f2(-len*.55)+' 0,'+f2(-len)+'" fill="none" stroke="'+mix(c,-.22)+'" stroke-width="1.5" stroke-linecap="round"/>';
+    for(i=1;i<=10;i++){var t2=i/10,y2=f2(-len*t2),sd2=(i%2?1:-1),w=len*.26*(1-t2*.72);
+      s+='<path d="M0,'+y2+' q'+f2(sd2*w*.6)+','+f2(-w*.28)+' '+f2(sd2*w)+','+f2(-w*.06)+' q'+f2(-sd2*w*.55)+','+f2(w*.42)+' '+f2(-sd2*w)+','+f2(w*.06)+' Z" fill="'+(i%2?c:mix(c,.09))+'"/>';}
+  }else{
+    s+='<path d="M0,0 L0,'+f2(-len)+'" stroke="'+mix(c,-.2)+'" stroke-width="1.5" stroke-linecap="round"/>';
+    for(i=1;i<=6;i++){var t3=i/6,y3=f2(-len*t3),sd3=(i%2?1:-1),w3=len*.2;
+      s+='<path d="M0,'+y3+' q'+f2(sd3*w3)+','+f2(-w3*.5)+' '+f2(sd3*w3*1.5)+','+f2(-w3*.1)+' q'+f2(-sd3*w3)+','+f2(w3*.6)+' '+f2(-sd3*w3*1.5)+','+f2(w3*.1)+' Z" fill="'+(i%2?c:mix(c,.1))+'"/>';}
+  }
+  return s;
+}
+
+/* ---- 包装 ---- */
+function wrapShape(c,bx,by,bw,bh){
+  var s='',d=mix(c,-.1),l=mix(c,.16);
+  s+='<path d="M'+f2(bx-bw*.56)+','+by+' L'+f2(bx+bw*.56)+','+by+' L'+f2(bx+bw*.27)+','+f2(by+bh)+' L'+f2(bx-bw*.27)+','+f2(by+bh)+' Z" fill="'+d+'" opacity=".55"/>';
+  s+='<path d="M'+f2(bx-bw*.45)+','+by+' L'+f2(bx+bw*.45)+','+by+' L'+f2(bx+bw*.21)+','+f2(by+bh)+' L'+f2(bx-bw*.21)+','+f2(by+bh)+' Z" fill="'+c+'"/>';
+  s+='<path d="M'+f2(bx-bw*.45)+','+by+' L'+f2(bx-bw*.05)+','+by+' L'+f2(bx-bw*.02)+','+f2(by+bh)+' L'+f2(bx-bw*.21)+','+f2(by+bh)+' Z" fill="'+l+'" opacity=".7"/>';
+  s+='<path d="M'+f2(bx+bw*.45)+','+by+' L'+f2(bx+bw*.21)+','+f2(by+bh)+'" fill="none" stroke="'+mix(c,-.2)+'" stroke-width="1" opacity=".5"/>';
+  s+='<path d="M'+f2(bx-bw*.45)+','+by+' L'+f2(bx+bw*.45)+','+by+'" fill="none" stroke="'+mix(c,-.16)+'" stroke-width="1" opacity=".45"/>';
+  return s;
+}
+function ribbonBow(c,x,y,sc){
+  var d=mix(c,-.16),s='';
+  s+='<g transform="translate('+x+','+y+') scale('+sc+')">';
+  s+='<ellipse cx="-11" cy="-3" rx="11" ry="7" fill="'+c+'" transform="rotate(-16 -11 -3)"/>';
+  s+='<ellipse cx="11" cy="-3" rx="11" ry="7" fill="'+c+'" transform="rotate(16 11 -3)"/>';
+  s+='<ellipse cx="-11" cy="-3" rx="6" ry="3.4" fill="'+d+'" opacity=".5" transform="rotate(-16 -11 -3)"/>';
+  s+='<ellipse cx="11" cy="-3" rx="6" ry="3.4" fill="'+d+'" opacity=".5" transform="rotate(16 11 -3)"/>';
+  s+='<path d="M-3,3 L-9,26 M3,3 L9,26" stroke="'+c+'" stroke-width="4.4" stroke-linecap="round" fill="none"/>';
+  s+='<rect x="-5" y="-7" width="10" height="11" rx="3" fill="'+d+'"/>';
+  s+='</g>';
+  return s;
+}
+
+/* ---- 完整花束 ---- */
+var VW=400,VH=470,CX=200,CY=186,RX=132,RY=104,BY=296;
+function renderBouquet(bq,cls,ar){
+  var R=rng(bq.seed||7);
+  var mains=bq.main||[],seconds=bq.second||[],leaves=bq.leaf||[],deco=bq.deco||[];
+  var wp=(bq.wrap&&bq.wrap.id)?findDef('wrap',bq.wrap.id):null;
+  var wc=bq.wrap&&bq.wrap.color?bq.wrap.color:(wp?wp.colors[0].c:'#EDE5D7');
+  var total=0;
+  mains.forEach(function(m){total+=(m.qty||1);});
+  seconds.forEach(function(m){total+=(m.qty||1);});
+  var s='';
+  /* 花茎 */
+  var stems='';
+  function stemTo(x,y){
+    stems+='<path d="M'+f2(x)+','+f2(y)+' Q'+f2(x+(CX-x)*.28)+','+f2((y+BY)/2)+' '+CX+','+BY+'" fill="none" stroke="#8C9479" stroke-width="2.2" opacity=".8" stroke-linecap="round"/>';
+  }
+  /* 叶材位置 */
+  var leafItems=[];
+  leaves.forEach(function(m){
+    var def=findDef('leaf',m.id); if(!def) return;
+    for(var i=0;i<(m.qty||1);i++){
+      var a=-Math.PI*(0.22+0.56*R());
+      var rad=0.86+R()*0.26;
+      leafItems.push({def:def,m:m,a:a,rad:rad});
+    }
+  });
+  var leafSvg='';
+  leafItems.forEach(function(o){
+    var x=CX+RX*o.rad*Math.cos(o.a-Math.PI/2)*1.02;
+    var y=CY+RY*o.rad*Math.sin(o.a-Math.PI/2)*0.92+8;
+    x=Math.max(46,Math.min(VW-46,x)); y=Math.min(y,BY-40);
+    var rot=(o.a*180/Math.PI)*0.28;
+    leafSvg+='<g transform="translate('+f2(x)+','+f2(y)+') rotate('+f2(rot)+')">'+leafy(o.def.type,54,o.m.color||o.def.colors[0].c,R)+'</g>';
+    stemTo(x,y+30);
+  });
+  /* 花朵位置：黄金角分布 */
+  function place(list,cat,radLo,radHi,rLo,rHi,out){
+    var idx=0,cnt=0;
+    list.forEach(function(m){cnt+=(m.qty||1);});
+    var GA=2.39996;
+    list.forEach(function(m){
+      var def=findDef(cat,m.id); if(!def) return;
+      for(var i=0;i<(m.qty||1);i++){
+        var t=(idx+0.5)/Math.max(1,cnt);
+        var ang=GA*idx-Math.PI/2;
+        var rad=radLo+(radHi-radLo)*Math.sqrt(t);
+        var x=CX+RX*rad*Math.cos(ang)*(0.92+R()*0.16);
+        var y=CY+RY*rad*Math.sin(ang)*(0.86+R()*0.16);
+        x=Math.max(64,Math.min(VW-64,x)); y=Math.max(48,Math.min(BY-34,y));
+        var rr=rLo+(rHi-rLo)*R();
+        out.push({def:def,m:m,x:x,y:y,r:rr});
+        stemTo(x,y+rr*0.5);
+        idx++;
+      }
+    });
+  }
+  var sec=[],mai=[];
+  place(seconds,'second',0.5,0.96,17,23,sec);
+  place(mains,'main',0.06,0.6,30,39,mai);
+  /* 绘制顺序：叶 → 茎 → 包装 → 次花 → 主花 → 装饰 */
+  s+=leafSvg;
+  s+=stems;
+  s+=wrapShape(wc,CX,BY-10,116,176);
+  sec.forEach(function(o){
+    s+='<g transform="translate('+f2(o.x)+','+f2(o.y)+')">'+bloom(o.def.type,o.r,o.m.color||o.def.colors[0].c,R)+'</g>';
+  });
+  mai.forEach(function(o){
+    s+='<g transform="translate('+f2(o.x)+','+f2(o.y)+')">'+bloom(o.def.type,o.r,o.m.color||o.def.colors[0].c,R)+'</g>';
+  });
+  /* 装饰 */
+  var rb=null;
+  deco.forEach(function(m){
+    var def=findDef('deco',m.id); if(!def) return;
+    if(def.type==='ribbon') rb=m;
+    if(def.type==='card'){
+      s+='<g transform="translate('+(CX+62)+','+(BY+52)+') rotate(9)"><rect x="-17" y="-22" width="34" height="44" rx="1.5" fill="'+(m.color||def.colors[0].c)+'" stroke="'+mix(def.colors[0].c,-.18)+'" stroke-width="1"/><path d="M-17,-14 L34,-14" stroke="'+mix(def.colors[0].c,-.14)+'" stroke-width="1" opacity=".6"/><path d="M0,-22 L0,-32" stroke="#B6AE9E" stroke-width="1"/><circle cx="0" cy="-33" r="2" fill="none" stroke="#B6AE9E" stroke-width="1"/></g>';
+    }
+    if(def.type==='light'){
+      var lp=[[CX-72,CY+22],[CX-30,CY-46],[CX+38,CY-30],[CX+78,CY+16],[CX+10,CY+62]];
+      s+='<path d="M'+(CX-84)+','+(CY+40)+' Q'+CX+','+(CY-72)+' '+(CX+90)+','+(CY+34)+'" fill="none" stroke="#CFC6B4" stroke-width="1" opacity=".85"/>';
+      lp.forEach(function(p,i){s+='<circle cx="'+p[0]+'" cy="'+p[1]+'" r="3.4" fill="'+(m.color||def.colors[0].c)+'" opacity=".95"/><circle cx="'+p[0]+'" cy="'+p[1]+'" r="7" fill="'+(m.color||def.colors[0].c)+'" opacity=".18"/>';});
+    }
+  });
+  if(rb) s+=ribbonBow(rb.color||'#C99B9B',CX,BY+2,1);
+  else s+='<rect x="'+(CX-42)+'" y="'+(BY-4)+'" width="84" height="9" rx="2" fill="'+mix(wc,-.12)+'" opacity=".7"/>';
+  return '<svg class="'+(cls||'bq')+'" viewBox="0 0 '+VW+' '+VH+'" xmlns="http://www.w3.org/2000/svg"'+(ar?' preserveAspectRatio="xMidYMid slice"':'')+'>'+s+'</svg>';
+}
+
+/* ---- 空态线描 ---- */
+function emptyStem(){
+  return '<svg viewBox="0 0 96 120" xmlns="http://www.w3.org/2000/svg">'+
+   '<path d="M48,116 C48,86 46,66 48,44"/>'+
+   '<path d="M48,74 C36,72 28,62 27,50 C39,50 47,60 48,74"/>'+
+   '<path d="M48,88 C60,86 68,76 69,64 C57,64 49,74 48,88"/>'+
+   '<path d="M48,44 C41,40 38,31 42,24 C45,19 51,19 54,24 C58,31 55,40 48,44 Z"/>'+
+   '</svg>';
+}
+
+/* ---- 单个花材小图（图鉴式预览） ---- */
+function miniSVG(cat,def,color){
+  var c=color||def.colors[0].c;
+  var body='';
+  if(cat==='leaf') body='<g transform="translate(50,86)">'+leafy(def.type,58,c,null)+'</g>';
+  else if(cat==='wrap') body=wrapShape(c,50,34,52,58);
+  else if(cat==='deco'){
+    if(def.type==='ribbon') body=ribbonBow(c,50,44,1.25);
+    else if(def.type==='card') body='<g transform="translate(50,50)"><rect x="-19" y="-25" width="38" height="50" rx="2" fill="'+c+'" stroke="'+mix(c,-.2)+'" stroke-width="1"/><path d="M-19,-15 L38,-15" stroke="'+mix(c,-.16)+'" stroke-width="1" opacity=".6" transform="translate(19,0) scale(1,1)"/><path d="M-11,-4 L11,-4 M-11,5 L6,5" stroke="'+mix(c,-.24)+'" stroke-width="1.2" opacity=".55"/></g>';
+    else body='<g transform="translate(50,50)"><path d="M-32,18 Q0,-30 32,14" fill="none" stroke="#CFC6B4" stroke-width="1.2"/>'+[[ -20,4],[0,-12],[20,2]].map(function(p){return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="'+c+'"/><circle cx="'+p[0]+'" cy="'+p[1]+'" r="8.5" fill="'+c+'" opacity=".2"/>';}).join('')+'</g>';
+  }
+  else body='<g transform="translate(50,50)">'+bloom(def.type,30,c,null)+'</g>';
+  return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'+body+'</svg>';
+}
+
+/* ---- 灵感图（抽象编辑感画面） ---- */
+function artSVG(item,w,h){
+  var p=item.palette,R=rng(item.seed||3),s='';
+  w=w||300;h=h||400;
+  var k=item.seed%4;
+  s+='<rect width="'+w+'" height="'+h+'" fill="'+p[0]+'"/>';
+  if(k===0){
+    s+='<circle cx="'+f2(w*.5)+'" cy="'+f2(h*.4)+'" r="'+f2(w*.3)+'" fill="'+p[1]+'" opacity=".92"/>';
+    s+='<rect x="0" y="'+f2(h*.66)+'" width="'+w+'" height="'+f2(h*.34)+'" fill="'+p[2]+'" opacity=".85"/>';
+    s+='<path d="M0,'+f2(h*.66)+' Q'+f2(w*.5)+','+f2(h*.56)+' '+w+','+f2(h*.68)+' L'+w+','+h+' L0,'+h+' Z" fill="'+(p[3]||p[2])+'" opacity=".55"/>';
+  }else if(k===1){
+    for(var i=0;i<4;i++){s+='<rect x="0" y="'+f2(h*i/4)+'" width="'+w+'" height="'+f2(h/4+1)+'" fill="'+p[i%p.length]+'" opacity="'+(0.5+i*0.14)+'"/>';}
+    s+='<circle cx="'+f2(w*.72)+'" cy="'+f2(h*.28)+'" r="'+f2(w*.17)+'" fill="'+(p[4]||p[1])+'" opacity=".8"/>';
+  }else if(k===2){
+    s+='<path d="M0,'+h+' L0,'+f2(h*.5)+' Q'+f2(w*.3)+','+f2(h*.16)+' '+f2(w*.62)+','+f2(h*.44)+' T'+w+','+f2(h*.3)+' L'+w+','+h+' Z" fill="'+p[1]+'" opacity=".9"/>';
+    s+='<circle cx="'+f2(w*.3)+'" cy="'+f2(h*.24)+'" r="'+f2(w*.13)+'" fill="'+p[2]+'" opacity=".85"/>';
+    s+='<rect x="'+f2(w*.5)+'" y="'+f2(h*.62)+'" width="'+f2(w*.36)+'" height="'+f2(h*.2)+'" fill="'+(p[3]||p[0])+'" opacity=".7"/>';
+  }else{
+    for(var j=0;j<5;j++){
+      s+='<ellipse cx="'+f2(w*(0.18+R()*0.66))+'" cy="'+f2(h*(0.16+R()*0.7))+'" rx="'+f2(w*(0.12+R()*0.2))+'" ry="'+f2(h*(0.08+R()*0.14))+'" fill="'+p[j%p.length]+'" opacity="'+f2(0.45+R()*0.4)+'"/>';
+    }
+  }
+  s+='<rect width="'+w+'" height="'+h+'" fill="none" stroke="rgba(48,43,39,.07)" stroke-width="1"/>';
+  var c0=rgb(p[0]),lumv=c0[0]*.3+c0[1]*.5+c0[2]*.2;
+  var pc=p[3]||p[2]||p[1];
+  if(lumv<150) pc=mix(pc,.3);
+  var framec=lumv<150?'rgba(250,248,243,.38)':'rgba(48,43,39,.2)';
+  s+='<g transform="translate('+f2(w*.56)+','+f2(h*.8)+') scale('+f2(w/420)+')" opacity=".5">'+leafy('fern',150,pc,null)+'</g>';
+  s+='<rect x="'+f2(w*.055)+'" y="'+f2(h*.045)+'" width="'+f2(w*.89)+'" height="'+f2(h*.91)+'" fill="none" stroke="'+framec+'" stroke-width="1"/>';
+  return '<svg viewBox="0 0 '+w+' '+h+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'+s+'</svg>';
+}
+
+/* ---- 空间（程序化室内） ---- */
+function roomSVG(type){
+  var W=400,H=300,s='';
+  var wall={living:'#EDE6D9',dining:'#EAE2D4',bed:'#F0EAE0',wedding:'#F2EDE4',cafe:'#E6DCCB',window:'#E9E3D6'}[type]||'#EDE6D9';
+  var floor={living:'#D6C7B0',dining:'#CDBBA0',bed:'#DCD0BC',wedding:'#E0D6C4',cafe:'#C4AE92',window:'#D9D2C4'}[type]||'#D6C7B0';
+  s+='<rect width="'+W+'" height="'+H+'" fill="'+wall+'"/>';
+  s+='<rect y="'+(H*0.66)+'" width="'+W+'" height="'+(H*0.34)+'" fill="'+floor+'"/>';
+  s+='<rect y="'+(H*0.66-2)+'" width="'+W+'" height="2" fill="'+mix(floor,-.14)+'" opacity=".55"/>';
+  if(type==='living'||type==='bed'){
+    s+='<rect x="42" y="46" width="120" height="130" rx="2" fill="#F7F3EA" opacity=".85"/>';
+    s+='<rect x="42" y="46" width="120" height="130" rx="2" fill="none" stroke="'+mix(wall,-.16)+'" stroke-width="2"/>';
+    s+='<line x1="102" y1="46" x2="102" y2="176" stroke="'+mix(wall,-.16)+'" stroke-width="2"/>';
+    s+='<path d="M162,60 L300,190 L300,240 L162,110 Z" fill="#FBF7EC" opacity=".35"/>';
+    if(type==='bed') s+='<rect x="210" y="196" width="170" height="26" rx="3" fill="'+mix(floor,-.1)+'"/>';
+  }
+  if(type==='dining'||type==='cafe'||type==='window'){
+    s+='<rect x="0" y="196" width="'+W+'" height="16" fill="'+mix(floor,-.16)+'"/>';
+    s+='<rect x="60" y="212" width="12" height="88" fill="'+mix(floor,-.2)+'" opacity=".8"/>';
+    s+='<rect x="328" y="212" width="12" height="88" fill="'+mix(floor,-.2)+'" opacity=".8"/>';
+  }
+  if(type==='cafe'){
+    s+='<rect x="250" y="60" width="110" height="90" rx="2" fill="#F5F0E4" opacity=".7"/>';
+    s+='<line x1="250" y1="105" x2="360" y2="105" stroke="'+mix(wall,-.14)+'" stroke-width="1.5"/>';
+    s+='<circle cx="90" cy="96" r="26" fill="none" stroke="'+mix(wall,-.18)+'" stroke-width="1.5" opacity=".6"/>';
+  }
+  if(type==='wedding'){
+    s+='<path d="M120,0 L120,150 Q200,210 280,150 L280,0 Z" fill="#F8F4EC" opacity=".7"/>';
+    s+='<path d="M120,0 L120,150 Q200,210 280,150 L280,0" fill="none" stroke="'+mix(wall,-.14)+'" stroke-width="1.5"/>';
+    for(var i=0;i<5;i++) s+='<circle cx="'+(150+i*26)+'" cy="'+(36+(i%2)*16)+'" r="7" fill="#E4D7CE" opacity=".75"/>';
+  }
+  if(type==='window'){
+    for(var r=0;r<3;r++)for(var c=0;c<4;c++)
+      s+='<rect x="'+(40+c*84)+'" y="'+(40+r*46)+'" width="70" height="34" rx="1" fill="'+mix(wall,0.14)+'" opacity=".55" stroke="'+mix(wall,-.12)+'" stroke-width="1"/>';
+  }
+  s+='<rect width="'+W+'" height="'+H+'" fill="url(#vg)"/>';
+  s='<defs><radialGradient id="vg" cx="50%" cy="42%" r="78%"><stop offset="60%" stop-color="#000" stop-opacity="0"/><stop offset="100%" stop-color="#4A3F31" stop-opacity=".18"/></radialGradient></defs>'+s;
+  return '<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">'+s+'</svg>';
+}
+var ROOMS=[{id:'living',n:'客厅'},{id:'dining',n:'餐桌'},{id:'bed',n:'卧室'},{id:'wedding',n:'婚礼'},{id:'cafe',n:'咖啡店'},{id:'window',n:'橱窗'}];
+
+/* ==========================================================
+   3. 数据
+   ========================================================== */
+function M(cat,id,cn,q){
+  var d=findDef(cat,id),c=d.colors[0];
+  if(cn){for(var i=0;i<d.colors.length;i++) if(d.colors[i].n===cn) c=d.colors[i];}
+  return {id:id,color:c.c,colorName:c.n,qty:q||1};
+}
+function BQ(o){
+  var b={main:[],second:[],leaf:[],wrap:null,deco:[],seed:o.seed||7};
+  if(o.main) b.main=o.main;
+  if(o.second) b.second=o.second;
+  if(o.leaf) b.leaf=o.leaf;
+  if(o.wrap) b.wrap=o.wrap;
+  if(o.deco) b.deco=o.deco;
+  return b;
+}
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function emptyBQ(){return {main:[],second:[],leaf:[],wrap:null,deco:[],seed:Math.floor(Math.random()*9000)+10};}
+
+var GALLERY=[
+  {id:'i1',t:'春日来信',cat:'季节',d:'三月，风把颜色吹散在纸上',palette:['#F2E4DE','#DFA8A2','#C9D2BE','#EFE7DA','#B89A94'],seed:11},
+  {id:'i2',t:'蓝调时刻',cat:'音乐',d:'一张深夜唱片封面的冷与静',palette:['#2E3A4E','#5C6E86','#9FAEC4','#DCD6C8','#7A6A5E'],seed:23},
+  {id:'i3',t:'旧画报',cat:'绘画',d:'泛黄纸页上的赭石与墨绿',palette:['#E4D6BC','#C0A07A','#8A7A5C','#6E7A5E','#B8574A'],seed:37},
+  {id:'i4',t:'海的另一边',cat:'电影',d:'胶片里的雾蓝和一点暖光',palette:['#DCE3E4','#9DB3B8','#5F7C82','#E8D9B8','#40565C'],seed:41},
+  {id:'i5',t:'苔与石',cat:'自然',d:'雨后庭院，只有绿和灰',palette:['#E8EAE2','#A8B49A','#7C8A6E','#5E6A52','#C9C6BA'],seed:53},
+  {id:'i6',t:'午后三点',cat:'摄影',d:'窗帘过滤过的暖白与木色',palette:['#F6F0E4','#E6D6BC','#C8AC86','#A88C6A','#8C9A7E'],seed:61},
+  {id:'i7',t:'藕荷',cat:'色彩',d:'低饱和的粉与灰紫',palette:['#F0E6E6','#D9B8BE','#B49AA8','#8E8298','#E2DAD2'],seed:71},
+  {id:'i8',t:'秋分',cat:'季节',d:'干花棕、亚麻与一点砖红',palette:['#EDE3D2','#D2BC9A','#B08A62','#A85248','#8A8468'],seed:83},
+  {id:'i9',t:'默片',cat:'电影',d:'黑白之间的一层暖灰',palette:['#EFEDE8','#C9C6BF','#8E8B84','#5C5A55','#D8CFC0'],seed:97}
+];
+var GCATS=['全部','电影','音乐','绘画','摄影','自然','季节','色彩'];
+
+/* ==========================================================
+   4. 状态
+   ========================================================== */
+var S={
+  screen:'home',tab:'create',stack:[],dir:'fwd',
+  bq:BQ({main:[M('main','rose','豆沙粉',3)],second:[M('second','daisy','白',3)],leaf:[M('leaf','eucalyptus','银绿',2)],wrap:{id:'han',color:'#EDE5D7',colorName:'米白'},deco:[M('deco','ribbon','豆沙粉',1)],seed:21}),
+  hist:[],fut:[],
+  drawerCat:'main',adj:null,
+  works:[
+    {id:'w1',name:'豆沙粉玫瑰',date:'2024.04.12',ar:'4/5',bq:BQ({main:[M('main','rose','豆沙粉',4)],second:[M('second','star','白',2)],leaf:[M('leaf','eucalyptus','银绿',2)],wrap:{id:'han',color:'#EDE5D7',colorName:'米白'},deco:[M('deco','ribbon','豆沙粉',1)],seed:31})},
+    {id:'w2',name:'杏黄郁金香',date:'2024.04.08',ar:'1/1',bq:BQ({main:[M('main','tulip','杏黄',5)],second:[M('second','daisy','白',2)],leaf:[M('leaf','fern','深绿',2)],wrap:{id:'kraft',color:'#D8C6A8',colorName:'亚麻'},deco:[],seed:47})},
+    {id:'w3',name:'雾蓝绣球',date:'2024.03.28',ar:'3/4',bq:BQ({main:[M('main','hydrangea','雾蓝',2)],second:[M('second','stock','奶白',2)],leaf:[M('leaf','ruscus','黄绿',2)],wrap:{id:'cotton',color:'#F2EDE3',colorName:'象牙'},deco:[M('deco','card','米白',1)],seed:59})},
+    {id:'w4',name:'珊瑚粉洋牡丹',date:'2024.03.20',ar:'4/5',bq:BQ({main:[M('main','peony','珊瑚粉',3)],second:[M('second','berry','白',2)],leaf:[M('leaf','eucalyptus','银绿',1)],wrap:{id:'gauze',color:'#EFDAD6',colorName:'雾粉'},deco:[M('deco','ribbon','亚麻',1)],seed:67})}
+  ],
+  gFilter:'全部',
+  credit:50,
+  loading:false,
+  idt:{img:null,svg:null,list:null,fromDemo:false},
+  ins:{img:null,art:null,palette:[],bq:null,name:'灵感花束'},
+  sc:{src:'current',wid:null,room:'living',img:null,x:50,y:54,size:32,hinted:false,out:null,name:''},
+  detailWork:null,detailGal:null
+};
+
+/* ==========================================================
+   5. 通用 DOM
+   ========================================================== */
+function $(s,r){return (r||document).querySelector(s);}
+function $$(s,r){return [].slice.call((r||document).querySelectorAll(s));}
+function mk(tag,cls,html){var e=document.createElement(tag);if(cls)e.className=cls;if(html!=null)e.innerHTML=html;return e;}
+var ICON={
+  back:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  create:'<svg viewBox="0 0 24 24"><circle cx="12" cy="6.6" r="2.7"/><path d="M12 21v-8.4"/><path d="M12 16.4c-2.7 0-4.4-1.5-5.2-3.7"/><path d="M12 18.6c2.7 0 4.4-1.5 5.2-3.7"/></svg>',
+  inspire:'<svg viewBox="0 0 24 24"><path d="M12 3.4l1.9 5.9 5.9 1.9-5.9 1.9-1.9 5.9-1.9-5.9-5.9-1.9 5.9-1.9z"/></svg>',
+  works:'<svg viewBox="0 0 24 24"><rect x="3.6" y="3.6" width="12.4" height="12.4" rx="1.2"/><path d="M8 20.4h12.4V8"/></svg>',
+  undo:'<svg viewBox="0 0 24 24"><path d="M4.5 10.5a8 8 0 118 8"/><path d="M4.5 5.5v5h5"/></svg>',
+  redo:'<svg viewBox="0 0 24 24"><path d="M19.5 10.5a8 8 0 10-8 8"/><path d="M19.5 5.5v5h-5"/></svg>',
+  arrow:'<svg viewBox="0 0 24 24"><path d="M5 12h13m0 0l-5-5m5 5l-5 5"/></svg>',
+  down:'<svg viewBox="0 0 24 24"><path d="M12 4v12m0 0l-4.4-4.4M12 16l4.4-4.4M4.5 20h15"/></svg>',
+  edit:'<svg viewBox="0 0 24 24"><path d="M4 20h16M5.5 16.5L16 6l3 3-10.5 10.5H5.5z"/></svg>',
+  list:'<svg viewBox="0 0 24 24"><rect x="4.5" y="3.5" width="15" height="17" rx="1.4"/><path d="M8.5 8.5h7M8.5 12.5h7M8.5 16.5h4.5"/></svg>',
+  frame:'<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="17" height="13" rx="1.4"/><path d="M3.5 14l4.6-3.8 3.6 2.8 4-3.6 4.8 4"/></svg>',
+  cam:'<svg viewBox="0 0 24 24"><path d="M3.5 8.5h3.8l1.9-2.8h5.6l1.9 2.8h3.8v11H3.5z"/><circle cx="12" cy="13.4" r="3.6"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></svg>',
+  chevD:'<svg viewBox="0 0 24 24"><path d="M6 9.5l6 6 6-6"/></svg>',
+  x:'<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg>',
+  trash:'<svg viewBox="0 0 24 24"><path d="M4.5 7h15M9.5 7V4.5h5V7M7 7l1 13h8l1-13"/></svg>',
+  wand:'<svg viewBox="0 0 24 24"><path d="M5 19L16.5 7.5M14 4.5l1 2.5 2.5 1-2.5 1-1 2.5-1-2.5L10.5 8l2.5-1z"/></svg>'
+};
+function tabbar(active){
+  return '<div class="tabbar">'+
+    '<div class="tab'+(active==='create'?' on':'')+'" data-act="tab" data-tab="create">'+ICON.create+'<span>创作</span></div>'+
+    '<div class="tab'+(active==='inspire'?' on':'')+'" data-act="tab" data-tab="inspire">'+ICON.inspire+'<span>灵感</span></div>'+
+    '<div class="tab'+(active==='works'?' on':'')+'" data-act="tab" data-tab="works">'+ICON.works+'<span>作品</span></div>'+
+  '</div>';
+}
+function topbar(title,left,extra){
+  return '<div class="topbar">'+(left!==false?'<div class="bk" data-act="back">'+ICON.back+'</div>':'')+
+    '<span class="tt'+(left===false?' tt-l':'')+'">'+title+'</span>'+(extra||'<div class="capsule"><i>···</i><i>◎</i></div>')+'</div>';
+}
+function toast(msg){
+  var old=$('.toast'); if(old) old.remove();
+  var t=mk('div','toast',ICON.check+'<span>'+msg+'</span>');
+  $('#phone').appendChild(t);
+  setTimeout(function(){t.classList.add('out');setTimeout(function(){if(t.parentNode)t.remove();},320);},1750);
+}
+/* 分步加载 */
+function runLoad(steps,total,done){
+  if(S.loading) return;
+  S.loading=true;
+  var ov=mk('div','load');
+  ov.innerHTML='<div class="petal"><svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><path d="M20,36 C20,24 18,16 20,9"/><path d="M20,26 C13,25 9,19 9,12 C16,12 20,18 20,26"/><path d="M20,17 C26,16 30,11 30,5 C24,5 20,10 20,17"/></svg></div>'+
+    '<div class="txt">'+steps[0]+'</div><div class="bar"><i></i></div>';
+  $('#phone').appendChild(ov);
+  var bar=$('.bar i',ov),txt=$('.txt',ov),i=0;
+  requestAnimationFrame(function(){bar.style.width='100%';bar.style.transition='width '+total+'ms linear';});
+  var iv=setInterval(function(){
+    i++;
+    if(i>=steps.length){clearInterval(iv);return;}
+    txt.classList.add('fade');
+    setTimeout(function(){txt.textContent=steps[i];txt.classList.remove('fade');},300);
+  },Math.max(700,total/steps.length));
+  setTimeout(function(){
+    clearInterval(iv);
+    ov.classList.add('out');
+    setTimeout(function(){if(ov.parentNode)ov.remove();S.loading=false;if(done)done();},300);
+  },total);
+}
+/* 确认弹窗 */
+function confirmBox(title,text,okLabel,danger,onOk){
+  var m=mk('div','mask');
+  m.innerHTML='<div class="dlg"><h4>'+title+'</h4><p>'+text+'</p><div class="acts">'+
+    '<div class="btn btn-sec" data-x="cancel">取消</div>'+
+    '<div class="btn '+(danger?'btn-danger':'btn-pri')+'" data-x="ok">'+okLabel+'</div></div></div>';
+  $('#phone').appendChild(m);
+  m.addEventListener('click',function(e){
+    var b=e.target.closest('[data-x]'); if(!b) return;
+    var close=function(){m.classList.add('out');setTimeout(function(){if(m.parentNode)m.remove();},200);};
+    if(b.getAttribute('data-x')==='ok'){close();onOk&&onOk();}else close();
+  });
+}
+function pickImage(cb){
+  var inp=$('#file');
+  inp.value='';
+  inp.onchange=function(){
+    var f=inp.files&&inp.files[0]; if(!f) return;
+    if(f.type.indexOf('image')!==0){toast('请选择图片');return;}
+    var r=new FileReader();
+    r.onload=function(){cb(r.result);};
+    r.readAsDataURL(f);
+  };
+  inp.click();
+}
+function svgDataURL(svg,w,h){
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg.replace('<svg ','<svg width="'+(w||400)+'" height="'+(h||470)+'" '));
+}
+
+/* ==========================================================
+   6. 花束逻辑
+   ========================================================== */
+function countKinds(bq){
+  var n=0;CATS.forEach(function(c){
+    if(c==='wrap'){if(bq.wrap&&bq.wrap.id)n++;}
+    else n+=(bq[c]||[]).length;
+  });
+  return n;
+}
+function missingParts(bq){
+  var out=[];
+  if(!(bq.main&&bq.main.length)) out.push('主花');
+  if(!(bq.wrap&&bq.wrap.id)) out.push('包装');
+  return out;
+}
+function nameBouquet(bq){
+  var m=bq.main&&bq.main[0];
+  if(!m) return '未命名花束';
+  var d=findDef('main',m.id);
+  return (m.colorName||'')+(d?d.name:'花');
+}
+function pushHist(){
+  S.hist.push(JSON.stringify(S.bq));
+  if(S.hist.length>30) S.hist.shift();
+  S.fut=[];
+}
+function getSel(cat,id){
+  var a=S.bq[cat]||[];
+  for(var i=0;i<a.length;i++) if(a[i].id===id) return a[i];
+  return null;
+}
+function toggleMat(cat,def){
+  pushHist();
+  if(cat==='wrap'){
+    S.bq.wrap={id:def.id,color:def.colors[0].c,colorName:def.colors[0].n};
+    render();return;
+  }
+  var arr=S.bq[cat],ex=getSel(cat,def.id);
+  if(ex){arr.splice(arr.indexOf(ex),1);}
+  else{
+    if(arr.length>=LIMIT[cat]){toast(CATNAME[cat]+'最多选 '+LIMIT[cat]+' 种');S.hist.pop();return;}
+    arr.push({id:def.id,color:def.colors[0].c,colorName:def.colors[0].n,qty:1});
+  }
+  render();
+}
+function autoFill(){
+  pushHist();
+  var b=S.bq,changed=false;
+  if(!b.main.length){b.main=[M('main','rose','豆沙粉',3)];changed=true;}
+  if(!b.second.length){
+    var mc=b.main[0]?b.main[0].color:'#C99B9B';
+    b.second=[{id:'star',color:'#F6F2EA',colorName:'白',qty:2},{id:'daisy',color:'#F4F0E7',colorName:'白',qty:2}];
+    changed=true;
+  }
+  if(!b.leaf.length){b.leaf=[{id:'eucalyptus',color:'#9FAE9B',colorName:'银绿',qty:2}];changed=true;}
+  if(!b.wrap||!b.wrap.id){b.wrap={id:'han',color:'#EDE5D7',colorName:'米白'};changed=true;}
+  if(!changed){toast('已经搭配好了');S.hist.pop();return;}
+  toast('已为你搭配好基础花材');
+  render();
+}
+/* 由色板生成花束 */
+function allColors(cat){
+  var out=[];
+  (LIB[cat]||[]).forEach(function(d){d.colors.forEach(function(c){out.push({cat:cat,def:d,c:c});});});
+  return out;
+}
+function nearest(hex,cat,avoid){
+  var a=rgb(hex),pool=allColors(cat),best=null,bd=1e9;
+  pool.forEach(function(o){
+    if(avoid&&avoid.indexOf(o.def.id)>=0) return;
+    var b=rgb(o.c.c),d=Math.pow(a[0]-b[0],2)+Math.pow(a[1]-b[1],2)+Math.pow(a[2]-b[2],2);
+    if(d<bd){bd=d;best=o;}
+  });
+  return best||pool[0];
+}
+function bqFromPalette(cols,seed){
+  var R=rng(seed||5);
+  var c0=cols[0]||'#C99B9B',c1=cols[1]||cols[0]||'#E7D9C8',c2=cols[2]||cols[0]||'#9FAE9B';
+  var m=nearest(c0,'main');
+  var s1=nearest(c1,'second');
+  var s2=nearest(c2,'second',[s1.def.id]);
+  var second=[{id:s1.def.id,color:s1.c.c,colorName:s1.c.n,qty:2}];
+  if(s2&&s2.def.id!==s1.def.id) second.push({id:s2.def.id,color:s2.c.c,colorName:s2.c.n,qty:2});
+  var lum=rgb(c0)[0]*.3+rgb(c0)[1]*.5+rgb(c0)[2]*.2;
+  var wid=lum>190?'cotton':(lum<110?'kraft':'han');
+  var wdef=findDef('wrap',wid);
+  var wc=wdef.colors[0];
+  return {main:[{id:m.def.id,color:m.c.c,colorName:m.c.n,qty:3}],second:second,
+    leaf:[{id:'eucalyptus',color:'#9FAE9B',colorName:'银绿',qty:2}],
+    wrap:{id:wid,color:wc.c,colorName:wc.n},
+    deco:[{id:'ribbon',color:(cols[3]||c1),colorName:'灵感色',qty:1}],
+    seed:seed||Math.floor(R()*9000)+10};
+}
+function extractPalette(src,cb){
+  var img=new Image();
+  img.onload=function(){
+    try{
+      var cv=document.createElement('canvas'),g=cv.getContext('2d');
+      cv.width=48;cv.height=48;g.drawImage(img,0,0,48,48);
+      var d=g.getImageData(0,0,48,48).data,bk={},i,k;
+      for(i=0;i<d.length;i+=4){
+        if(d[i+3]<120)continue;
+        k=[Math.round(d[i]/28)*28,Math.round(d[i+1]/28)*28,Math.round(d[i+2]/28)*28].join(',');
+        if(!bk[k])bk[k]={n:0,r:0,g:0,b:0};
+        bk[k].n++;bk[k].r+=d[i];bk[k].g+=d[i+1];bk[k].b+=d[i+2];
+      }
+      var arr=Object.keys(bk).map(function(kk){var o=bk[kk];
+        return {n:o.n,c:'#'+[o.r,o.g,o.b].map(function(v){var x=Math.round(v/o.n);return (x<16?'0':'')+x.toString(16);}).join('')};});
+      arr.sort(function(a,b){return b.n-a.n;});
+      var out=arr.slice(0,5).map(function(o){return o.c;});
+      cb(out.length?out:['#D9CFBB','#C0A07A','#8A8468','#EFE7DA','#A85248']);
+    }catch(e){cb(['#D9CFBB','#C0A07A','#8A8468','#EFE7DA','#A85248']);}
+  };
+  img.onerror=function(){cb(['#D9CFBB','#C0A07A','#8A8468','#EFE7DA','#A85248']);};
+  img.src=src;
+}
+/* 识花分析（原型内为示意数据） */
+function analyzeBouquet(bq){
+  var list=[];
+  ['main','second','leaf'].forEach(function(c){
+    (bq[c]||[]).forEach(function(m){
+      var d=findDef(c,m.id);
+      list.push({name:d?d.name:m.id,color:m.colorName||'—',qty:m.qty||1,hex:m.color,kind:CATNAME[c]});
+    });
+  });
+  if(bq.wrap&&bq.wrap.id){var w=findDef('wrap',bq.wrap.id);list.push({name:w?w.name:'包装',color:bq.wrap.colorName||'—',qty:1,hex:bq.wrap.color,kind:'包装',unit:'张'});}
+  (bq.deco||[]).forEach(function(m){var d=findDef('deco',m.id);list.push({name:d?d.name:m.id,color:m.colorName||'—',qty:m.qty||1,hex:m.color,kind:'装饰'});});
+  return list;
+}
+var DEMO_IDT=[
+  BQ({main:[M('main','tulip','浅粉',4),M('main','peony','香槟',2)],second:[M('second','daisy','白',3),M('second','star','白',2)],leaf:[M('leaf','eucalyptus','银绿',3)],wrap:{id:'han',color:'#EDE5D7',colorName:'米白'},deco:[],seed:113}),
+  BQ({main:[M('main','hydrangea','雾蓝',2)],second:[M('second','stock','雾紫',3),M('second','berry','白',2)],leaf:[M('leaf','fern','深绿',2)],wrap:{id:'kraft',color:'#D8C6A8',colorName:'亚麻'},deco:[M('deco','ribbon','苔绿',1)],seed:127})
+];
+
+/* ==========================================================
+   7. 屏幕
+   ========================================================== */
+var SC={};
+
+function miniOf(cat,id){var d=findDef(cat,id);return d?miniSVG(cat,d,d.colors[0].c):'';}
+SC.home=function(){
+  var cards=[
+    {n:'01',t:'灵感生花',d:'把一张图变成花',s:'inspire',th:miniOf('second','star')},
+    {n:'02',t:'自由创作',d:'从零搭一束花',s:'studio',th:miniOf('main','rose')},
+    {n:'03',t:'看图识花',d:'看看这束花用了什么',s:'identify',th:miniOf('main','tulip')},
+    {n:'04',t:'场景试花',d:'放进我的空间看看',s:'scene',th:roomSVG('living')}
+  ];
+  var ch='';
+  cards.forEach(function(c){
+    ch+='<div class="hcard" data-act="go" data-s="'+c.s+'"><span class="no">'+c.n+'</span>'+
+      '<b>'+c.t+'</b><span>'+c.d+'</span><i class="th">'+c.th+'</i></div>';
+  });
+  return '<div class="home">'+
+    '<div class="home-bg">'+renderBouquet(S.bq,'')+'</div>'+
+    '<div class="home-veil"></div>'+
+    '<div class="home-in">'+
+      '<div class="home-top"><span class="wm display">花作</span><span class="eyebrow eb">FLORAL STUDIO</span></div>'+
+      '<div class="home-copy"><h1>把灵感，<br>做成一束花。</h1><p>不认识花材，也能搭出一束成立的花。</p></div>'+
+
+      '<div class="home-entries">'+ch+'</div>'+
+      tabbar('create').replace('class="tabbar"','class="tabbar glass"')+
+    '</div>'+
+  '</div>';
+};
+
+SC.studio=function(){
+  var bq=S.bq,has=countKinds(bq)>0;
+  var canvas=has
+    ? renderBouquet(bq)
+    : '<div class="studio-empty">'+emptyStem()+'<p>还没有花材<br>从下面选一种主花开始</p></div>';
+  /* 顶部流程条 */
+  var st='';
+  CATS.forEach(function(c,i){
+    var cls=i===S.drawerCat?' on':(i<S.drawerCat?' done':'');
+    st+='<div class="step'+cls+'" data-act="dtab" data-c="'+c+'"><i class="dot"></i><span>'+CATNAME[c]+'</span></div>';
+  });
+  /* 材料抽屉 */
+  var cat=S.drawerCat,wb='';
+  if(S.adj){
+    var c2=S.adj.cat,d=findDef(c2,S.adj.id);
+    var cur=c2==='wrap'?bq.wrap:getSel(c2,S.adj.id);
+    var sw='';
+    d.colors.forEach(function(cc){
+      sw+='<div class="sw'+(cur&&cur.color===cc.c?' on':'')+'" data-act="color" data-cat="'+c2+'" data-id="'+d.id+'" data-c="'+cc.c+'" data-n="'+cc.n+'"><i style="background:'+cc.c+'"></i><em>'+cc.n+'</em></div>';
+    });
+    var qtyRow='';
+    if(c2!=='wrap'){
+      var q=cur?cur.qty:1,mx=MAXQ[c2]||9;
+      qtyRow='<div class="adj-block"><div class="adj-label"><b>数量</b><span>最多 '+mx+'</span></div>'+
+        '<div class="qty"><i data-act="qty" data-d="-1">−</i><b>'+q+'</b><i data-act="qty" data-d="1">＋</i></div></div>';
+    }
+    wb='<div class="wb-head"><span class="bk2" data-act="adjClose"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>返回'+CATNAME[c2]+'</span></div>'+
+      '<div class="wb-adj"><div class="adj-name">'+d.name+'</div><div class="eyebrow adj-en">'+d.en+'</div>'+
+      '<div class="adj-block"><div class="adj-label"><b>颜色</b><span>点选即时生效</span></div><div class="swatches">'+sw+'</div></div>'+
+      qtyRow+
+      '<div class="adj-block"><div class="tlink danger" data-act="remove" data-cat="'+c2+'" data-id="'+d.id+'"><u>从花束中移除</u></div></div></div>';
+  }else{
+    var chips='';
+    LIB[cat].forEach(function(d){
+      var m=cat==='wrap'?((bq.wrap&&bq.wrap.id===d.id)?{color:bq.wrap.color,qty:1}:null):getSel(cat,d.id);
+      var cc=m?m.color:d.colors[0].c;
+      chips+='<div class="fchip'+(m?' on':'')+'" data-act="pick" data-cat="'+cat+'" data-id="'+d.id+'">'+
+        '<span class="th">'+miniSVG(cat,d,cc)+(m&&cat!=='wrap'&&m.qty>1?'<i class="cn">'+m.qty+'</i>':'')+'</span><em>'+d.name+'</em></div>';
+    });
+    var tip={main:'主体花材，最多两种',second:'填补空隙，最多三种',leaf:'撑起轮廓，最多两种',wrap:'选一种包装',deco:'可选，最多两件'}[cat];
+    wb='<div class="wb-head"><b>选择'+CATNAME[cat]+'</b><span class="tipx">'+tip+'</span></div>'+
+      '<div class="wb-scroll">'+chips+'</div>'+
+      '<div class="wb-tip">点已选花材可改颜色与数量</div>';
+  }
+  var miss=missingParts(bq);
+  var isLast=cat==='deco';
+  var foot='<div class="wb-foot">'+
+    '<div class="btn btn-sec" data-act="prevStep">'+(S.drawerCat==='main'?'帮我搭配':'上一步')+'</div>'+
+    '<div class="btn btn-pri" data-act="'+(isLast?'finish':'nextStep')+'">'+(isLast?'完成这束花':'下一步')+ICON.arrow+'</div></div>';
+  return topbar('创作台')+
+    '<div class="studio-canvas">'+canvas+
+      '<div class="tools">'+
+        '<i data-act="undo" class="'+(S.hist.length?'':'off')+'">'+ICON.undo+'</i>'+
+        '<i data-act="redo" class="'+(S.fut.length?'':'off')+'">'+ICON.redo+'</i>'+
+      '</div>'+
+    '</div>'+
+    '<div class="steps">'+st+'</div>'+
+    '<div class="wb">'+wb+foot+'</div>';
+};
+
+SC.workResult=function(){
+  var bq=S.lastBQ||S.bq;
+  return topbar('完成')+
+    '<div class="res-hero">'+renderBouquet(bq,'')+'<div class="res-mark">花作</div></div>'+
+    '<div class="res-info"><h2>'+(S.lastName||nameBouquet(bq))+'</h2><div class="meta">'+today()+' · '+countKinds(bq)+' 种材料</div></div>'+
+    '<div class="res-acts">'+
+      '<div class="btn btn-pri" data-act="saveWork">'+ICON.down+'保存到我的花作</div>'+
+      '<div class="btn btn-sec" data-act="go" data-s="materials" data-from="result">'+ICON.list+'材料清单</div>'+
+    '</div>'+
+    '<div class="res-links"><span class="tlink" data-act="go" data-s="studio"><u>继续调整</u></span>'+
+      '<span class="tlink" data-act="toScene"><u>放进场景</u></span></div>';
+};
+
+SC.materials=function(){
+  var bq=S.matBQ||S.bq,from=S.matFrom||'result';
+  var list=analyzeBouquet(bq);
+  var groups=[['花材',list.filter(function(x){return x.kind==='主花'||x.kind==='次花'||x.kind==='叶材';})],
+              ['包装与装饰',list.filter(function(x){return x.kind==='包装'||x.kind==='装饰';})]];
+  var body='';
+  groups.forEach(function(g){
+    if(!g[1].length) return;
+    body+='<div class="mat-group"><span class="eyebrow">'+g[0]+'</span>';
+    g[1].forEach(function(it){
+      body+='<div class="mrow"><i class="dot" style="background:'+it.hex+'"></i>'+
+        '<span class="nm">'+it.name+(it.unsure?'<span class="unsure">不太确定</span>':'')+'</span>'+
+        '<span class="cl">'+it.color+'</span>'+
+        '<span class="qt">'+(it.approx?'约 ':'')+it.qty+' '+(it.unit||'支')+'</span></div>';
+    });
+    body+='</div>';
+  });
+  if(S.matNote) body+='<div class="mat-note">'+S.matNote+'</div>';
+  var second=from==='identify'
+    ? '<div class="btn btn-pri" data-act="idtToStudio">'+ICON.edit+'按这束花继续创作</div>'
+    : '<div class="btn btn-sec" data-act="go" data-s="studio">'+ICON.edit+'继续编辑</div>';
+  return topbar('材料清单')+
+    '<div class="mat-head"><div class="th">'+renderBouquet(bq,'')+'</div>'+
+      '<div><h2>'+(S.matName||nameBouquet(bq))+'</h2><div class="meta">共 '+list.length+' 项</div></div></div>'+
+    '<div class="mat-body">'+body+'</div>'+
+    '<div class="mat-foot"><div class="btn-row">'+
+      '<div class="btn btn-sec" data-act="dl">'+ICON.down+'下载清单</div></div>'+second+'</div>';
+};
+
+SC.identify=function(){
+  var has=S.idt.img||S.idt.svg;
+  return topbar('')+
+    '<div class="pg-head"><h2>看看这束花<br>用了什么</h2><p>拍一张或从相册选一张花束的照片，<br>会得到一份材料清单。</p></div>'+
+    '<div class="drop'+(has?' has':'')+'" data-act="pickIdt">'+
+      '<img class="pv"'+(S.idt.img?' src="'+S.idt.img+'"':'')+' alt="">'+
+      (S.idt.svg&&!S.idt.img?'<img class="pv" style="display:block" src="'+svgDataURL(S.idt.svg)+'" alt="">':'')+
+      ICON.cam+'<b>拍摄或上传一束花</b><span>支持 JPG / PNG</span><div class="chg">点击更换</div></div>'+
+    '<div class="up-alt"><span class="tlink" data-act="pickIdt"><u>从相册选择</u></span>'+
+      '<span class="tlink" data-act="demoIdt"><u>用示例花束</u></span></div>'+
+    '<div class="up-foot"><div class="btn btn-pri" data-act="runIdt"'+(has?'':' disabled')+'>开始辨认</div></div>'+
+    tabbar('create');
+};
+
+SC.identifyResult=function(){
+  var list=S.idt.list||[];
+  var rows='';
+  list.forEach(function(it){
+    rows+='<div class="mrow"><i class="dot" style="background:'+it.hex+'"></i>'+
+      '<span class="nm">'+it.name+(it.unsure?'<span class="unsure">不太确定</span>':'')+'</span>'+
+      '<span class="cl">'+it.color+'</span>'+
+      '<span class="qt">'+(it.approx?'约 ':'')+it.qty+' 支</span></div>';
+  });
+  var img=S.idt.img?'<img src="'+S.idt.img+'" alt="">':(S.idt.svg||'');
+  return topbar('')+
+    '<div class="id-img">'+img+'</div>'+
+    '<div class="id-cap"><span class="h-sec">材料清单</span><span class="meta">共 '+list.length+' 项 · 由照片辨认</span></div>'+
+    '<div class="id-list">'+rows+'<div class="mat-note">数量与颜色为照片辨认结果，可能有出入，继续创作时可以随时调整。</div></div>'+
+    '<div class="mat-foot"><div class="btn btn-pri" data-act="idtToStudio">'+ICON.edit+'按这束花继续创作</div>'+
+      '<div class="btn btn-sec" data-act="go" data-s="materials" data-from="identify">'+ICON.list+'查看完整清单</div></div>'+
+    tabbar('create');
+};
+
+SC.inspire=function(){
+  var has=S.ins.img||S.ins.art;
+  var exs='';
+  [['电影','i4'],['音乐','i2'],['摄影','i6']].forEach(function(e){
+    var it=null;GALLERY.forEach(function(g){if(g.id===e[1])it=g;});
+    if(!it)return;
+    exs+='<div class="ex-row" data-act="galToInspire" data-id="'+it.id+'">'+
+      '<span class="a">'+artSVG(it,88,112)+'</span><i class="ln"></i>'+
+      '<span class="b">'+renderBouquet(bqFromPalette(it.palette,it.seed),'')+'</span>'+
+      '<span class="tx"><b>'+e[0]+'变成一束花</b><span>「'+it.t+'」</span></span></div>';
+  });
+  return topbar('')+
+    '<div class="pg-head"><h2>把这张图，<br>变成一束花</h2><p>电影海报、专辑封面、一张照片，<br>都可以成为一束花的来源。</p></div>'+
+    '<div class="drop'+(has?' has':'')+'" data-act="pickIns" style="flex:0 0 auto;height:190px;margin-top:20px">'+
+      '<img class="pv"'+(S.ins.img?' src="'+S.ins.img+'"':'')+' alt="">'+
+      (S.ins.art&&!S.ins.img?'<img class="pv" style="display:block" src="'+svgDataURL(S.ins.art)+'" alt="">':'')+
+      ICON.plus+'<b>选择一张灵感图片</b><span>从相册中选择</span><div class="chg">点击更换</div></div>'+
+    '<div class="examples"><span class="eyebrow">INSPIRATION</span>'+exs+'</div>'+
+    '<div class="up-foot" style="margin-top:auto"><div class="btn btn-pri" data-act="runInspire"'+(has?'':' disabled')+'>变成一束花</div></div>'+
+    tabbar('inspire');
+};
+
+SC.inspireResult=function(){
+  var cols=S.ins.palette,pal='';
+  cols.forEach(function(c,i){pal+='<i style="background:'+c+';animation-delay:'+(i*.06)+'s"></i>';});
+  var srcImg=S.ins.img?'<img src="'+S.ins.img+'" alt="">':(S.ins.art||'');
+  return topbar('')+
+    '<div class="ins-flow">'+
+      '<div class="eyebrow">灵感来源</div>'+
+      '<div class="ins-src">'+srcImg+'</div>'+
+      '<div class="ins-arrow"><i></i>'+ICON.chevD+'</div>'+
+      '<div class="eyebrow" style="text-align:center;display:block">提取的色彩</div>'+
+      '<div class="ins-colors">'+pal+'</div>'+
+      '<div class="ins-arrow"><i></i>'+ICON.chevD+'</div>'+
+      '<div class="eyebrow" style="text-align:center;display:block">这束花</div>'+
+      '<div class="ins-hero">'+renderBouquet(S.ins.bq||S.bq,'')+'</div>'+
+      '<div style="height:16px"></div>'+
+    '</div>'+
+    '<div class="ins-foot">'+
+      '<div class="btn btn-pri" data-act="insToStudio">'+ICON.edit+'继续调整这束花</div>'+
+      '<div class="btn-row"><div class="btn btn-sec" data-act="saveInspire">'+ICON.down+'保存作品</div>'+
+      '<div class="btn btn-sec" data-act="runInspire">换一版</div></div>'+
+    '</div>';
+};
+
+SC.scene=function(){
+  var bq=sceneBQ(),name=sceneName();
+  var bg=S.sc.img?'<img src="'+S.sc.img+'" alt="">':roomSVG(S.sc.room);
+  var rooms='';
+  ROOMS.forEach(function(r){
+    rooms+='<div class="sc-room'+(!S.sc.img&&S.sc.room===r.id?' on':'')+'" data-act="room" data-r="'+r.id+'">'+
+      '<div class="pv">'+roomSVG(r.id)+'</div><em>'+r.n+'</em></div>';
+  });
+  var ready=!!(bq&&countKinds(bq)>0);
+  return topbar('')+
+    '<div class="pg-head" style="padding-bottom:0"><h2>放进我的空间</h2></div>'+
+    '<div class="sc-pick">'+
+      '<div class="sc-slot" data-act="pickBq"><div class="pv">'+(ready?renderBouquet(bq,''):'<span style="font-size:.74em;color:var(--ink-3)">未选择</span>')+'</div>'+
+        '<div class="lb"><b>'+name+'</b><u>更换</u></div></div>'+
+      '<div class="sc-slot" data-act="pickSpace"><div class="pv">'+(S.sc.img?'<img src="'+S.sc.img+'" alt="">':roomSVG(S.sc.room))+'</div>'+
+        '<div class="lb"><b>'+(S.sc.img?'我的空间':roomName(S.sc.room))+'</b><u>更换</u></div></div>'+
+    '</div>'+
+    '<div class="sc-stage" id="scStage">'+
+      '<div class="bg">'+bg+'</div>'+
+      (ready?'<div class="fl" id="scFlower" style="left:'+S.sc.x+'%;top:'+S.sc.y+'%;width:'+S.sc.size+'%">'+renderBouquet(bq,'')+'</div>':'')+
+      '<div class="ph-old"'+(ready?' style="display:none"':'')+'>'+ICON.plus+'先选择花束与空间</div>'+
+      '<div class="sc-hint'+(S.sc.hinted?' gone':'')+'" id="scHint">拖动调整位置 · 双指缩放</div>'+
+    '</div>'+
+    '<div class="sc-size"><span class="eyebrow">SIZE</span><input type="range" id="scSize" min="16" max="62" value="'+S.sc.size+'"><b id="scSizeV">'+S.sc.size+'%</b></div>'+
+    '<div class="sc-rooms">'+rooms+'</div>'+
+    '<div class="sc-foot"><div class="btn btn-pri" data-act="compose"'+(ready?'':' disabled')+'>生成场景效果</div></div>'+
+    tabbar('create');
+  function roomName(id){var n='';ROOMS.forEach(function(r){if(r.id===id)n=r.n;});return n||'空间';}
+};
+
+SC.sceneResult=function(){
+  return topbar('')+
+    '<div class="sc-res">'+(S.sc.out?'<img src="'+S.sc.out+'" alt="">':'')+
+      '<div class="cap"><b>'+S.sc.name+'</b><span>'+today()+' · '+roomLabel(S.sc)+'</span></div></div>'+
+    '<div class="sc-res-foot">'+
+      '<div class="btn btn-pri" data-act="saveScene">'+ICON.down+'保存作品</div>'+
+      '<div class="btn-row"><div class="btn btn-sec" data-act="go" data-s="scene">重新调整</div>'+
+      '<div class="btn btn-sec" data-act="dlScene">'+ICON.down+'下载效果图</div></div></div>'+
+    tabbar('create');
+  function roomLabel(s){if(s.img)return '我的空间';var n='';ROOMS.forEach(function(r){if(r.id===s.room)n=r.n;});return n;}
+};
+
+SC.gallery=function(){
+  var tabs='';
+  GCATS.forEach(function(c){tabs+='<span class="'+(S.gFilter===c?'on':'')+'" data-act="gfilter" data-c="'+c+'">'+c+'</span>';});
+  var list=GALLERY.filter(function(g){return S.gFilter==='全部'||g.cat===S.gFilter;});
+  var body='';
+  if(!list.length){
+    body='<div class="empty">'+emptyStem()+'<p>这个分类还没有内容<br>换一个看看</p></div>';
+  }else{
+    var cols=['<div class="gal-col">','<div class="gal-col">','<div class="gal-col">'];
+    list.forEach(function(g,i){
+      var h=[320,260,380][(g.seed+i)%3];
+      cols[i%3]+='<div class="gi" style="animation-delay:'+(i*.04)+'s" data-act="openGal" data-id="'+g.id+'">'+
+        '<span class="im">'+artSVG(g,240,h)+'</span><b>'+g.t+'</b></div>';
+    });
+    body=cols[0]+'</div>'+cols[1]+'</div>'+cols[2]+'</div>';
+  }
+  return '<div class="topbar"><span class="tt tt-l display" style="font-size:1.32em;letter-spacing:.3em">灵感</span><div class="capsule"><i>···</i><i>◎</i></div></div>'+
+    '<div class="gal-head"><p>挑一张喜欢的，做成花。</p></div>'+
+    '<div class="gal-tabs">'+tabs+'</div>'+
+    '<div class="gal-body">'+body+'</div>'+tabbar('inspire');
+};
+
+SC.works=function(){
+  var body='';
+  if(!S.works.length){
+    body='<div class="empty">'+emptyStem()+'<p>还没有作品<br>做出来的第一束花会放在这里</p>'+
+      '<div class="btn btn-pri" data-act="go" data-s="studio">开始第一束</div></div>';
+  }else{
+    var cols2=['<div class="wk-col">','<div class="wk-col">'];
+    S.works.forEach(function(w,i){
+      var im=w.img?('<img src="'+w.img+'" alt="">'):renderBouquet(w.bq,'',w.ar||'4/5');
+      cols2[i%2]+='<div class="wk" style="animation-delay:'+(i*.05)+'s" data-act="openWork" data-id="'+w.id+'">'+
+        '<span class="im" style="aspect-ratio:'+(w.ar||'4/5')+'">'+im+'</span><b>'+w.name+'</b><span>'+w.date+'</span></div>';
+    });
+    body=cols2[0]+'</div>'+cols2[1]+'</div>';
+  }
+  return '<div class="topbar"><span class="tt tt-l display" style="font-size:1.32em;letter-spacing:.22em">我的花作</span><div class="capsule"><i>···</i><i>◎</i></div></div>'+
+    '<div class="wk-head"><div class="top"><div><h2>作品集</h2><div class="meta">'+S.works.length+' 束花</div></div>'+
+    '<div class="credit"><b>'+S.credit+'</b><span>积分</span></div></div></div>'+
+    '<div class="wk-body">'+body+'</div>'+tabbar('works');
+};
+
+function sceneBQ(){
+  if(S.sc.src==='current') return S.bq;
+  var w=null;S.works.forEach(function(x){if(x.id===S.sc.wid)w=x;});
+  return w?w.bq:S.bq;
+}
+function sceneName(){
+  if(S.sc.src==='current') return nameBouquet(S.bq);
+  var w=null;S.works.forEach(function(x){if(x.id===S.sc.wid)w=x;});
+  return w?w.name:nameBouquet(S.bq);
+}
+function today(){
+  var d=new Date();
+  return d.getFullYear()+'.'+('0'+(d.getMonth()+1)).slice(-2)+'.'+('0'+d.getDate()).slice(-2);
+}
+
+/* ==========================================================
+   8. 渲染与导航
+   ========================================================== */
+function render(){
+  var el=$('#screen');
+  el.setAttribute('data-boot','1');
+  el.className='screen on '+S.dir;
+  el.innerHTML=(SC[S.screen]||SC.home)();
+  if(S.screen==='scene') bindStage();
+}
+function go(s,dir){
+  if(S.loading) return;
+  S.dir=dir||'fwd';
+  if(dir!=='replace'&&S.screen) S.stack.push(S.screen);
+  S.screen=s;
+  render();
+}
+function back(){
+  if(S.loading) return;
+  var p=S.stack.pop();
+  S.dir='back';
+  S.screen=p||'home';
+  render();
+}
+function tab(t){
+  S.tab=t;S.stack=[];S.dir='fwd';
+  S.screen=t==='create'?'home':(t==='inspire'?'gallery':'works');
+  render();
+}
+
+/* ---- 浮层：作品详情 ---- */
+function openWork(id){
+  var w=null;S.works.forEach(function(x){if(x.id===id)w=x;});
+  if(!w)return;
+  S.detailWork=w;
+  var ov=mk('div','ov wd in');
+  ov.innerHTML='<div class="bar"><div class="x" data-x="close">'+ICON.x+'</div><span class="eyebrow eb">WORKS</span></div>'+
+    '<div class="fig">'+renderBouquet(w.bq,'')+'</div>'+
+    '<div class="ttl"><h3>'+w.name+'</h3><div class="meta">'+w.date+' · '+countKinds(w.bq)+' 种材料</div></div>'+
+    '<div class="acts">'+
+      '<div class="ar" data-x="list">'+ICON.list+'材料清单<i class="ar2"></i></div>'+
+      '<div class="ar" data-x="edit">'+ICON.edit+'继续编辑<i class="ar2"></i></div>'+
+      '<div class="ar" data-x="scene">'+ICON.frame+'放进场景<i class="ar2"></i></div>'+
+    '</div><div class="del" data-x="del">删除这束花</div>';
+  $('#phone').appendChild(ov);
+  ov.addEventListener('click',function(e){
+    var t=e.target.closest('[data-x]'); if(!t)return;
+    var a=t.getAttribute('data-x');
+    if(a==='close') closeOv(ov);
+    else if(a==='list'){S.matBQ=w.bq;S.matName=w.name;S.matFrom='work';S.matNote='';closeOv(ov,function(){go('materials');});}
+    else if(a==='edit'){S.bq=clone(w.bq);S.hist=[];S.fut=[];S.adj=null;S.drawerCat='main';closeOv(ov,function(){go('studio');});}
+    else if(a==='scene'){S.sc.src='work';S.sc.wid=w.id;S.sc.out=null;closeOv(ov,function(){go('scene');});}
+    else if(a==='del'){
+      confirmBox('删除这束花？','「'+w.name+'」删除后无法恢复','删除',true,function(){
+        S.works=S.works.filter(function(x){return x.id!==w.id;});
+        closeOv(ov,function(){render();});
+        toast('已删除');
+      });
+    }
+  });
+}
+/* ---- 浮层：灵感详情 ---- */
+function openGal(id){
+  var g=null;GALLERY.forEach(function(x){if(x.id===id)g=x;});
+  if(!g)return;
+  S.detailGal=g;
+  var pal='';g.palette.forEach(function(c){pal+='<i style="background:'+c+'"></i>';});
+  var ov=mk('div','ov gd in');
+  ov.innerHTML='<div class="bar"><div class="x" data-x="close">'+ICON.x+'</div><span class="eyebrow eb">'+g.cat+'</span></div>'+
+    '<div class="fig"><div><div class="im">'+artSVG(g,320,420)+'</div>'+
+    '<div class="pal">'+pal+'</div>'+
+    '<div class="ttl" style="padding:18px 0 0"><h3>'+g.t+'</h3></div>'+
+    '<div class="desc">'+g.d+'</div></div></div>'+
+    '<div class="cta"><div class="btn btn-pri" data-x="make">以此为灵感创作</div>'+
+    '<div class="btn btn-sec" data-x="close">再看看</div></div>';
+  $('#phone').appendChild(ov);
+  ov.addEventListener('click',function(e){
+    var t=e.target.closest('[data-x]'); if(!t)return;
+    var a=t.getAttribute('data-x');
+    if(a==='close') closeOv(ov);
+    else if(a==='make'){
+      closeOv(ov,function(){
+        runLoad(['正在读取画面的颜色…','正在寻找适合的花材…','正在整理这束花…'],2200,function(){
+          S.ins.img=null;S.ins.art=artSVG(g,320,420);S.ins.palette=g.palette.slice();
+          S.ins.bq=bqFromPalette(g.palette,g.seed);
+          S.ins.name=g.t;
+          go('inspireResult');
+        });
+      });
+    }
+  });
+}
+function closeOv(ov,cb){
+  ov.classList.remove('in');ov.classList.add('out');
+  setTimeout(function(){if(ov.parentNode)ov.remove();if(cb)cb();},250);
+}
+/* ---- 浮层：选择花束 ---- */
+function pickBqSheet(){
+  var mask=mk('div','sheet-mask');
+  var rows='<div class="shr" data-w="current"><div class="th">'+renderBouquet(S.bq,'')+'</div>'+
+    '<div class="tx"><b>创作台上的花束</b><span>'+nameBouquet(S.bq)+'</span></div>'+
+    '<div class="ck">'+(S.sc.src==='current'?ICON.check:'')+'</div></div>';
+  S.works.forEach(function(w){
+    rows+='<div class="shr" data-w="'+w.id+'"><div class="th">'+renderBouquet(w.bq,'')+'</div>'+
+      '<div class="tx"><b>'+w.name+'</b><span>'+w.date+'</span></div>'+
+      '<div class="ck">'+(S.sc.src==='work'&&S.sc.wid===w.id?ICON.check:'')+'</div></div>';
+  });
+  mask.innerHTML='<div class="sheet"><div class="sh-h"><b>选择花束</b><span>共 '+(S.works.length+1)+' 束</span></div>'+
+    '<div class="sh-b">'+rows+'</div><div class="sh-x"><div class="btn btn-sec" data-x="1">取消</div></div></div>';
+  $('#phone').appendChild(mask);
+  mask.addEventListener('click',function(e){
+    var r=e.target.closest('[data-w]');
+    if(r){
+      var v=r.getAttribute('data-w');
+      if(v==='current'){S.sc.src='current';S.sc.wid=null;}
+      else{S.sc.src='work';S.sc.wid=v;}
+      closeSheet();render();return;
+    }
+    if(e.target.closest('[data-x]')||e.target===mask) closeSheet();
+  });
+  function closeSheet(){mask.classList.add('out');setTimeout(function(){if(mask.parentNode)mask.remove();},210);}
+}
+/* ---- 浮层：选择空间 ---- */
+function pickSpaceSheet(){
+  var mask=mk('div','sheet-mask');
+  var rows='';
+  ROOMS.forEach(function(r){
+    rows+='<div class="shr" data-r="'+r.id+'"><div class="th" style="width:52px;height:40px">'+roomSVG(r.id)+'</div>'+
+      '<div class="tx"><b>'+r.n+'</b><span>示例空间</span></div>'+
+      '<div class="ck">'+(!S.sc.img&&S.sc.room===r.id?ICON.check:'')+'</div></div>';
+  });
+  mask.innerHTML='<div class="sheet"><div class="sh-h"><b>选择空间</b><span>或上传照片</span></div>'+
+    '<div class="sh-b">'+rows+
+    '<div class="shr" data-up="1"><div class="th" style="width:52px;height:40px;display:flex;align-items:center;justify-content:center;color:var(--ink-3)">'+ICON.plus+'</div>'+
+    '<div class="tx"><b>上传我的空间照片</b><span>客厅、餐桌、橱窗都可以</span></div></div></div>'+
+    '<div class="sh-x"><div class="btn btn-sec" data-x="1">取消</div></div></div>';
+  $('#phone').appendChild(mask);
+  mask.addEventListener('click',function(e){
+    var r=e.target.closest('[data-r]');
+    if(r){S.sc.room=r.getAttribute('data-r');S.sc.img=null;closeSheet();render();return;}
+    if(e.target.closest('[data-up]')){
+      closeSheet();
+      setTimeout(function(){pickImage(function(d){S.sc.img=d;render();toast('已使用我的空间照片');});},260);
+      return;
+    }
+    if(e.target.closest('[data-x]')||e.target===mask) closeSheet();
+  });
+  function closeSheet(){mask.classList.add('out');setTimeout(function(){if(mask.parentNode)mask.remove();},210);}
+}
+
+/* ---- 场景拖动 ---- */
+function bindStage(){
+  var st=$('#scStage'),fl=$('#scFlower');
+  if(!st) return;
+  if(!S.sc.hinted){
+    setTimeout(function(){S.sc.hinted=true;var h=$('#scHint');if(h)h.classList.add('gone');},2600);
+  }
+  if(!fl) return;
+  var drag=false;
+  fl.addEventListener('pointerdown',function(e){drag=true;fl.setPointerCapture(e.pointerId);e.preventDefault();});
+  fl.addEventListener('pointermove',function(e){
+    if(!drag)return;
+    var r=st.getBoundingClientRect();
+    S.sc.x=Math.max(8,Math.min(92,(e.clientX-r.left)/r.width*100));
+    S.sc.y=Math.max(10,Math.min(90,(e.clientY-r.top)/r.height*100));
+    fl.style.left=S.sc.x+'%';fl.style.top=S.sc.y+'%';
+  });
+  var end=function(){drag=false;};
+  fl.addEventListener('pointerup',end);
+  fl.addEventListener('pointercancel',end);
+  var sl=$('#scSize');
+  if(sl) sl.addEventListener('input',function(){
+    S.sc.size=+this.value;
+    $('#scSizeV').textContent=S.sc.size+'%';
+    if(fl) fl.style.width=S.sc.size+'%';
+  });
+}
+/* ---- 场景合成 ---- */
+function composeScene(done){
+  var bq=sceneBQ();
+  var bgSrc=S.sc.img?S.sc.img:svgDataURL(roomSVG(S.sc.room),800,600);
+  var flSrc=svgDataURL(renderBouquet(bq,''),400,470);
+  var bg=new Image(),fl=new Image(),n=0;
+  function ok(){
+    if(++n<2)return;
+    var W=900,H=675;
+    var cv=document.createElement('canvas');cv.width=W;cv.height=H;
+    var g=cv.getContext('2d');
+    g.drawImage(bg,0,0,W,H);
+    var fw=W*S.sc.size/100*1.5,fh=fw*470/400;
+    var fx=W*S.sc.x/100-fw/2,fy=H*S.sc.y/100-fh/2;
+    g.save();
+    g.fillStyle='rgba(60,48,36,.2)';
+    g.beginPath();g.ellipse(fx+fw/2,fy+fh*0.95,fw*0.3,fw*0.07,0,0,6.283);g.fill();
+    g.shadowColor='rgba(50,40,30,.34)';g.shadowBlur=26;g.shadowOffsetY=14;
+    g.drawImage(fl,fx,fy,fw,fh);
+    g.restore();
+    g.font='300 30px "Songti SC",STSong,serif';
+    g.fillStyle='rgba(250,248,243,.72)';g.textAlign='right';
+    g.fillText('花  作',W-34,H-30);
+    done(cv.toDataURL('image/png'));
+  }
+  bg.onload=ok;fl.onload=ok;
+  bg.onerror=function(){toast('图片读取失败');S.loading=false;};
+  fl.onerror=function(){toast('图片读取失败');S.loading=false;};
+  bg.src=bgSrc;fl.src=flSrc;
+}
+
+/* ==========================================================
+   9. 事件
+   ========================================================== */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-act]');
+  if(!t) return;
+  var a=t.getAttribute('data-act');
+
+  if(a==='go'){
+    var s=t.getAttribute('data-s');
+    if(s==='materials'){
+      var from=t.getAttribute('data-from');
+      if(from==='identify'){S.matBQ=S.idtBQ;S.matName='照片中的花束';S.matFrom='identify';
+        S.matNote='数量与颜色为照片辨认结果，可能有出入。';}
+      else{S.matBQ=S.lastBQ||S.bq;S.matName=S.lastName||nameBouquet(S.matBQ||S.bq);S.matFrom='result';S.matNote='';}
+    }
+    go(s);
+  }
+  else if(a==='back') back();
+  else if(a==='tab') tab(t.getAttribute('data-tab'));
+  /* 创作台 */
+  else if(a==='dtab'){S.drawerCat=t.getAttribute('data-c');S.adj=null;render();}
+  else if(a==='pick'){
+    var cat=t.getAttribute('data-cat'),id=t.getAttribute('data-id'),def=findDef(cat,id);
+    var on=cat==='wrap'?(S.bq.wrap&&S.bq.wrap.id===id):!!getSel(cat,id);
+    if(on){S.adj={cat:cat,id:id};render();}
+    else{toggleMat(cat,def);if(cat==='wrap'){S.adj={cat:cat,id:id};render();}}
+  }
+  else if(a==='adj'){S.adj={cat:t.getAttribute('data-cat'),id:t.getAttribute('data-id')};render();}
+  else if(a==='adjClose'){S.adj=null;render();}
+  else if(a==='color'){
+    pushHist();
+    var c2=t.getAttribute('data-cat'),i2=t.getAttribute('data-id'),col=t.getAttribute('data-c'),nm=t.getAttribute('data-n');
+    if(c2==='wrap'){S.bq.wrap.color=col;S.bq.wrap.colorName=nm;}
+    else{var m=getSel(c2,i2);if(m){m.color=col;m.colorName=nm;}}
+    render();
+  }
+  else if(a==='qty'){
+    var c3=S.adj.cat,m3=c3==='wrap'?null:getSel(c3,S.adj.id);
+    if(!m3)return;
+    var d3=parseInt(t.getAttribute('data-d'),10),mx3=MAXQ[c3]||9,nq=m3.qty+d3;
+    if(nq<1||nq>mx3){toast(nq<1?'至少保留一支':'最多 '+mx3+' 支');return;}
+    pushHist();m3.qty=nq;render();
+  }
+  else if(a==='remove'){
+    var c4=t.getAttribute('data-cat'),i4=t.getAttribute('data-id');
+    pushHist();
+    if(c4==='wrap')S.bq.wrap=null;
+    else{var m4=getSel(c4,i4);if(m4)S.bq[c4].splice(S.bq[c4].indexOf(m4),1);}
+    S.adj=null;render();toast('已移除');
+  }
+  else if(a==='undo'){
+    if(!S.hist.length){toast('没有可撤销的');return;}
+    S.fut.push(JSON.stringify(S.bq));S.bq=JSON.parse(S.hist.pop());render();
+  }
+  else if(a==='redo'){
+    if(!S.fut.length){toast('没有可重做的');return;}
+    S.hist.push(JSON.stringify(S.bq));S.bq=JSON.parse(S.fut.pop());render();
+  }
+  else if(a==='autofill') autoFill();
+  else if(a==='prevStep'){
+    if(S.drawerCat==='main'){autoFill();return;}
+    var ci=CATS.indexOf(S.drawerCat);
+    if(ci>0){S.drawerCat=CATS[ci-1];S.adj=null;render();}
+  }
+  else if(a==='nextStep'){
+    var c5=S.drawerCat;
+    if(c5!=='wrap'&&c5!=='deco'&&!(S.bq[c5]||[]).length){toast('先选一种'+CATNAME[c5]);return;}
+    if(c5==='wrap'&&!(S.bq.wrap&&S.bq.wrap.id)){toast('先选一种包装');return;}
+    var ci2=CATS.indexOf(c5);
+    if(ci2<CATS.length-1){S.drawerCat=CATS[ci2+1];S.adj=null;render();}
+  }
+  else if(a==='finish'){
+    var miss=missingParts(S.bq);
+    if(miss.length){toast('还需要选择'+miss.join('和'));return;}
+    runLoad(['正在整理这束花…','正在记录材料清单…'],1500,function(){
+      S.lastBQ=clone(S.bq);S.lastName=nameBouquet(S.bq);
+      go('workResult');
+    });
+  }
+  else if(a==='saveWork'){
+    var bq2=S.lastBQ||S.bq,nm2=S.lastName||nameBouquet(bq2);
+    S.works.unshift({id:'w'+Date.now(),name:nm2,date:today(),ar:['4/5','1/1','3/4'][S.works.length%3],bq:clone(bq2)});
+    toast('已保存到我的花作');
+  }
+  else if(a==='dl') toast('材料清单已下载');
+  else if(a==='dlScene') toast('效果图已下载');
+  else if(a==='toScene'){S.sc.src='current';S.sc.wid=null;S.sc.out=null;go('scene');}
+  /* 识花 */
+  else if(a==='pickIdt') pickImage(function(d){S.idt.img=d;S.idt.svg=null;S.idt.fromDemo=false;render();});
+  else if(a==='demoIdt'){
+    var preset=DEMO_IDT[Math.floor(Math.random()*DEMO_IDT.length)];
+    S.idt.img=null;S.idt.svg=renderBouquet(preset,'');S.idt.demoBQ=preset;S.idt.fromDemo=true;render();
+    toast('已选择示例花束');
+  }
+  else if(a==='runIdt'){
+    if(!(S.idt.img||S.idt.svg)){toast('先选择一张照片');return;}
+    runLoad(['正在辨认花材…','正在估计颜色与数量…','正在整理材料清单…'],2400,function(){
+      var base=S.idt.fromDemo&&S.idt.demoBQ?S.idt.demoBQ:S.bq;
+      var raw=analyzeBouquet(clone(base));
+      var list=raw.filter(function(x){return x.kind!=='包装'&&x.kind!=='装饰';}).map(function(x,i){
+        x.approx=true;
+        if(i===raw.length-2) x.unsure=true;
+        return x;
+      });
+      if(!list.length) list=[{name:'玫瑰',color:'粉色',qty:5,hex:'#C99B9B',approx:true}];
+      S.idt.list=list;
+      S.idtBQ=clone(base);
+      go('identifyResult');
+    });
+  }
+  else if(a==='idtToStudio'){
+    var src=S.idtBQ||S.bq;
+    S.bq=clone(src);S.hist=[];S.fut=[];S.adj=null;S.drawerCat='main';
+    go('studio');
+    toast('已载入，可以继续调整');
+  }
+  /* 灵感生花 */
+  else if(a==='pickIns') pickImage(function(d){S.ins.img=d;S.ins.art=null;render();});
+  else if(a==='galToInspire'){
+    var g2=null;GALLERY.forEach(function(x){if(x.id===t.getAttribute('data-id'))g2=x;});
+    if(!g2)return;
+    S.ins.img=null;S.ins.art=artSVG(g2,320,420);S.ins.palette=g2.palette.slice();S.ins.name=g2.t;
+    render();toast('已选择「'+g2.t+'」');
+  }
+  else if(a==='runInspire'){
+    var hasSrc=S.ins.img||S.ins.art;
+    if(!hasSrc){toast('先选择一张灵感图片');return;}
+    runLoad(['正在读取画面的颜色…','正在寻找适合的花材…','正在整理这束花…'],2300,function(){
+      var build=function(pal){
+        S.ins.palette=pal;
+        S.ins.bq=bqFromPalette(pal,Math.floor(Math.random()*9000)+10);
+        if(S.screen!=='inspireResult') go('inspireResult'); else render();
+      };
+      if(S.ins.img) extractPalette(S.ins.img,build);
+      else build(S.ins.palette.length?S.ins.palette:['#D9CFBB','#C0A07A','#8A8468','#EFE7DA','#A85248']);
+    });
+  }
+  else if(a==='insToStudio'){
+    if(!S.ins.bq){toast('先生成一束花');return;}
+    S.bq=clone(S.ins.bq);S.hist=[];S.fut=[];S.adj=null;S.drawerCat='main';
+    go('studio');toast('已载入，可以继续调整');
+  }
+  else if(a==='saveInspire'){
+    var bq3=S.ins.bq||S.bq;
+    S.works.unshift({id:'w'+Date.now(),name:(S.ins.name&&S.ins.name!=='灵感花束'?S.ins.name:'灵感花束'),date:today(),ar:'4/5',bq:clone(bq3)});
+    toast('已保存到我的花作');
+  }
+  /* 场景 */
+  else if(a==='pickBq') pickBqSheet();
+  else if(a==='pickSpace') pickSpaceSheet();
+  else if(a==='room'){S.sc.room=t.getAttribute('data-r');S.sc.img=null;render();}
+  else if(a==='compose'){
+    if(!countKinds(sceneBQ())){toast('先选择一束花');return;}
+    runLoad(['正在把花放进空间…','正在调整光影…'],1900,function(){
+      composeScene(function(url){
+        S.sc.out=url;S.sc.name=sceneName();
+        go('sceneResult');
+      });
+    });
+  }
+  else if(a==='saveScene'){
+    S.works.unshift({id:'w'+Date.now(),name:S.sc.name+' · 场景',date:today(),ar:'3/4',
+      bq:clone(sceneBQ()),img:S.sc.out});
+    toast('已保存到我的花作');
+  }
+  /* 灵感画册 / 作品 */
+  else if(a==='gfilter'){S.gFilter=t.getAttribute('data-c');render();}
+  else if(a==='openGal') openGal(t.getAttribute('data-id'));
+  else if(a==='openWork') openWork(t.getAttribute('data-id'));
+});
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){
+    var ov=$('.ov,.sheet-mask,.mask');
+    if(ov){ov.classList.add('out');setTimeout(function(){if(ov.parentNode)ov.remove();},220);return;}
+    back();
+  }
+});
+
+/* 保存的场景效果图需要在作品里以图片呈现 */
+var _renderBouquet=renderBouquet;
+renderBouquet=function(bq,cls){return _renderBouquet(bq,cls);};
+
+/* ==========================================================
+   10. 适配
+   ========================================================== */
+function fit(){
+  var s=Math.min(window.innerWidth/390*0.94,window.innerHeight/844*0.96);
+  $('#stage').style.transform='scale('+s+')';
+}
+window.addEventListener('resize',fit);
+fit();
+render();
+
+})();
+</script>
+</body>
+</html>

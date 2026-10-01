@@ -1,0 +1,20 @@
+{
+  "name": "house-flower-mini-program",
+  "version": "1.0.0",
+  "description": "House花生微信小程序",
+  "scripts": {
+    "build": "node scripts/check-miniprogram.mjs && tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "backend:test": "node scripts/test-backend-core.mjs",
+    "assets:miniprogram": "node scripts/build-editorial-assets.mjs && node scripts/build-material-assets.mjs",
+    "preview:static": "node scripts/render-static-preview.mjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "miniprogram-api-typings": "^2.8.3-1",
+    "sharp": "^0.35.5",
+    "typescript": "^5.9.3"
+  }
+}
