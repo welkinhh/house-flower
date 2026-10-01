@@ -1,0 +1,605 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "key": "bouquet-home",
+      "fileName": "bouquet-home.jpg",
+      "sourcePath": "flower-assets/editorial/source/bouquet-home.png",
+      "sourceWidth": 1448,
+      "sourceHeight": 1086,
+      "width": 1448,
+      "height": 1086,
+      "bytes": 254859
+    },
+    {
+      "key": "bouquet-ivory-sample",
+      "fileName": "bouquet-ivory-sample.jpg",
+      "sourcePath": "flower-assets/editorial/source/bouquet-ivory-sample.png",
+      "sourceWidth": 1086,
+      "sourceHeight": 1448,
+      "width": 1086,
+      "height": 1448,
+      "bytes": 237673
+    },
+    {
+      "key": "bouquet-peach-sample",
+      "fileName": "bouquet-peach-sample.jpg",
+      "sourcePath": "flower-assets/editorial/source/bouquet-peach-sample.png",
+      "sourceWidth": 1086,
+      "sourceHeight": 1448,
+      "width": 1086,
+      "height": 1448,
+      "bytes": 289473
+    },
+    {
+      "key": "inspiration-garden",
+      "fileName": "inspiration-garden.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-garden.png",
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 428765
+    },
+    {
+      "key": "scene-living",
+      "fileName": "scene-living.jpg",
+      "sourcePath": "flower-assets/editorial/source/scene-living.png",
+      "sourceWidth": 1448,
+      "sourceHeight": 1086,
+      "width": 1448,
+      "height": 1086,
+      "bytes": 197537
+    },
+    {
+      "key": "scene-dining",
+      "fileName": "scene-dining.jpg",
+      "sourcePath": "flower-assets/editorial/source/scene-dining.png",
+      "sourceWidth": 1086,
+      "sourceHeight": 1448,
+      "width": 1086,
+      "height": 1448,
+      "bytes": 172895
+    },
+    {
+      "key": "scene-bedroom",
+      "fileName": "scene-bedroom.jpg",
+      "sourcePath": "flower-assets/editorial/source/scene-bedroom.png",
+      "sourceWidth": 1448,
+      "sourceHeight": 1086,
+      "width": 1448,
+      "height": 1086,
+      "bytes": 181085
+    },
+    {
+      "key": "scene-entryway",
+      "fileName": "scene-entryway.jpg",
+      "sourcePath": "flower-assets/editorial/source/scene-entryway.png",
+      "sourceWidth": 1448,
+      "sourceHeight": 1086,
+      "width": 1448,
+      "height": 1086,
+      "bytes": 207987
+    },
+    {
+      "key": "case-truman-reference",
+      "fileName": "case-truman-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-truman-reference.png",
+      "sourceWidth": 1920,
+      "sourceHeight": 1080,
+      "width": 1600,
+      "height": 900,
+      "bytes": 124507
+    },
+    {
+      "key": "case-truman-result",
+      "fileName": "case-truman-result.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-truman-result.png",
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 239063
+    },
+    {
+      "key": "case-jay-reference",
+      "fileName": "case-jay-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-jay-reference.png",
+      "sourceWidth": 1080,
+      "sourceHeight": 1440,
+      "width": 1080,
+      "height": 1440,
+      "bytes": 117164
+    },
+    {
+      "key": "case-jay-result",
+      "fileName": "case-jay-result.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-jay-result.png",
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 224475
+    },
+    {
+      "key": "case-starry-night-pd-reference",
+      "fileName": "case-starry-night-pd-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-starry-night-pd-reference.jpg",
+      "sourceWidth": 1879,
+      "sourceHeight": 1500,
+      "width": 1600,
+      "height": 1277,
+      "bytes": 665090
+    },
+    {
+      "key": "case-starry-night-result",
+      "fileName": "case-starry-night-result.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-starry-night-result.png",
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 253954
+    },
+    {
+      "key": "case-great-wave-reference",
+      "fileName": "case-great-wave-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-great-wave-reference.jpg",
+      "sourceWidth": 1200,
+      "sourceHeight": 810,
+      "width": 1200,
+      "height": 810,
+      "bytes": 263073
+    },
+    {
+      "key": "case-great-wave-result",
+      "fileName": "case-great-wave-result.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-great-wave-result.png",
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 262335
+    },
+    {
+      "key": "case-monet-bridge-reference",
+      "fileName": "case-monet-bridge-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-monet-bridge-reference.jpg",
+      "sourceWidth": 4096,
+      "sourceHeight": 3302,
+      "width": 1600,
+      "height": 1290,
+      "bytes": 560273
+    },
+    {
+      "key": "case-japanese-bridge-result",
+      "fileName": "case-japanese-bridge-result.jpg",
+      "sourcePath": "flower-assets/editorial/source/case-japanese-bridge-result.png",
+      "sourceWidth": 1254,
+      "sourceHeight": 1254,
+      "width": 1254,
+      "height": 1254,
+      "bytes": 305375
+    },
+    {
+      "key": "inspiration-titanic-reference",
+      "fileName": "inspiration-titanic-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-titanic-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 153332
+    },
+    {
+      "key": "inspiration-titanic-flower",
+      "fileName": "inspiration-titanic-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-titanic-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 128652
+    },
+    {
+      "key": "inspiration-green-book-reference",
+      "fileName": "inspiration-green-book-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-green-book-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 183456
+    },
+    {
+      "key": "inspiration-green-book-flower",
+      "fileName": "inspiration-green-book-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-green-book-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 134474
+    },
+    {
+      "key": "inspiration-grand-budapest-reference",
+      "fileName": "inspiration-grand-budapest-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-grand-budapest-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 196336
+    },
+    {
+      "key": "inspiration-grand-budapest-flower",
+      "fileName": "inspiration-grand-budapest-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-grand-budapest-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 146568
+    },
+    {
+      "key": "inspiration-pursuit-happyness-reference",
+      "fileName": "inspiration-pursuit-happyness-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-pursuit-happyness-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 197216
+    },
+    {
+      "key": "inspiration-pursuit-happyness-flower",
+      "fileName": "inspiration-pursuit-happyness-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-pursuit-happyness-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 147571
+    },
+    {
+      "key": "inspiration-blindspotting-reference",
+      "fileName": "inspiration-blindspotting-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-blindspotting-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 234234
+    },
+    {
+      "key": "inspiration-blindspotting-flower",
+      "fileName": "inspiration-blindspotting-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-blindspotting-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 139539
+    },
+    {
+      "key": "inspiration-les-choristes-reference",
+      "fileName": "inspiration-les-choristes-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-les-choristes-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 162966
+    },
+    {
+      "key": "inspiration-les-choristes-flower",
+      "fileName": "inspiration-les-choristes-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-les-choristes-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 134560
+    },
+    {
+      "key": "inspiration-cinema-paradiso-reference",
+      "fileName": "inspiration-cinema-paradiso-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-cinema-paradiso-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 77832
+    },
+    {
+      "key": "inspiration-cinema-paradiso-flower",
+      "fileName": "inspiration-cinema-paradiso-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-cinema-paradiso-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 132290
+    },
+    {
+      "key": "inspiration-legend-1900-reference",
+      "fileName": "inspiration-legend-1900-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-legend-1900-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 166947
+    },
+    {
+      "key": "inspiration-legend-1900-flower",
+      "fileName": "inspiration-legend-1900-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-legend-1900-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 150161
+    },
+    {
+      "key": "inspiration-thriller-reference",
+      "fileName": "inspiration-thriller-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-thriller-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 67724
+    },
+    {
+      "key": "inspiration-thriller-flower",
+      "fileName": "inspiration-thriller-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-thriller-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 114490
+    },
+    {
+      "key": "inspiration-folklore-reference",
+      "fileName": "inspiration-folklore-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-folklore-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 187329
+    },
+    {
+      "key": "inspiration-folklore-flower",
+      "fileName": "inspiration-folklore-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-folklore-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 129240
+    },
+    {
+      "key": "inspiration-black-tangerine-reference",
+      "fileName": "inspiration-black-tangerine-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-black-tangerine-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 93984
+    },
+    {
+      "key": "inspiration-black-tangerine-flower",
+      "fileName": "inspiration-black-tangerine-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-black-tangerine-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 129166
+    },
+    {
+      "key": "inspiration-u87-reference",
+      "fileName": "inspiration-u87-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-u87-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 140360
+    },
+    {
+      "key": "inspiration-u87-flower",
+      "fileName": "inspiration-u87-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-u87-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 124394
+    },
+    {
+      "key": "inspiration-floating-reference",
+      "fileName": "inspiration-floating-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-floating-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 182447
+    },
+    {
+      "key": "inspiration-floating-flower",
+      "fileName": "inspiration-floating-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-floating-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 140524
+    },
+    {
+      "key": "inspiration-dandan-youqing-reference",
+      "fileName": "inspiration-dandan-youqing-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-dandan-youqing-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 172262
+    },
+    {
+      "key": "inspiration-dandan-youqing-flower",
+      "fileName": "inspiration-dandan-youqing-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-dandan-youqing-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 141311
+    },
+    {
+      "key": "inspiration-golden-mountain-reference",
+      "fileName": "inspiration-golden-mountain-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-golden-mountain-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 111700
+    },
+    {
+      "key": "inspiration-golden-mountain-flower",
+      "fileName": "inspiration-golden-mountain-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-golden-mountain-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 166075
+    },
+    {
+      "key": "inspiration-po-pin-chau-reference",
+      "fileName": "inspiration-po-pin-chau-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-po-pin-chau-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 230756
+    },
+    {
+      "key": "inspiration-po-pin-chau-flower",
+      "fileName": "inspiration-po-pin-chau-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-po-pin-chau-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 154823
+    },
+    {
+      "key": "inspiration-meadow-reference",
+      "fileName": "inspiration-meadow-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-meadow-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 197100
+    },
+    {
+      "key": "inspiration-meadow-flower",
+      "fileName": "inspiration-meadow-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-meadow-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 197702
+    },
+    {
+      "key": "inspiration-spring-buds-reference",
+      "fileName": "inspiration-spring-buds-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-spring-buds-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 102276
+    },
+    {
+      "key": "inspiration-spring-buds-flower",
+      "fileName": "inspiration-spring-buds-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-spring-buds-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 158087
+    },
+    {
+      "key": "inspiration-summer-pond-reference",
+      "fileName": "inspiration-summer-pond-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-summer-pond-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 134002
+    },
+    {
+      "key": "inspiration-summer-pond-flower",
+      "fileName": "inspiration-summer-pond-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-summer-pond-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 156653
+    },
+    {
+      "key": "inspiration-autumn-leaves-reference",
+      "fileName": "inspiration-autumn-leaves-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-autumn-leaves-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 280014
+    },
+    {
+      "key": "inspiration-autumn-leaves-flower",
+      "fileName": "inspiration-autumn-leaves-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-autumn-leaves-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 165626
+    },
+    {
+      "key": "inspiration-winter-snow-reference",
+      "fileName": "inspiration-winter-snow-reference.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-winter-snow-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 189946
+    },
+    {
+      "key": "inspiration-winter-snow-flower",
+      "fileName": "inspiration-winter-snow-flower.jpg",
+      "sourcePath": "flower-assets/editorial/source/inspiration-winter-snow-diptych.png",
+      "sourceWidth": 768,
+      "sourceHeight": 1024,
+      "width": 768,
+      "height": 1024,
+      "bytes": 159127
+    }
+  ]
+}

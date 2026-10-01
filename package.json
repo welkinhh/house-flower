@@ -6,7 +6,8 @@
     "build": "node scripts/check-miniprogram.mjs && tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "backend:test": "node scripts/test-backend-core.mjs",
-    "assets:miniprogram": "node scripts/build-editorial-assets.mjs && node scripts/build-material-assets.mjs",
+    "assets:miniprogram": "node scripts/build-editorial-cloud-assets.mjs && node scripts/build-editorial-fileids.mjs && node scripts/build-material-assets.mjs",
+    "assets:cloud": "node scripts/build-editorial-cloud-assets.mjs",
     "preview:static": "node scripts/render-static-preview.mjs"
   },
   "keywords": [],

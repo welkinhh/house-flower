@@ -2,6 +2,7 @@ const crypto = require('node:crypto')
 const cloud = require('wx-server-sdk')
 const sharp = require('sharp')
 const { normalizeMaterialRows } = require('./record-validation')
+const EDITORIAL_ASSET_FILE_IDS = require('./editorial-assets.json')
 const {
   DAILY_QUOTA_LIMIT,
   dayKey,
@@ -370,6 +371,27 @@ async function getAssetUrls(event, identity, id) {
     }
   })
   return ok({ urls, fileIDs }, id)
+}
+
+async function getEditorialAssetUrls(event, identity, id) {
+  requireIdentity(identity, id)
+  const requested = Array.isArray(event.assetKeys) ? [...new Set(event.assetKeys.map((value) => String(value || '').trim()).filter(Boolean))] : []
+  if (!requested.length || requested.length > 500 || requested.some((key) => !/^[a-zA-Z0-9_-]{1,100}$/.test(key))) {
+    throw new BackendError('INVALID_INPUT', '案例图片列表格式不正确。')
+  }
+  const records = requested.map((assetKey) => ({ assetKey, fileID: EDITORIAL_ASSET_FILE_IDS[assetKey] })).filter((item) => typeof item.fileID === 'string' && item.fileID.startsWith('cloud://'))
+  if (records.length !== requested.length) throw new BackendError('EDITORIAL_ASSET_NOT_FOUND', '部分案例图片暂未发布，请稍后重试。', true, id)
+
+  const urls = {}
+  for (let index = 0; index < records.length; index += 50) {
+    const batch = records.slice(index, index + 50)
+    const result = await cloud.getTempFileURL({ fileList: batch.map((asset) => ({ fileID: asset.fileID, maxAge: 3600 })) })
+    ;(result.fileList || []).forEach((item, offset) => {
+      if (item && item.tempFileURL && batch[offset]) urls[batch[offset].assetKey] = item.tempFileURL
+    })
+  }
+  if (Object.keys(urls).length !== records.length) throw new BackendError('EDITORIAL_ASSET_URL_FAILED', '案例高清图片暂时无法读取，请重试。', true, id)
+  return ok({ urls }, id)
 }
 
 async function createTask(event, identity, id) {
@@ -936,6 +958,7 @@ exports.main = async (event, context) => {
     if (action === 'prepare-upload') return await prepareUpload(event, identity, id)
     if (action === 'complete-upload') return await completeUpload(event, identity, id)
     if (action === 'get-asset-urls') return await getAssetUrls(event, identity, id)
+    if (action === 'get-editorial-asset-urls') return await getEditorialAssetUrls(event, identity, id)
     if (action === 'compose-scene-reference') return await composeSceneReference(event, identity, id)
     if (action === 'create-task') return await createTask(event, identity, id)
     if (action === 'get-task') return await getTask(event, identity, id)

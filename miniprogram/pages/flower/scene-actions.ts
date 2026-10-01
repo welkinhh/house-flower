@@ -1,11 +1,8 @@
-import { EDITORIAL_ASSETS } from '../../data/editorial-assets'
 import { generateFlowerImageFromScene } from '../../utils/flower-image-ai'
 import { aiFailureMessage, logAiFailure } from '../../utils/ai-diagnostics'
 import { saveImageToAlbum } from '../../utils/image-album'
 import { dayKey, readWorks, saveWork, type WorkRecord } from '../../utils/houseflower-data'
 import { getDailyQuota, saveCloudWork } from '../../utils/backend'
-
-const SCENE_OPTIONS = EDITORIAL_ASSETS.scenes
 
 function persistImage(path: string, done: (savedPath: string) => void): void {
   if (!path) { done(''); return }
@@ -38,7 +35,7 @@ export const sceneActions = {
     })
   },
   chooseScenePreset(this: any, event: any) {
-    const scene = SCENE_OPTIONS.find((item) => item.id === String(event.currentTarget.dataset.id))
+    const scene = (this.data.sceneOptions || []).find((item: any) => item.id === String(event.currentTarget.dataset.id))
     if (!scene) return
     this.setData({ scenePath: scene.path, sceneAssetId: '', selectedSceneId: scene.id, sceneTitle: scene.name, sceneMessage: '', sceneSaved: false }, () => this.captureSceneRect())
   },

@@ -1,3 +1,4 @@
+import { EDITORIAL_ASSETS } from '../../data/editorial-assets'
 import { DATES_KEY, PROFILE_KEY, WORKS_KEY, buildCalendar, dateFromKey, dayKey, formatDateLabel, kindLabel, readDates, readWorks, saveWork, type ImportantDate, type WorkRecord } from '../../utils/houseflower-data'
 import { completeBackendUpload, deleteCloudDate, deleteCloudWork, prepareBackendUpload, requestAccountDeletion, saveCloudDate, saveCloudWork, saveSubscription, updateRemoteProfile } from '../../utils/backend'
 
@@ -30,6 +31,14 @@ function persistImage(path: string, done: (savedPath: string) => void): void {
   else save(path)
 }
 
+function editorialPathsForWork(work: WorkRecord): { previewPath: string; sourcePath: string } | null {
+  const sourceKey = String(work.sourceKey || '')
+  if (!sourceKey.startsWith('inspiration-gallery|')) return null
+  const caseId = sourceKey.slice('inspiration-gallery|'.length) as keyof typeof EDITORIAL_ASSETS.inspirationCases
+  const assets = EDITORIAL_ASSETS.inspirationCases[caseId]
+  return assets ? { previewPath: assets.flower, sourcePath: assets.reference } : null
+}
+
 export const worksActions = {
   async syncLocalWorks(this: any) {
     const source = readWorks().filter((work) => !String(work.id).startsWith('demo-') && (!work.cloudWorkId || work.cloudSyncPending))
@@ -42,18 +51,20 @@ export const worksActions = {
         const previewPath = String(work.previewPath || '')
         const sourcePath = String(work.sourcePath || '')
         const isBundleAsset = (path: string) => path.startsWith('/assets/')
+        const editorialPaths = editorialPathsForWork(work)
+        const isEditorialCase = Boolean(editorialPaths)
         let previewAssetId = String(work.previewAssetId || '') || (work.kind === 'materials' ? String(work.sourceAssetId || '') : '')
         let sourceAssetId = String(work.sourceAssetId || '')
-        if (!previewAssetId && previewPath && !isBundleAsset(previewPath)) previewAssetId = await uploadLocalAsset(previewPath)
-        if (!sourceAssetId && sourcePath && !isBundleAsset(sourcePath)) sourceAssetId = await uploadLocalAsset(sourcePath)
-        if (previewPath && !isBundleAsset(previewPath) && !previewAssetId) throw new Error('封面图片上传失败。')
-        if (sourcePath && !isBundleAsset(sourcePath) && !sourceAssetId) throw new Error('原始图片上传失败。')
+        if (!isEditorialCase && !previewAssetId && previewPath && !isBundleAsset(previewPath)) previewAssetId = await uploadLocalAsset(previewPath)
+        if (!isEditorialCase && !sourceAssetId && sourcePath && !isBundleAsset(sourcePath)) sourceAssetId = await uploadLocalAsset(sourcePath)
+        if (!isEditorialCase && previewPath && !isBundleAsset(previewPath) && !previewAssetId) throw new Error('封面图片上传失败。')
+        if (!isEditorialCase && sourcePath && !isBundleAsset(sourcePath) && !sourceAssetId) throw new Error('原始图片上传失败。')
         const remote = await saveCloudWork({
           id: work.cloudWorkId,
           expectedRevision: work.cloudRevision,
           kind: work.kind, title: work.title, sourceKey: work.sourceKey,
           previewAssetId, sourceAssetId, assetIds: work.assetIds || [], rows: work.rows,
-          metadata: { createdAt: work.createdAt, previewPath: previewAssetId ? '' : work.previewPath, sourcePath: sourceAssetId ? '' : work.sourcePath, note: work.note, notes: work.notes, status: work.status, sceneBouquetAssetId: work.sceneBouquetAssetId, sceneCompositeAssetId: work.sceneCompositeAssetId },
+          metadata: { createdAt: work.createdAt, previewPath: isEditorialCase ? editorialPaths!.previewPath : previewAssetId ? '' : work.previewPath, sourcePath: isEditorialCase ? editorialPaths!.sourcePath : sourceAssetId ? '' : work.sourcePath, note: work.note, notes: work.notes, status: work.status, sceneBouquetAssetId: work.sceneBouquetAssetId, sceneCompositeAssetId: work.sceneCompositeAssetId },
         })
         const index = next.findIndex((item) => item.id === work.id)
         if (index >= 0) next[index] = { ...next[index], cloudWorkId: remote.workId, cloudRevision: remote.revision, previewAssetId, sourceAssetId, cloudSyncPending: false }
@@ -91,7 +102,13 @@ export const worksActions = {
       this.refreshWorks()
       const saved = works.find((work) => work.sourceKey === record.sourceKey) || record
       try {
-        const remote = await saveCloudWork({ kind: record.kind, title: record.title, sourceKey: record.sourceKey, metadata: { previewPath: record.previewPath, sourcePath: record.sourcePath, createdAt: record.createdAt } })
+        const editorialPaths = editorialPathsForWork(record)
+        const remote = await saveCloudWork({
+          kind: record.kind,
+          title: record.title,
+          sourceKey: record.sourceKey,
+          metadata: { createdAt: record.createdAt, previewPath: editorialPaths && editorialPaths.previewPath, sourcePath: editorialPaths && editorialPaths.sourcePath },
+        })
         const synced = readWorks().map((work) => work.id === saved.id ? { ...work, cloudWorkId: remote.workId, cloudRevision: remote.revision, cloudSyncPending: false } : work)
         wx.setStorageSync(WORKS_KEY, synced)
         this.setData({ works: synced })

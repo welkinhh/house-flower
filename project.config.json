@@ -47,11 +47,12 @@
   "libVersion": "trial",
   "packOptions": {
     "ignore": [
-      { "type": "folder", "value": "assets/materials" }
+      { "type": "folder", "value": "assets/materials" },
+      { "type": "folder", "value": "assets/editorial" },
+      { "type": "folder", "value": "packages" }
     ],
     "include": [
-      { "type": "folder", "value": "assets/materials-ui" },
-      { "type": "folder", "value": "assets/editorial" }
+      { "type": "folder", "value": "assets/materials-ui" }
     ]
   },
   "appid": "wx99a7f60aaec06d4d"

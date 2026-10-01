@@ -38,6 +38,7 @@ function resolveLocalImport(fromFile, request) {
 
 const appConfig = readJson(appConfigPath)
 let routeCount = 0
+let subpackageRouteCount = 0
 for (const route of appConfig.pages || []) {
   const pageBase = path.join(sourceRoot, route)
   const scriptExists = fs.existsSync(pageBase + '.ts') || fs.existsSync(pageBase + '.js')
@@ -48,6 +49,22 @@ for (const route of appConfig.pages || []) {
   }
   if (!scriptExists) problems.push('App route "' + route + '" is missing its .ts/.js script')
   if (scriptExists) routeCount += 1
+}
+for (const subpackage of appConfig.subPackages || appConfig.subpackages || []) {
+  for (const route of subpackage.pages || []) {
+    const pageBase = path.join(sourceRoot, subpackage.root, route)
+    const scriptExists = fs.existsSync(pageBase + '.ts') || fs.existsSync(pageBase + '.js')
+    for (const extension of ['.wxml', '.wxss']) {
+      if (!fs.existsSync(pageBase + extension)) {
+        problems.push('Subpackage route "' + subpackage.root + '/' + route + '" is missing ' + extension)
+      }
+    }
+    if (!fs.existsSync(pageBase + '.json')) {
+      problems.push('Subpackage route "' + subpackage.root + '/' + route + '" is missing .json')
+    }
+    if (!scriptExists) problems.push('Subpackage route "' + subpackage.root + '/' + route + '" is missing its .ts/.js script')
+    if (scriptExists) subpackageRouteCount += 1
+  }
 }
 
 const sourceFiles = walk(sourceRoot, (file) => file.endsWith('.ts'))
@@ -78,7 +95,7 @@ if (fs.existsSync(templatePath)) {
     problems.push('WXML event "' + name + '" has no matching page/action handler')
   }
   if (problems.length === 0) {
-    console.log('Mini Program structure OK: ' + routeCount + ' app route, ' + importCount + ' local imports, ' + handlers.size + ' WXML handlers.')
+    console.log('Mini Program structure OK: ' + routeCount + ' app route, ' + subpackageRouteCount + ' subpackage routes, ' + importCount + ' local imports, ' + handlers.size + ' WXML handlers.')
   }
 } else {
   problems.push('Missing miniprogram/pages/flower/index.wxml')

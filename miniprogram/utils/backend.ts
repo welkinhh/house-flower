@@ -224,6 +224,13 @@ export async function getCloudAssetDetails(assetIds: string[]): Promise<{ urls: 
   return { urls, fileIDs }
 }
 
+export async function getEditorialAssetUrls(assetKeys: string[]): Promise<Record<string, string>> {
+  const keys = [...new Set(assetKeys.map((key) => String(key || '').trim()).filter((key) => /^[a-zA-Z0-9_-]{1,100}$/.test(key)))]
+  if (!keys.length || keys.length > 500) throw new Error('案例图片清单格式不正确。')
+  const data = await callBackend<{ urls: Record<string, string> }>({ action: 'get-editorial-asset-urls', assetKeys: keys })
+  return data.urls || {}
+}
+
 export async function saveSubscription(results: Record<string, string>): Promise<void> {
   await callBackend({ action: 'save-subscription', results })
 }

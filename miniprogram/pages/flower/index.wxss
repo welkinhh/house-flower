@@ -419,6 +419,17 @@ button::after { border: 0; }
   background: linear-gradient(180deg, rgba(246, 241, 234, 0.5), rgba(246, 241, 234, 0.06) 40%, rgba(246, 241, 234, 0.93));
 }
 
+.home-image-status {
+  position: absolute;
+  z-index: 1;
+  top: 52%;
+  right: 32rpx;
+  left: 32rpx;
+  color: #8a7c6f;
+  font-size: 22rpx;
+  text-align: center;
+}
+
 .hero-head {
   position: relative;
   z-index: 1;
@@ -1647,6 +1658,12 @@ button::after { border: 0; }
 .detail-desc {
   color: #8a7c6f;
   font: 23rpx/1.7 "Songti SC", serif;
+}
+
+.detail-viewer-hint {
+  align-self: flex-start;
+  color: #a88b79;
+  font: 20rpx/1.4 "Songti SC", serif;
 }
 
 .detail-create {

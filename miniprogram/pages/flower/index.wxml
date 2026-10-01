@@ -10,8 +10,9 @@
 
   <!-- ============ 1. 首页（整屏铺满，卡片压在底部） ============ -->
   <view wx:if="{{mode === 'home'}}" class="home-screen">
-    <image class="home-bg" src="{{homeHero}}" mode="aspectFill" />
+    <image wx:if="{{editorialAssetsReady}}" class="home-bg" src="{{homeHero}}" mode="aspectFill" />
     <view class="home-veil"></view>
+    <view wx:if="{{!editorialAssetsReady}}" class="home-image-status">{{editorialAssetsLoading ? '正在加载高清图片…' : '高清图片暂不可用，请检查网络后重试'}}</view>
     <view class="hero-head">
       <text class="hero-brand">House花生</text>
       <view class="hero-slogan">
@@ -22,7 +23,7 @@
 
     <view class="home-entries">
       <button wx:for="{{homeEntries}}" wx:key="id" class="hcard" data-id="{{item.id}}" bindtap="openEntry">
-        <view class="hcard-frame"><image src="{{item.path}}" mode="aspectFill" /></view>
+        <view class="hcard-frame"><image wx:if="{{editorialAssetsReady && item.path}}" src="{{item.path}}" mode="aspectFill" lazy-load="true" /></view>
         <view class="hcard-copy">
           <text class="hcard-title">{{item.title}}</text>
           <text class="hcard-note">{{item.note}}</text>
@@ -55,10 +56,10 @@
       <text class="section-title">灵感示例</text>
     </view>
     <view class="ex-list">
-      <button wx:for="{{inspirationExamples}}" wx:key="id" class="ex-row" data-path="{{item.path}}" data-label="{{item.title}}" bindtap="chooseInspirationSample">
-        <image class="ex-img" src="{{item.path}}" mode="aspectFill" />
+      <button wx:for="{{inspirationExamples}}" wx:key="id" class="ex-row" data-path="{{item.path}}" data-label="{{item.title}}" data-asset-key="{{item.assetKey}}" bindtap="chooseInspirationSample" disabled="{{!editorialAssetsReady}}">
+        <image wx:if="{{editorialAssetsReady && item.path}}" class="ex-img" src="{{item.path}}" mode="aspectFill" lazy-load="true" />
         <view class="ex-link"><text>→</text></view>
-        <image class="ex-img result" src="{{item.resultPath}}" mode="aspectFill" />
+        <image wx:if="{{editorialAssetsReady && item.resultPath}}" class="ex-img result" src="{{item.resultPath}}" mode="aspectFill" lazy-load="true" />
         <view class="ex-tx">
           <text class="ex-title">{{item.title}}</text>
           <text class="ex-desc">{{item.description}}</text>
@@ -126,8 +127,8 @@
       <text class="section-title">灵感示例</text>
     </view>
     <view class="ex-list">
-      <button wx:for="{{recognitionExamples}}" wx:key="id" class="ex-row" data-id="{{item.id}}" data-path="{{item.path}}" bindtap="chooseReplicaSample">
-        <image class="ex-img wide" src="{{item.path}}" mode="aspectFill" />
+      <button wx:for="{{recognitionExamples}}" wx:key="id" class="ex-row" data-id="{{item.id}}" data-path="{{item.path}}" data-asset-key="{{item.assetKey}}" bindtap="chooseReplicaSample" disabled="{{!editorialAssetsReady}}">
+        <image wx:if="{{editorialAssetsReady && item.path}}" class="ex-img wide" src="{{item.path}}" mode="aspectFill" lazy-load="true" />
         <view class="ex-tx">
           <text class="ex-title">{{item.label}}</text>
           <text class="ex-desc">{{item.description}}</text>
@@ -201,7 +202,7 @@
         </view>
       </button>
       <button class="scene-chip" bindtap="chooseScene" disabled="{{sceneGenerating}}">
-        <image wx:if="{{scenePath}}" src="{{scenePath}}" mode="aspectFit" class="chip-thumb" />
+        <image wx:if="{{editorialAssetsReady && scenePath}}" src="{{scenePath}}" mode="aspectFit" class="chip-thumb" lazy-load="true" />
         <view wx:else class="chip-thumb chip-empty">＋</view>
         <view class="chip-copy">
           <text class="chip-label">{{scenePath ? '更换场景图' : '上传场景图'}}</text>
@@ -210,7 +211,7 @@
       </button>
     </view>
     <view class="scene-board" id="scene-board">
-      <image wx:if="{{scenePath}}" class="scene-background" src="{{scenePath}}" mode="aspectFit" />
+      <image wx:if="{{editorialAssetsReady && scenePath}}" class="scene-background" src="{{scenePath}}" mode="aspectFit" lazy-load="true" />
       <view wx:else class="scene-empty"><text>先选择一个生活场景</text></view>
       <image wx:if="{{sceneBouquetPath}}" class="scene-bouquet-overlay" src="{{sceneBouquetPath}}" mode="aspectFit" style="{{sceneBouquetStyle}}" bindtouchstart="onSceneBouquetTouchStart" bindtouchmove="onSceneBouquetTouchMove" bindtouchend="onSceneBouquetTouchEnd" bindtouchcancel="onSceneBouquetTouchEnd" />
       <text wx:if="{{sceneBouquetPath}}" class="drag-hint">拖动调整位置</text>
@@ -226,8 +227,8 @@
     </view>
     <scroll-view scroll-x enhanced show-scrollbar="false" class="scene-strip">
       <view class="scene-list">
-        <button wx:for="{{sceneOptions}}" wx:key="id" class="scene-option {{selectedSceneId === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="chooseScenePreset" disabled="{{sceneGenerating}}">
-          <image src="{{item.path}}" mode="aspectFill" />
+        <button wx:for="{{sceneOptions}}" wx:key="id" class="scene-option {{selectedSceneId === item.id ? 'selected' : ''}}" data-id="{{item.id}}" bindtap="chooseScenePreset" disabled="{{sceneGenerating || !editorialAssetsReady}}">
+          <image wx:if="{{editorialAssetsReady && item.path}}" src="{{item.path}}" mode="aspectFill" lazy-load="true" />
           <text>{{item.name}}</text>
           <view wx:if="{{selectedSceneId === item.id}}" class="scene-check">✓</view>
         </button>
@@ -271,7 +272,7 @@
       <swiper class="bn-swiper" autoplay circular interval="3500" duration="420" current="{{bannerCurrent}}" bindchange="onBannerChange">
         <swiper-item wx:for="{{inspirationBanners}}" wx:key="id">
           <view class="bn" data-id="{{item.caseId}}" bindtap="openInspirationCase">
-            <image src="{{item.path}}" mode="aspectFill" />
+            <image wx:if="{{editorialAssetsReady && item.path}}" src="{{item.path}}" mode="aspectFill" lazy-load="true" />
             <view class="bn-veil"></view>
             <view class="bn-tx">
               <text class="bn-title">{{item.title}}</text>
@@ -290,28 +291,30 @@
     </view>
 
     <scroll-view scroll-y enhanced show-scrollbar="false" class="insp-feed">
-      <view class="wf-grid">
+      <view wx:if="{{editorialAssetsReady}}" class="wf-grid">
         <button wx:for="{{inspirationItems}}" wx:key="id" class="wf-card" data-id="{{item.id}}" bindtap="openInspirationCase">
-          <view class="wf-img-frame"><image src="{{item.path}}" mode="aspectFill" /></view>
+          <view class="wf-img-frame"><image src="{{item.path}}" mode="aspectFill" lazy-load="true" /></view>
           <view class="wf-tx">
             <text class="wf-name">{{item.title}}</text>
             <text class="wf-cat">{{item.categoryLabel}}</text>
           </view>
         </button>
       </view>
-      <view wx:if="{{!inspirationItems.length}}" class="material-empty">这个分类还没有内容，换一个看看</view>
+      <view wx:if="{{!editorialAssetsReady}}" class="material-empty">{{editorialAssetsLoading ? '正在加载高清图片…' : '高清图片暂不可用，请检查网络后重试'}}</view>
+      <view wx:elif="{{!inspirationItems.length}}" class="material-empty">这个分类还没有内容，换一个看看</view>
     </scroll-view>
   </view>
 
-  <!-- 灵感详情：模糊背景 + 成品大图 + 保存作品 -->
+  <!-- 灵感详情：模糊背景 + 成品预览 + 高清原图入口 -->
   <view wx:if="{{showInspirationDetail}}" class="modal-mask inspiration-detail-mask" catchtap="closeInspirationDetail">
     <view class="detail-card" catchtap="stopPropagation">
       <button class="modal-close detail-close" bindtap="closeInspirationDetail" aria-label="关闭">×</button>
-      <image class="detail-image" src="{{selectedInspiration.resultPath}}" mode="aspectFit" bindtap="previewImage" data-path="{{selectedInspiration.resultPath}}" />
+      <image wx:if="{{editorialAssetsReady}}" class="detail-image" src="{{selectedInspiration.resultPath}}" mode="aspectFit" bindtap="previewImage" data-path="{{selectedInspiration.resultPath}}" show-menu-by-longpress="true" />
       <view class="detail-copy">
         <text class="detail-kicker">{{selectedInspiration.categoryLabel}}</text>
         <text class="detail-title">{{selectedInspiration.title}}</text>
         <text class="detail-desc">{{selectedInspiration.description}}</text>
+        <text class="detail-viewer-hint">图片已加载高清版本，轻触可继续放大</text>
         <view class="detail-actions">
           <button class="btn outline" bindtap="generateInspirationList"><view class="list-icon"></view>生成清单</button>
           <button class="btn primary" bindtap="saveInspirationToWorks" disabled="{{selectedInspiration.saved}}"><view class="save-icon"></view>{{selectedInspiration.saved ? '已保存到作品集' : '保存到作品集'}}</button>
@@ -324,7 +327,7 @@
   <view wx:if="{{mode === 'works'}}" class="screen works-screen">
     <view class="works-header">
       <view class="avatar-button" bindtap="openSettings">
-        <image class="avatar-image" src="{{userProfile.avatarUrl}}" mode="aspectFill" />
+        <image wx:if="{{editorialAssetsReady || userProfile.avatarAssetId}}" class="avatar-image" src="{{userProfile.avatarUrl}}" mode="aspectFill" />
       </view>
       <view class="header-copy">
         <text class="header-name">{{userProfile.name}}</text>
@@ -359,7 +362,7 @@
         <view wx:if="{{visibleWorks.length}}" class="works-grid">
           <view wx:for="{{visibleWorks}}" wx:key="id" class="work-card {{item.selected ? 'selected' : ''}}">
             <view class="work-image-wrap" data-index="{{index}}" bindtap="openWork" bindlongpress="workLongPress">
-              <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" class="work-image" />
+          <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" class="work-image" lazy-load="true" />
               <view wx:else class="work-image-empty"><text>House花生</text></view>
               <view class="work-veil"></view>
               <view class="work-tx">
@@ -402,7 +405,7 @@
       <view class="calendar-grid">
         <view wx:for="{{calendarDays}}" wx:key="dateKey" class="cal-cell {{item.selected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.inMonth ? '' : 'is-blank'}}" data-date="{{item.dateKey}}" bindtap="selectCalendarDate">
           <text class="cal-num">{{item.inMonth ? item.day : ''}}</text>
-          <image wx:if="{{item.inMonth && item.previewPath}}" class="cal-thumb" src="{{item.previewPath}}" mode="aspectFill" />
+          <image wx:if="{{editorialAssetsReady && item.inMonth && item.previewPath}}" class="cal-thumb" src="{{item.previewPath}}" mode="aspectFill" lazy-load="true" />
           <view wx:if="{{item.inMonth && item.hasEvent}}" class="cal-event"></view>
         </view>
       </view>
@@ -422,7 +425,7 @@
           <text class="date-event-edit">编辑 ›</text>
         </view>
         <view wx:for="{{selectedDateWorks}}" wx:key="id" class="dw-card" data-id="{{item.id}}" bindtap="openCalendarWork">
-          <image class="dw-thumb" src="{{item.previewPath}}" mode="aspectFill" />
+          <image wx:if="{{editorialAssetsReady && item.previewPath}}" class="dw-thumb" src="{{item.previewPath}}" mode="aspectFill" lazy-load="true" />
           <view class="dw-copy">
             <text class="dw-title">{{item.title}}</text>
             <text class="dw-meta">{{item.dateLabel}} · {{item.kindLabel}}</text>
@@ -452,7 +455,7 @@
   <view wx:if="{{mode === 'settings'}}" class="screen settings-screen">
     <view class="settings-card">
       <button class="settings-avatar" bindtap="chooseAvatar">
-        <image src="{{userProfile.avatarUrl}}" mode="aspectFill" />
+        <image wx:if="{{editorialAssetsReady || userProfile.avatarAssetId}}" src="{{userProfile.avatarUrl}}" mode="aspectFill" />
         <view class="avatar-edit">更换</view>
       </button>
       <text class="settings-hint">点头像可更换头像</text>

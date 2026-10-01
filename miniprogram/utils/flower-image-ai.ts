@@ -88,6 +88,19 @@ function getFileSize(filePath: string): Promise<number> {
   })
 }
 
+async function downloadRemoteImage(filePath: string, label: string): Promise<{ filePath: string; cleanup?: () => Promise<void> }> {
+  if (!/^https?:\/\//i.test(filePath)) return { filePath }
+  const downloaded = await new Promise<any>((resolve, reject) => wx.downloadFile({
+    url: filePath,
+    success: (result) => result.statusCode === 200 && result.tempFilePath ? resolve(result) : reject(new Error(`${label}下载失败，请检查网络后重试。`)),
+    fail: reject,
+  }))
+  return {
+    filePath: downloaded.tempFilePath,
+    cleanup: () => new Promise<void>((resolve) => wx.getFileSystemManager().unlink({ filePath: downloaded.tempFilePath, complete: () => resolve() })),
+  }
+}
+
 async function prepareSceneUploadSource(
   filePath: string,
   extension: 'jpg' | 'png',
@@ -201,8 +214,8 @@ export async function resumeFlowerImageTask(options: ResumeFlowerImageTaskOption
 export async function generateFlowerImageFromReference(
   options: GenerateFlowerImageOptions,
 ): Promise<GeneratedFlowerImage> {
-  const filePath = String(options.filePath || '').trim()
-  if (!filePath) throw new Error('请先选择一张参考图片。')
+  const sourcePath = String(options.filePath || '').trim()
+  if (!sourcePath) throw new Error('请先选择一张参考图片。')
   if (!CLOUDBASE_ENV_ID) throw new Error('尚未配置 CloudBase 环境。')
 
   const prompt = String(options.prompt || '').trim()
@@ -211,29 +224,37 @@ export async function generateFlowerImageFromReference(
 
   options.onStage?.('preparing')
   options.onProgress?.({ mode: 'determinate', percent: 5, label: '正在读取原图', note: '检查格式，不裁切、不拉伸图片' })
-  const extension = await getImageType(filePath)
-  options.onProgress?.({ mode: 'determinate', percent: 14, label: '正在检查原图', note: '确认图片格式' })
-  const fileSize = await getFileSize(filePath)
-  if (fileSize > MAX_REFERENCE_IMAGE_BYTES) throw new Error('原图超过 10 MB，请选择一张更小的原图；图片不会被拉伸或强行压缩。')
-  options.onProgress?.({ mode: 'determinate', percent: 20, label: '原图检查完成', note: '准备安全上传' })
+  const uploadSource = await downloadRemoteImage(sourcePath, '参考图片')
+  let uploaded: any
+  let prepared: { assetId: string; cloudPath: string }
+  try {
+    const filePath = uploadSource.filePath
+    const extension = await getImageType(filePath)
+    options.onProgress?.({ mode: 'determinate', percent: 14, label: '正在检查原图', note: '确认图片格式' })
+    const fileSize = await getFileSize(filePath)
+    if (fileSize > MAX_REFERENCE_IMAGE_BYTES) throw new Error('原图超过 10 MB，请选择一张更小的原图；图片不会被拉伸或强行压缩。')
+    options.onProgress?.({ mode: 'determinate', percent: 20, label: '原图检查完成', note: '准备安全上传' })
 
-  options.onProgress?.({ mode: 'determinate', percent: 23, label: '正在准备上传', note: '正在登记本次图片素材' })
-  const prepared = await prepareBackendUpload('inspiration', extension)
-  options.onStage?.('uploading')
-  options.onProgress?.({ mode: 'determinate', percent: 0, label: '正在上传原图', note: '上传进度' })
-  const uploadTask: any = wx.cloud.uploadFile({ cloudPath: prepared.cloudPath, filePath })
-  if (uploadTask && typeof uploadTask.onProgressUpdate === 'function') {
-    uploadTask.onProgressUpdate((event: any) => {
-      const percent = Math.max(0, Math.min(100, Math.round(Number(event && event.progress) || 0)))
-      options.onProgress?.({ mode: 'determinate', percent: 25 + Math.round(percent * 0.3), label: '正在上传原图', note: '真实上传进度' })
-    })
-  } else {
-    options.onProgress?.({ mode: 'indeterminate', percent: 0, label: '正在上传原图', note: '原图正在安全上传' })
+    options.onProgress?.({ mode: 'determinate', percent: 23, label: '正在准备上传', note: '正在登记本次图片素材' })
+    prepared = await prepareBackendUpload('inspiration', extension)
+    options.onStage?.('uploading')
+    options.onProgress?.({ mode: 'determinate', percent: 0, label: '正在上传原图', note: '上传进度' })
+    const uploadTask: any = wx.cloud.uploadFile({ cloudPath: prepared.cloudPath, filePath })
+    if (uploadTask && typeof uploadTask.onProgressUpdate === 'function') {
+      uploadTask.onProgressUpdate((event: any) => {
+        const percent = Math.max(0, Math.min(100, Math.round(Number(event && event.progress) || 0)))
+        options.onProgress?.({ mode: 'determinate', percent: 25 + Math.round(percent * 0.3), label: '正在上传原图', note: '真实上传进度' })
+      })
+    } else {
+      options.onProgress?.({ mode: 'indeterminate', percent: 0, label: '正在上传原图', note: '原图正在安全上传' })
+    }
+    uploaded = await uploadTask
+    if (!uploaded.fileID) throw new Error('参考图片上传失败，请重试。')
+    options.onProgress?.({ mode: 'determinate', percent: 57, label: '正在校验原图', note: '确认原图已安全上传' })
+    await completeBackendUpload(prepared.assetId, uploaded.fileID)
+  } finally {
+    if (uploadSource.cleanup) await uploadSource.cleanup().catch(() => {})
   }
-  const uploaded = await uploadTask
-  if (!uploaded.fileID) throw new Error('参考图片上传失败，请重试。')
-  options.onProgress?.({ mode: 'determinate', percent: 57, label: '正在校验原图', note: '确认原图已安全上传' })
-  await completeBackendUpload(prepared.assetId, uploaded.fileID)
   options.onProgress?.({ mode: 'determinate', percent: 61, label: '原图准备完成', note: '正在创建 AI 任务' })
 
   options.onStage?.('generating')
@@ -256,11 +277,14 @@ async function uploadSceneAsset(
 ): Promise<{ assetId: string; fileID: string }> {
   let stage = '格式检查'
   let uploadSource: { filePath: string; cleanup?: () => Promise<void> } | null = null
+  let remoteSource: { filePath: string; cleanup?: () => Promise<void> } | null = null
   try {
     onProgress?.({ mode: 'determinate', percent: 0, label: `正在检查${label}`, note: '确认图片格式' })
-    const extension = await getImageType(filePath)
+    stage = '下载云端场景图片'
+    remoteSource = await downloadRemoteImage(filePath, label)
+    const extension = await getImageType(remoteSource.filePath)
     stage = '转换内置图片'
-    uploadSource = await prepareSceneUploadSource(filePath, extension)
+    uploadSource = await prepareSceneUploadSource(remoteSource.filePath, extension)
     stage = '大小检查'
     const fileSize = await getFileSize(uploadSource.filePath)
     if (fileSize > MAX_REFERENCE_IMAGE_BYTES) throw new Error(`${label}超过 10 MB，请选择更小的图片。`)
@@ -286,6 +310,7 @@ async function uploadSceneAsset(
     throw sceneAssetError(error, label, stage)
   } finally {
     if (uploadSource && uploadSource.cleanup) await uploadSource.cleanup().catch(() => {})
+    if (remoteSource && remoteSource.cleanup) await remoteSource.cleanup().catch(() => {})
   }
 }
 

@@ -154,7 +154,7 @@ export const creationActions = {
       return
     }
     this.setData({
-      inspirationPath: '', inspirationMessage: '',
+      inspirationPath: '', inspirationAssetKey: '', inspirationMessage: '',
       generationPreviewPath: '', generationSourcePath: '', generationFileID: '', sourceFileID: '', generationAssetId: '', generationSourceAssetId: '',
       bouquetTitle: '生活画面 · 花束', generationDateLabel: '', generationDemo: false,
       generating: false, generationResumePending: false, generatedSaved: false, generationProgressPercent: 0,
@@ -227,7 +227,7 @@ export const creationActions = {
     }
     if (pending) this.clearPendingFlowerGeneration()
     chooseImage((path) => this.setData({
-      inspirationPath: path, generationSourcePath: '', generationPreviewPath: '', generationFileID: '', sourceFileID: '', generationAssetId: '', generationSourceAssetId: '',
+      inspirationPath: path, inspirationAssetKey: '', generationSourcePath: '', generationPreviewPath: '', generationFileID: '', sourceFileID: '', generationAssetId: '', generationSourceAssetId: '',
       bouquetTitle: '生活画面 · 花束', generationDateLabel: '', generationDemo: false, generatedSaved: false, generationResumePending: false, inspirationMessage: '',
       generationProgressPercent: 0, generationProgressLabel: '', generationProgressNote: '', generationProgressFillStyle: '',
     }))
@@ -242,9 +242,10 @@ export const creationActions = {
     if (pending) this.clearPendingFlowerGeneration()
     const path = String(event.currentTarget.dataset.path || '')
     const label = String(event.currentTarget.dataset.label || '生活画面')
+    const assetKey = String(event.currentTarget.dataset.assetKey || '')
     if (!path) return
     this.setData({
-      inspirationPath: path, generationSourcePath: '', generationPreviewPath: '', generationFileID: '', sourceFileID: '', generationAssetId: '', generationSourceAssetId: '',
+      inspirationPath: path, inspirationAssetKey: assetKey, generationSourcePath: '', generationPreviewPath: '', generationFileID: '', sourceFileID: '', generationAssetId: '', generationSourceAssetId: '',
       bouquetTitle: label + ' · 花束', generationDateLabel: '', generationDemo: false, generatedSaved: false, generationResumePending: false, inspirationMessage: '',
       generationProgressPercent: 0, generationProgressLabel: '', generationProgressNote: '', generationProgressFillStyle: '',
     })
@@ -348,7 +349,7 @@ export const creationActions = {
       || (this.data.generationFileID && work.fileID === this.data.generationFileID))
     const begin = (localPath: string) => {
       this.setData({
-        replicaPath: localPath, replicaCandidates: [], replicaNotes: [], replicaAssetId: '',
+        replicaPath: localPath, replicaAssetKey: '', replicaCandidates: [], replicaNotes: [], replicaAssetId: '',
         replicaMessage: '', replicaDemo: false, replicaSampleId: '', replicaParentWorkId: sourceWork ? sourceWork.id : '',
         sourceFileID: this.data.generationFileID || '', recognitionSaved: false,
       }, () => {
@@ -366,14 +367,14 @@ export const creationActions = {
   },
   chooseReplica(this: any) {
     chooseImage((path) => this.setData({
-      replicaPath: path, replicaCandidates: [], replicaNotes: [], replicaAssetId: '', replicaDemo: false, recognitionSaved: false,
+      replicaPath: path, replicaAssetKey: '', replicaCandidates: [], replicaNotes: [], replicaAssetId: '', replicaDemo: false, recognitionSaved: false,
       replicaSampleId: '', replicaParentWorkId: '', replicaMessage: '',
     }))
   },
   chooseReplicaSample(this: any, event: any) {
     const path = String(event.currentTarget.dataset.path || '')
     if (path) this.setData({
-      replicaPath: path, replicaCandidates: [], replicaNotes: [], replicaAssetId: '',
+      replicaPath: path, replicaAssetKey: String(event.currentTarget.dataset.assetKey || ''), replicaCandidates: [], replicaNotes: [], replicaAssetId: '',
       replicaSampleId: String(event.currentTarget.dataset.id || 'hand-bouquet'), replicaParentWorkId: '',
       replicaDemo: false, recognitionSaved: false, replicaMessage: '',
     })
@@ -640,7 +641,7 @@ export const creationActions = {
     if (!work || !work.previewPath) return
     const begin = (path: string) => {
       this.setData({
-        replicaPath: path, replicaCandidates: [], replicaNotes: [], replicaAssetId: '',
+        replicaPath: path, replicaAssetKey: '', replicaCandidates: [], replicaNotes: [], replicaAssetId: '',
         sourceFileID: work.fileID || '', replicaSampleId: path.indexOf('/assets/') === 0 ? 'hand-bouquet' : '',
         replicaParentWorkId: work.id, replicaDemo: false, recognitionSaved: false, replicaMessage: '',
       }, () => {
