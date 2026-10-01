@@ -79,12 +79,14 @@ AI 只由 `flowerTaskWorker` 调用。全局 AI 资源开关关闭时，worker �
 
 运营和订阅需要在函数环境变量中配置：
 
-- `ADMIN_OPENIDS`：允许查看运营数据的微信 OpenID，逗号分隔。
+- `ADMIN_OPENIDS`：允许查看运营数据、给用户赠送次数的微信 OpenID，逗号分隔。
 - `SUBSCRIBE_TEMPLATE_DATE`：重要日子提醒模板 ID。
 - `SUBSCRIBE_TEMPLATE_TASK`：AI 任务完成模板 ID。
 - `SUBSCRIBE_FIELD_MAP_JSON`：模板字段映射，例如 `{"important_date":{"thing1":"title","time2":"date","phrase3":"note"},"ai_task":{"thing1":"title","phrase3":"note"}}`。
 
 模板 ID 和字段必须与微信公众平台实际模板一致，否则发送会失败；代码不会把模板字段写死成平台保证可用的格式。
+
+管理员可在小程序“作品 > 点击头像 > 运营数据”中给指定用户赠送一次性次数。用户 ID 使用作品页设置中显示的完整 ID；赠送次数保存在 `users.bonusQuotaBalance`，赠送记录写入已有的 `quota_ledger` 集合，不随每日额度重置，且在每日额度耗尽后使用。后端更新后需重新部署 `flowerBackend`，并上传包含管理表单的小程序版本。
 
 ## 2026-10-01 实际联调状态
 

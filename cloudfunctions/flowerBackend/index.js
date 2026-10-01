@@ -7,6 +7,7 @@ const {
   dayKey,
   userIdFor,
   quotaId,
+  quotaSource,
   normalizeQuota,
 } = require('./quota')
 
@@ -102,6 +103,8 @@ async function getOrCreateUser(identity) {
     nickname: '',
     avatarAssetId: '',
     activeTaskId: '',
+    bonusQuotaBalance: 0,
+    bonusQuotaReserved: 0,
     createdAt: now,
     lastSeenAt: now,
   }
@@ -142,7 +145,8 @@ async function ensureQuota(userId, date = new Date()) {
 
 async function getQuota(userId, date = new Date()) {
   const current = await ensureQuota(userId, date)
-  return normalizeQuota(current.data, date)
+  const user = await readDocument('users', userId)
+  return normalizeQuota(current.data, date, user || {})
 }
 
 async function bootstrap(identity, id) {
@@ -257,6 +261,47 @@ async function adminSummary(event, identity, id) {
     eventCounts,
     preferences: Object.entries(preferences).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count).slice(0, 20),
   }, id)
+}
+
+async function grantBonusQuota(event, identity, id) {
+  requireIdentity(identity, id)
+  if (!isAdmin(identity)) throw new BackendError('FORBIDDEN', '当前账号没有赠送次数权限。')
+  const targetUserId = ensureString(event.userId, '用户 ID', 64)
+  if (!/^[a-f0-9]{32}$/i.test(targetUserId)) throw new BackendError('INVALID_INPUT', '请输入作品页设置中显示的完整用户 ID。')
+  const count = Number(event.count)
+  if (!Number.isInteger(count) || count < 1 || count > 1000) throw new BackendError('INVALID_INPUT', '赠送次数需为 1–1000 的整数。')
+  const grantKey = ensureIdempotencyKey(event.grantId)
+  const grantDocId = `gift_${crypto.createHash('sha256').update(`${identity.userId}:${grantKey}`).digest('hex').slice(0, 40)}`
+  const reason = String(event.reason || '').trim().slice(0, 120)
+  const now = new Date()
+  let alreadyGranted = false
+  await db.runTransaction(async (transaction) => {
+    alreadyGranted = false
+    const prior = await readDocument('quota_ledger', grantDocId, transaction)
+    if (prior) {
+      if (prior.ownerId !== targetUserId || Number(prior.amount) !== count || String(prior.reason || '') !== reason) {
+        throw new BackendError('IDEMPOTENCY_CONFLICT', '这笔赠送编号已用于其他内容，请重新提交。')
+      }
+      alreadyGranted = true
+      return
+    }
+    const userRef = transaction.collection('users').doc(targetUserId)
+    const userResult = await userRef.get()
+    const target = userResult && userResult.data
+    if (!target || target.status !== 'active') throw new BackendError('NOT_FOUND', '用户不存在或账号当前不可用。')
+    const currentBalance = Math.max(0, Number(target.bonusQuotaBalance) || 0)
+    await userRef.update({ data: { bonusQuotaBalance: currentBalance + count, updatedAt: now } })
+    await transaction.collection('quota_ledger').doc(grantDocId).set({ data: {
+      ownerId: targetUserId,
+      actorId: identity.userId,
+      entryType: 'gift',
+      amount: count,
+      reason,
+      createdAt: now,
+    } })
+  })
+  const quota = await getQuota(targetUserId)
+  return ok({ userId: targetUserId, count, alreadyGranted, quota }, id)
 }
 
 async function prepareUpload(event, identity, id) {
@@ -401,16 +446,20 @@ async function createTask(event, identity, id) {
     const current = await readDocument('daily_quotas', quota.id, transaction)
     if (!current) throw new BackendError('QUOTA_STATE_INVALID', '次数状态正在核对，请稍后刷新。', true)
     const value = current
-    const available = DAILY_QUOTA_LIMIT - (Number(value.used) || 0) - (Number(value.reserved) || 0)
-    if (available <= 0) throw new BackendError('QUOTA_EXCEEDED', '今日 AI 次数已用完，明天 00:00 后恢复。')
+    const source = quotaSource(value, user)
+    if (!source) throw new BackendError('QUOTA_EXCEEDED', '今日 AI 次数已用完，明天 00:00 后恢复。')
     const taskAssetsResult = await transaction.collection('assets').where({ assetId: _.in(taskAssetIds), status: 'ready' }).limit(taskAssetIds.length).get()
     const taskAssets = (taskAssetsResult.data || []).filter((asset) => asset.ownerId === identity.userId || asset.ownerOpenId === identity.openid)
     if (taskAssets.length !== taskAssetIds.length) throw new BackendError('INVALID_INPUT', '任务图片已失效，请重新选择后再试。')
-    await transaction.collection('daily_quotas').doc(quota.id).update({ data: { reserved: _.inc(1), updatedAt: now } })
+    if (source === 'daily') {
+      await transaction.collection('daily_quotas').doc(quota.id).update({ data: { reserved: _.inc(1), updatedAt: now } })
+    } else {
+      await userRef.update({ data: { bonusQuotaReserved: (Number(user.bonusQuotaReserved) || 0) + 1, updatedAt: now } })
+    }
     await transaction.collection('ai_tasks').doc(taskId).set({ data: {
       taskId, reservationId: reservation, ownerOpenId: identity.openid, ownerId: identity.userId, type,
       inputAssetIds, options, requestFingerprint,
-      idempotencyKey: key, mode: 'queue', status: 'queued', stage: 'queued', quotaDateKey: dayKey(now),
+      idempotencyKey: key, mode: 'queue', status: 'queued', stage: 'queued', quotaDateKey: dayKey(now), quotaSource: source,
       attempt: 0, nextRunAt: now, createdAt: now, updatedAt: now,
     } })
     for (const asset of taskAssets) {
@@ -424,7 +473,7 @@ async function createTask(event, identity, id) {
     await userRef.update({ data: { activeTaskId: taskId, updatedAt: now } })
     await transaction.collection('quota_ledger').doc(reservation).set({ data: {
       reservationId: reservation, taskId, ownerId: identity.userId,
-      dateKey: dayKey(now), entryType: 'reserve', amount: 1, createdAt: now,
+      dateKey: dayKey(now), entryType: 'reserve', quotaSource: source, amount: 1, createdAt: now,
     } })
   })
   if (alreadyCreated) return ok({ taskId, reservationId: alreadyCreated.reservationId, status: alreadyCreated.status, quota: await getQuota(identity.userId) }, id)
@@ -455,9 +504,18 @@ async function cancelTask(event, identity, id) {
       return
     }
     if (current.status !== 'queued' && current.status !== 'reserved') throw new BackendError('STATE_CONFLICT', '任务已开始处理，当前不能取消。')
-    const currentQuotaResult = await transaction.collection('daily_quotas').doc(quotaDoc.id).get()
-    const currentQuota = currentQuotaResult && currentQuotaResult.data
-    if (!currentQuota) throw new BackendError('QUOTA_STATE_INVALID', '次数状态正在核对，请稍后刷新。', true)
+    const source = current.quotaSource === 'bonus' ? 'bonus' : 'daily'
+    let currentQuota
+    let currentUser
+    if (source === 'bonus') {
+      const currentUserResult = await transaction.collection('users').doc(identity.userId).get()
+      currentUser = currentUserResult && currentUserResult.data
+      if (!currentUser) throw new BackendError('QUOTA_STATE_INVALID', '赠送次数状态正在核对，请稍后刷新。', true)
+    } else {
+      const currentQuotaResult = await transaction.collection('daily_quotas').doc(quotaDoc.id).get()
+      currentQuota = currentQuotaResult && currentQuotaResult.data
+      if (!currentQuota) throw new BackendError('QUOTA_STATE_INVALID', '次数状态正在核对，请稍后刷新。', true)
+    }
     const releaseId = `${current.reservationId}_cancel`
     const previousRelease = await readDocument('quota_ledger', releaseId, transaction)
     if (previousRelease) {
@@ -467,12 +525,23 @@ async function cancelTask(event, identity, id) {
       alreadyCancelled = true
       return
     }
-    if (Number(currentQuota.reserved || 0) < 1) throw new BackendError('QUOTA_STATE_INVALID', '次数状态正在核对，请稍后刷新。', true)
-    await transaction.collection('daily_quotas').doc(quotaDoc.id).update({ data: { reserved: _.inc(-1), updatedAt: now } })
+    if (source === 'bonus' && Number(currentUser.bonusQuotaReserved || 0) < 1) throw new BackendError('QUOTA_STATE_INVALID', '赠送次数状态正在核对，请稍后刷新。', true)
+    if (source === 'daily' && Number(currentQuota.reserved || 0) < 1) throw new BackendError('QUOTA_STATE_INVALID', '次数状态正在核对，请稍后刷新。', true)
+    if (source === 'bonus') {
+      await transaction.collection('users').doc(identity.userId).update({ data: {
+        bonusQuotaReserved: Math.max(0, Number(currentUser.bonusQuotaReserved) - 1),
+        ...(currentUser.activeTaskId === taskId ? { activeTaskId: '' } : {}),
+        updatedAt: now,
+      } })
+    } else {
+      await transaction.collection('daily_quotas').doc(quotaDoc.id).update({ data: { reserved: _.inc(-1), updatedAt: now } })
+    }
     await transaction.collection('ai_tasks').doc(task._id).update({ data: { status: 'cancelled', stage: 'cancelled', completedAt: now, updatedAt: now } })
-    await transaction.collection('quota_ledger').doc(releaseId).set({ data: { reservationId: current.reservationId, taskId, ownerId: identity.userId, dateKey: current.quotaDateKey, entryType: 'release', amount: -1, createdAt: now } })
-    const userResult = await transaction.collection('users').doc(identity.userId).get()
-    if (userResult.data && userResult.data.activeTaskId === taskId) await transaction.collection('users').doc(identity.userId).update({ data: { activeTaskId: '' } })
+    await transaction.collection('quota_ledger').doc(releaseId).set({ data: { reservationId: current.reservationId, taskId, ownerId: identity.userId, dateKey: current.quotaDateKey, entryType: 'release', quotaSource: source, amount: -1, createdAt: now } })
+    if (source !== 'bonus') {
+      const userResult = await transaction.collection('users').doc(identity.userId).get()
+      if (userResult.data && userResult.data.activeTaskId === taskId) await transaction.collection('users').doc(identity.userId).update({ data: { activeTaskId: '' } })
+    }
     cancelled = true
   })
   return ok({ taskId, status: 'cancelled', alreadyCancelled, quota: await getQuota(identity.userId) }, id)
@@ -876,6 +945,7 @@ exports.main = async (event, context) => {
     if (action === 'request-account-deletion') return await requestAccountDeletion(identity, id)
     if (action === 'save-subscription') return await saveSubscription(event, identity, id)
     if (action === 'track-event') return await trackEvent(event, identity, id)
+    if (action === 'grant-bonus-quota') return await grantBonusQuota(event, identity, id)
     if (action === 'admin-summary') return await adminSummary(event, identity, id)
     if (action === 'list-works') return await listWorks(event, identity, id)
     if (action === 'save-work') return await saveWorkRecord(event, identity, id)

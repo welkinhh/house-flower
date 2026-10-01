@@ -7,6 +7,8 @@ export type DailyQuota = {
   limit: number
   used: number
   reserved: number
+  dailyRemaining: number
+  bonusRemaining: number
   remaining: number
   resetsAt: string
 }
@@ -71,7 +73,7 @@ async function callBackend<T>(data: Record<string, unknown>): Promise<T> {
 }
 
 export function defaultQuota(): DailyQuota {
-  return { dateKey: '', limit: DAILY_AI_QUOTA_LIMIT, used: 0, reserved: 0, remaining: DAILY_AI_QUOTA_LIMIT, resetsAt: '' }
+  return { dateKey: '', limit: DAILY_AI_QUOTA_LIMIT, used: 0, reserved: 0, dailyRemaining: DAILY_AI_QUOTA_LIMIT, bonusRemaining: 0, remaining: DAILY_AI_QUOTA_LIMIT, resetsAt: '' }
 }
 
 export async function bootstrapBackend(): Promise<BackendSession> {
@@ -233,4 +235,8 @@ export async function trackClientEvent(eventName: string, properties: Record<str
 export async function getAdminSummary(range = 30): Promise<any> {
   const data = await callBackend<any>({ action: 'admin-summary', range })
   return data
+}
+
+export async function grantBonusQuota(userId: string, count: number, reason = '', grantId = randomKey('gift')): Promise<{ userId: string; count: number; alreadyGranted: boolean; quota: DailyQuota }> {
+  return callBackend({ action: 'grant-bonus-quota', userId, count, reason, grantId })
 }

@@ -216,26 +216,44 @@ async function claimTask() {
 
 async function settle(task, patch, success) {
   const quotaId = `${task.ownerId}_${task.quotaDateKey}`
+  const quotaSource = task.quotaSource === 'bonus' ? 'bonus' : 'daily'
   const now = new Date()
   let settled = false
   await db.runTransaction(async (transaction) => {
     settled = false
     const currentTask = await transaction.collection('ai_tasks').doc(task._id).get()
     if (!currentTask.data || currentTask.data.status !== 'running' || currentTask.data.claimToken !== task.claimToken) return
-    const quota = await transaction.collection('daily_quotas').doc(quotaId).get()
-    const value = quota.data || {}
-    if ((Number(value.reserved) || 0) <= 0) throw new Error('额度预占不存在。')
-    await transaction.collection('daily_quotas').doc(quotaId).update({ data: success ? { reserved: _.inc(-1), used: _.inc(1), updatedAt: now } : { reserved: _.inc(-1), updatedAt: now } })
+    if (quotaSource === 'bonus') {
+      const userRef = transaction.collection('users').doc(task.ownerId)
+      const userResult = await userRef.get()
+      const user = userResult && userResult.data
+      if (!user || Number(user.bonusQuotaReserved || 0) <= 0) throw new Error('赠送次数预占不存在。')
+      const bonusBalance = Math.max(0, Number(user.bonusQuotaBalance) || 0)
+      if (success && bonusBalance <= 0) throw new Error('赠送次数余额不存在。')
+      await userRef.update({ data: {
+        bonusQuotaReserved: Math.max(0, Number(user.bonusQuotaReserved) - 1),
+        bonusQuotaBalance: success ? bonusBalance - 1 : bonusBalance,
+        ...(user.activeTaskId === task.taskId ? { activeTaskId: '' } : {}),
+        updatedAt: now,
+      } })
+    } else {
+      const quota = await transaction.collection('daily_quotas').doc(quotaId).get()
+      const value = quota.data || {}
+      if ((Number(value.reserved) || 0) <= 0) throw new Error('额度预占不存在。')
+      await transaction.collection('daily_quotas').doc(quotaId).update({ data: success ? { reserved: _.inc(-1), used: _.inc(1), updatedAt: now } : { reserved: _.inc(-1), updatedAt: now } })
+    }
     await transaction.collection('ai_tasks').doc(task._id).update({ data: { ...patch, status: success ? 'succeeded' : 'failed', stage: success ? 'completed' : 'failed', claimToken: '', leaseUntil: null, completedAt: now, updatedAt: now } })
-    const user = await transaction.collection('users').doc(task.ownerId).get()
-    if (user.data && user.data.activeTaskId === task.taskId) await transaction.collection('users').doc(task.ownerId).update({ data: { activeTaskId: '' } })
+    if (quotaSource !== 'bonus') {
+      const user = await transaction.collection('users').doc(task.ownerId).get()
+      if (user.data && user.data.activeTaskId === task.taskId) await transaction.collection('users').doc(task.ownerId).update({ data: { activeTaskId: '' } })
+    }
     if (success && Array.isArray(patch.resultAssetIds)) {
       for (const assetId of patch.resultAssetIds) {
         const refId = `task_${task.taskId}_${assetId}`
         await transaction.collection('asset_refs').doc(refId).set({ data: { assetId, resourceType: 'task', resourceId: task.taskId, ownerId: task.ownerId, createdAt: now } })
       }
     }
-    await transaction.collection('quota_ledger').doc(`${task.reservationId}_${success ? 'commit' : 'release'}`).set({ data: { reservationId: task.reservationId, taskId: task.taskId, ownerId: task.ownerId, dateKey: task.quotaDateKey, entryType: success ? 'commit' : 'release', amount: success ? 1 : -1, createdAt: now } })
+    await transaction.collection('quota_ledger').doc(`${task.reservationId}_${success ? 'commit' : 'release'}`).set({ data: { reservationId: task.reservationId, taskId: task.taskId, ownerId: task.ownerId, dateKey: task.quotaDateKey, entryType: success ? 'commit' : 'release', quotaSource, amount: success ? 1 : -1, createdAt: now } })
     settled = true
   })
   return settled
@@ -250,6 +268,7 @@ async function expireUnknownResults() {
   const task = query.data && query.data[0]
   if (!task) return false
   const quotaId = `${task.ownerId}_${task.quotaDateKey}`
+  const quotaSource = task.quotaSource === 'bonus' ? 'bonus' : 'daily'
   await db.runTransaction(async (transaction) => {
     const currentResult = await transaction.collection('ai_tasks').doc(task._id).get()
     const current = currentResult && currentResult.data
@@ -257,13 +276,25 @@ async function expireUnknownResults() {
     const releaseId = `${current.reservationId}_unknown_release`
     const prior = await readDocument('quota_ledger', releaseId, transaction)
     if (!prior) {
-      const quotaResult = await transaction.collection('daily_quotas').doc(quotaId).get()
-      const quota = quotaResult && quotaResult.data
-      if (!quota || Number(quota.reserved || 0) < 1) throw new Error('无法安全释放未核对任务的额度。')
-      await transaction.collection('daily_quotas').doc(quotaId).update({ data: { reserved: _.inc(-1), updatedAt: now } })
+      if (quotaSource === 'bonus') {
+        const userRef = transaction.collection('users').doc(current.ownerId)
+        const userResult = await userRef.get()
+        const user = userResult && userResult.data
+        if (!user || Number(user.bonusQuotaReserved || 0) < 1) throw new Error('无法安全释放未核对的赠送次数。')
+        await userRef.update({ data: {
+          bonusQuotaReserved: Math.max(0, Number(user.bonusQuotaReserved) - 1),
+          ...(user.activeTaskId === current.taskId ? { activeTaskId: '' } : {}),
+          updatedAt: now,
+        } })
+      } else {
+        const quotaResult = await transaction.collection('daily_quotas').doc(quotaId).get()
+        const quota = quotaResult && quotaResult.data
+        if (!quota || Number(quota.reserved || 0) < 1) throw new Error('无法安全释放未核对任务的额度。')
+        await transaction.collection('daily_quotas').doc(quotaId).update({ data: { reserved: _.inc(-1), updatedAt: now } })
+      }
       await transaction.collection('quota_ledger').doc(releaseId).set({ data: {
         reservationId: current.reservationId, taskId: current.taskId, ownerId: current.ownerId,
-        dateKey: current.quotaDateKey, entryType: 'release', amount: -1, reason: 'provider_result_unavailable', createdAt: now,
+        dateKey: current.quotaDateKey, entryType: 'release', quotaSource, amount: -1, reason: 'provider_result_unavailable', createdAt: now,
       } })
     }
     await transaction.collection('ai_tasks').doc(task._id).update({ data: {
@@ -271,8 +302,10 @@ async function expireUnknownResults() {
       completedAt: now,
       error: { code: 'PROVIDER_RESULT_UNAVAILABLE', message: '超过核对时限，次数已返还；如仍需要，请重新提交。', retryable: true }, updatedAt: now,
     } })
-    const userResult = await transaction.collection('users').doc(current.ownerId).get()
-    if (userResult.data && userResult.data.activeTaskId === current.taskId) await transaction.collection('users').doc(current.ownerId).update({ data: { activeTaskId: '' } })
+    if (quotaSource !== 'bonus') {
+      const userResult = await transaction.collection('users').doc(current.ownerId).get()
+      if (userResult.data && userResult.data.activeTaskId === current.taskId) await transaction.collection('users').doc(current.ownerId).update({ data: { activeTaskId: '' } })
+    }
   })
   return true
 }

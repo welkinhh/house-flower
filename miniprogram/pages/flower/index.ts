@@ -4,12 +4,14 @@ import {
   dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readDates, readWorks,
   type WorkRecord,
 } from '../../utils/houseflower-data'
-import { bootstrapBackend, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, listBackendTasks, listCloudDates, listCloudWorks, saveCloudDate, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
+import { bootstrapBackend, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudDates, listCloudWorks, saveCloudDate, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
 import { AI_VISION_ENABLED, LOCAL_DEMO_MODE } from '../../utils/cloud-env'
 import { flowerAssetForName } from '../../utils/flower-materials'
 import { creationActions } from './creation-actions'
 import { sceneActions } from './scene-actions'
 import { worksActions } from './works-actions'
+
+const QUOTA_GIFT_PENDING_STORAGE_KEY = 'houseflower.admin.quotaGiftPending'
 
 const HOME_ENTRIES = [
   { id: 'inspiration', title: '拾光成花', note: '喜欢的画面，变成一束花', path: EDITORIAL_ASSETS.inspirationGarden },
@@ -23,51 +25,55 @@ const NAV_ITEMS = [
 ]
 const INSPIRATION_CATEGORIES = [
   { id: 'all', label: '全部' }, { id: 'film', label: '电影' }, { id: 'music', label: '音乐' },
-  { id: 'art', label: '绘画' }, { id: 'photo', label: '摄影' }, { id: 'nature', label: '自然' },
-  { id: 'season', label: '季节' }, { id: 'color', label: '色彩' },
+  { id: 'art', label: '绘画' }, { id: 'nature', label: '自然' },
 ]
-const CATEGORY_LABELS: Record<string, string> = { all: '全部', film: '电影', music: '音乐', art: '绘画', photo: '摄影', nature: '自然', season: '季节', color: '色彩' }
+const CATEGORY_LABELS: Record<string, string> = { all: '全部', film: '电影', music: '音乐', art: '绘画', nature: '自然' }
 const TASK_RECOVERY_WINDOW_MS = 24 * 60 * 60 * 1000
+function inspirationCase(id: keyof typeof EDITORIAL_ASSETS.inspirationCases, category: string, title: string, description: string) {
+  const assets = EDITORIAL_ASSETS.inspirationCases[id]
+  return { id, category, title, description, path: assets.reference, resultPath: assets.flower }
+}
+
 const INSPIRATION_CASES = [
-  // 季节
-  { id: 'garden', category: 'season', title: '花园里的春日', description: '浅粉花影与灰绿色叶片交织，像晨光刚刚落进花园。', path: EDITORIAL_ASSETS.inspirationGarden },
-  { id: 'peach', category: 'season', title: '午后阳光', description: '暖桃色花束与轻柔的室内光线，适合值得纪念的一天。', path: EDITORIAL_ASSETS.inspirationBouquets[1] },
-  { id: 'spring-letter', category: 'season', title: '春日来信', description: '把一整个春天的花开，收进一束花里。', path: EDITORIAL_ASSETS.inspirationBouquets[0] },
-  { id: 'white-poem', category: 'season', title: '白色诗意', description: '奶油白与浅绿，清透得像三月清晨。', path: EDITORIAL_ASSETS.recognitionSamples[1] },
-  // 摄影
-  { id: 'window-photo', category: 'photo', title: '窗边日光', description: '窗光与枝叶相映，把安静的日常留进一帧照片。', path: EDITORIAL_ASSETS.scenes[0].path },
-  { id: 'table-photo', category: 'photo', title: '餐桌漫游', description: '木色餐桌和午后阳光，像一段缓慢的旅程。', path: EDITORIAL_ASSETS.scenes[1].path },
-  { id: 'entryway-photo', category: 'photo', title: '归家一刻', description: '午后的光线落在玄关，把归家的片刻留成照片。', path: EDITORIAL_ASSETS.scenes[3].path },
-  // 自然
-  { id: 'garden-path', category: 'nature', title: '花园小径', description: '把枝叶、野花与晨光，编进一束自然花作。', path: EDITORIAL_ASSETS.inspirationGarden },
-  { id: 'ivory-field', category: 'nature', title: '原野白花', description: '奶油白与浅绿，像风经过原野时留下的颜色。', path: EDITORIAL_ASSETS.recognitionSamples[1] },
-  { id: 'peach-field', category: 'nature', title: '山野花影', description: '柔和的花色映着自然光，轻轻留住远行记忆。', path: EDITORIAL_ASSETS.inspirationBouquets[1] },
-  // 电影
-  { id: 'still-life', category: 'film', title: '一帧安静', description: '光线、留白与花朵组成一张安静的生活画面。', path: EDITORIAL_ASSETS.filmPoster },
-  { id: 'truman', category: 'film', title: '楚门的世界', description: '走出摄影棚的那束光，开成一束向阳的花。', path: EDITORIAL_ASSETS.filmPoster },
-  { id: 'seaside-dusk', category: 'film', title: '海边的黄昏', description: '落日把海面染成蜜桃色，也把花染成蜜桃色。', path: EDITORIAL_ASSETS.filmPoster },
-  // 色彩
-  { id: 'bouquet', category: 'color', title: '柔粉的告白', description: '奶油白与浅粉相伴，把温柔留在日常的角落。', path: EDITORIAL_ASSETS.inspirationBouquets[2] },
-  { id: 'pink-romance', category: 'color', title: '粉色浪漫', description: '粉色是心跳的颜色，也是花瓣的颜色。', path: EDITORIAL_ASSETS.inspirationBouquets[0] },
-  { id: 'afternoon-cup', category: 'color', title: '一杯花的下午', description: '把午后泡进一杯花茶，让时间慢下来。', path: EDITORIAL_ASSETS.scenes[1].path },
-  // 音乐
-  { id: 'vinyl', category: 'music', title: '循环的温柔', description: '把一张单曲循环，变成一束安静的花。', path: EDITORIAL_ASSETS.albumCover },
-  { id: 'nocturne', category: 'music', title: '夜曲与花', description: '低音里的夜色，藏着深浅不一的花影。', path: EDITORIAL_ASSETS.albumCover },
-  { id: 'orange-sunset', category: 'music', title: '橙色日落', description: '像一段副歌，把整天的明亮都收束进花里。', path: EDITORIAL_ASSETS.albumCover },
-  // 画作
-  { id: 'starry', category: 'art', title: '星夜花束', description: '梵高的星空，旋转成蓝紫色的花束。', path: EDITORIAL_ASSETS.inspirationGarden },
-  { id: 'sunflower-art', category: 'art', title: '向日葵的午后', description: '把一片金黄的向日葵，留在桌边的花瓶里。', path: EDITORIAL_ASSETS.scenes[2].path },
-  { id: 'retro-romance', category: 'art', title: '复古的浪漫', description: '旧油画的暖调，落在花瓣的褶皱里。', path: EDITORIAL_ASSETS.recognitionSamples[0] },
+  // 电影：8 个原创意境图，加上展示案例《楚门的世界》。
+  inspirationCase('titanic', 'film', '泰坦尼克号', '海洋蓝与暖金，把远行、相遇和告别编进花束。'),
+  inspirationCase('green-book', 'film', '绿皮书', '橄榄绿、奶油白与爵士路途的温暖色调。'),
+  inspirationCase('grand-budapest', 'film', '布达佩斯大饭店', '粉色建筑、雪山与精致几何包装。'),
+  inspirationCase('pursuit-happyness', 'film', '当幸福来敲门', '城市晨光里的金橙色，表现坚持与希望。'),
+  inspirationCase('blindspotting', 'film', '盲点', '奥克兰街景的赭红与青绿，表现友情和韧性。'),
+  inspirationCase('les-choristes', 'film', '放牛班的春天', '冬日教室的奶油白与浅蓝，温柔而有力量。'),
+  inspirationCase('truman', 'film', '楚门的世界', '走向天光的一刻，以蓝白和日光金表现自由。'),
+  inspirationCase('cinema-paradiso', 'film', '天堂电影院', '老影院的酒红与琥珀光，收住怀旧的温度。'),
+  inspirationCase('legend-1900', 'film', '海上钢琴师', '钢琴、海面和靛蓝夜色，带一点香槟金。'),
+  // 音乐：周杰伦《Jay》保留在上方展示案例，音乐分类使用 6 位不同歌手。
+  inspirationCase('thriller', 'music', 'Michael Jackson · Thriller', '舞台聚光下的黑白、红与钴蓝。'),
+  inspirationCase('folklore', 'music', 'Taylor Swift · folklore', '雾林灰绿与象牙白，安静而有故事感。'),
+  inspirationCase('black-tangerine', 'music', '陶喆 · 黑色柳丁', '炭黑与橙红的强烈节奏，转成现代花束。'),
+  inspirationCase('u87', 'music', '陈奕迅 · U87', '香港雨夜、银灰和低饱和的港风夜色。'),
+  inspirationCase('floating', 'music', '王菲 · 浮躁', '雨雾绿、银灰与轻微迷离的层次。'),
+  inspirationCase('dandan-youqing', 'music', '邓丽君 · 淡淡幽情', '月下庭院、象牙白和浅银蓝的古典气息。'),
+  // 绘画：两幅公有领域藏品和用户指定的《星夜》。
+  inspirationCase('starry-night', 'art', '梵高 · 星夜', '群青和月光金，旋转的夜色化作花束。'),
+  inspirationCase('great-wave', 'art', '葛饰北斋 · 神奈川冲浪里', '靛蓝浪潮与象牙白泡沫的花材配色。'),
+  inspirationCase('japanese-bridge', 'art', '莫奈 · 日本桥', '睡莲绿、浅紫和粉色水光的印象派花园。'),
+  // 自然：三个自然景观，加春芽、夏塘、秋叶、冬雪四季主题。
+  inspirationCase('golden-mountain', 'nature', '日照金山', '晨光镀过山脊，花束以奶油白和暖金回应。'),
+  inspirationCase('po-pin-chau', 'nature', '麦理浩径 · 破边洲', '海蓝与六角岩柱的灰褐色，清爽而有力量。'),
+  inspirationCase('meadow', 'nature', '高山草甸', '露珠、野花和新绿组成轻盈的田野花束。'),
+  inspirationCase('spring-buds', 'nature', '春芽', '嫩绿新叶、白色花苞和浅粉色的初春气息。'),
+  inspirationCase('summer-pond', 'nature', '夏塘', '荷叶、粉荷与水面晚霞的清凉配色。'),
+  inspirationCase('autumn-leaves', 'nature', '秋叶', '枫红、银杏金和深酒红的秋日层次。'),
+  inspirationCase('winter-snow', 'nature', '冬雪', '雪白山茶、松针绿和一点莓果红。'),
 ]
 const INSPIRATION_BANNERS = [
-  { id: 'bn-spring', caseId: 'garden', title: '花园里的春日', sub: '四季的温柔，都藏在花里', path: EDITORIAL_ASSETS.inspirationGarden },
-  { id: 'bn-confess', caseId: 'bouquet', title: '柔粉的告白', sub: '把温柔留在日常的角落', path: EDITORIAL_ASSETS.inspirationBouquets[0] },
-  { id: 'bn-starry', caseId: 'starry', title: '星夜花束', sub: '把一幅画，变成一束花', path: EDITORIAL_ASSETS.inspirationBouquets[2] },
+  { id: 'bn-titanic', caseId: 'titanic', title: '泰坦尼克号', sub: '海上夜色里的蓝与金', path: EDITORIAL_ASSETS.inspirationCases.titanic.reference },
+  { id: 'bn-starry', caseId: 'starry-night', title: '星夜花束', sub: '把旋转的夜空化作花束', path: EDITORIAL_ASSETS.inspirationCases['starry-night'].reference },
+  { id: 'bn-golden-mountain', caseId: 'golden-mountain', title: '日照金山', sub: '把晨光留下来', path: EDITORIAL_ASSETS.inspirationCases['golden-mountain'].reference },
 ]
 const INSPIRATION_EXAMPLES = [
-  { id: 'poster', title: '电影海报 · 光影之外', description: '把电影画面里的柔光和留白，变成一束花。', path: EDITORIAL_ASSETS.filmPosterInput, resultPath: EDITORIAL_ASSETS.inspirationBouquets[0] },
-  { id: 'travel', title: '旅行照片 · 花园漫游', description: '把旅途中遇见的花园颜色，收进一束花里。', path: EDITORIAL_ASSETS.travelPhotoInput, resultPath: EDITORIAL_ASSETS.inspirationBouquets[1] },
-  { id: 'album', title: '音乐专辑 · 午后慢歌', description: '把一段旋律的温柔，化成一束花的配色。', path: EDITORIAL_ASSETS.albumCoverInput, resultPath: EDITORIAL_ASSETS.inspirationBouquets[2] },
+  { id: 'truman', title: '电影 · 楚门的世界', description: '走向天光的一刻，开成一束向阳的花。', path: EDITORIAL_ASSETS.showcases.truman.input, resultPath: EDITORIAL_ASSETS.showcases.truman.result },
+  { id: 'jay', title: '专辑 · 周杰伦《Jay》', description: '把暗红、黑色和琥珀金转化成一束花。', path: EDITORIAL_ASSETS.showcases.jay.input, resultPath: EDITORIAL_ASSETS.showcases.jay.result },
+  { id: 'starry-night', title: '画作 · 梵高《星夜》', description: '群青星空与月光金，化作一束夜色花礼。', path: EDITORIAL_ASSETS.showcases.starryNight.input, resultPath: EDITORIAL_ASSETS.showcases.starryNight.result },
 ]
 const RECOGNITION_EXAMPLES = [
   {
@@ -221,9 +227,10 @@ Page({
     todayKey: dayKey(new Date()),
     showEventEditor: false, editingEventId: '', eventTitle: '', eventDate: dayKey(new Date()), eventNote: '',
     eventRepeats: false, eventWorkId: '', eventWorkIndex: 0, eventWorkLabels: ['不关联'], eventWorkIds: [''],
-    showProfileEditor: false, userProfile: DEFAULT_PROFILE, remainingUses: DEFAULT_USES,
+    showProfileEditor: false, userProfile: DEFAULT_PROFILE, remainingUses: DEFAULT_USES, bonusQuotaRemaining: 0,
     quotaDateKey: '', quotaLimit: DEFAULT_USES, quotaReserved: 0, quotaResetsAt: '', backendReady: false, visionAvailable: AI_VISION_ENABLED,
     isAdmin: false, subscriptionTemplates: { date: '', task: '' }, adminRange: 30, adminSummary: null as any,
+    quotaGiftUserId: '', quotaGiftCount: '1', quotaGiftReason: '', quotaGiftBusy: false,
     inspirationExamples: INSPIRATION_EXAMPLES, recognitionExamples: RECOGNITION_EXAMPLES,
     inspirationBanners: INSPIRATION_BANNERS, bannerCurrent: 0,
     inspirationCategories: INSPIRATION_CATEGORIES, inspirationCategory: 'all', inspirationSearch: '',
@@ -256,6 +263,7 @@ Page({
       works,
       importantDates: readDates(),
       remainingUses: typeof uses === 'number' ? Math.max(0, uses) : DEFAULT_USES,
+      bonusQuotaRemaining: 0,
       userProfile: profile && profile.name ? { ...profile, avatarUrl: migrateMiniProgramAssetPath(profile.avatarUrl || '') || DEFAULT_PROFILE.avatarUrl } : DEFAULT_PROFILE,
     }, () => { this.refreshWorks(); this.refreshCalendar() })
     try { wx.setNavigationBarTitle({ title: 'House花生' }) } catch {}
@@ -323,6 +331,7 @@ Page({
       this.setData({
         backendReady: true,
         remainingUses: quota.remaining,
+        bonusQuotaRemaining: quota.bonusRemaining,
         quotaDateKey: quota.dateKey,
         quotaLimit: quota.limit,
         quotaReserved: quota.reserved,
@@ -359,6 +368,56 @@ Page({
   selectAdminRange(this: any, event: any) {
     const range = Number(event.currentTarget.dataset.range || 30)
     this.setData({ adminRange: range }, () => this.loadAdminSummary())
+  },
+  updateQuotaGiftUserId(this: any, event: any) {
+    this._quotaGiftGrantId = ''
+    this.setData({ quotaGiftUserId: String(event.detail.value || '') })
+  },
+  updateQuotaGiftCount(this: any, event: any) {
+    this._quotaGiftGrantId = ''
+    this.setData({ quotaGiftCount: String(event.detail.value || '') })
+  },
+  updateQuotaGiftReason(this: any, event: any) {
+    this._quotaGiftGrantId = ''
+    this.setData({ quotaGiftReason: String(event.detail.value || '') })
+  },
+  grantQuotaGift(this: any) {
+    if (!this.data.isAdmin || this.data.quotaGiftBusy) return
+    const userId = String(this.data.quotaGiftUserId || '').trim()
+    const count = Number(this.data.quotaGiftCount)
+    if (!/^[a-f0-9]{32}$/i.test(userId)) { wx.showToast({ title: '请输入作品页设置中显示的完整用户 ID', icon: 'none' }); return }
+    if (!Number.isInteger(count) || count < 1 || count > 1000) { wx.showToast({ title: '赠送次数需为 1–1000 的整数', icon: 'none' }); return }
+    const page = this
+    wx.showModal({
+      title: '确认赠送次数？',
+      content: `将向用户 ${userId.slice(0, 8)}… 赠送 ${count} 次。次数不会每日重置，日常额度用完后再使用。`,
+      confirmText: '确认赠送',
+      success: async (result) => {
+        if (!result.confirm) return
+        const reason = String(page.data.quotaGiftReason || '').trim()
+        let pending: any = null
+        try { pending = wx.getStorageSync(QUOTA_GIFT_PENDING_STORAGE_KEY) } catch {}
+        const pendingMatches = pending && pending.userId === userId && Number(pending.count) === count && String(pending.reason || '') === reason
+        if (!page._quotaGiftGrantId) page._quotaGiftGrantId = pendingMatches && pending.grantId || `gift_${Date.now().toString(36)}_${Math.random().toString(16).slice(2, 10)}`
+        const grantId = page._quotaGiftGrantId
+        try { wx.setStorageSync(QUOTA_GIFT_PENDING_STORAGE_KEY, { userId, count, reason, grantId }) } catch {}
+        page.setData({ quotaGiftBusy: true })
+        try {
+          const response = await grantUserBonusQuota(userId, count, reason, grantId)
+          page._quotaGiftGrantId = ''
+          try {
+            const savedPending = wx.getStorageSync(QUOTA_GIFT_PENDING_STORAGE_KEY)
+            if (savedPending && savedPending.grantId === grantId) wx.removeStorageSync(QUOTA_GIFT_PENDING_STORAGE_KEY)
+          } catch {}
+          wx.showToast({ title: response.alreadyGranted ? '这笔赠送已处理' : `赠送成功，剩余赠送 ${response.quota.bonusRemaining} 次`, icon: 'success' })
+          if (!response.alreadyGranted) page.setData({ quotaGiftCount: '1', quotaGiftReason: '' })
+        } catch (error: any) {
+          wx.showToast({ title: error && error.message ? error.message : '赠送失败，请重试', icon: 'none' })
+        } finally {
+          page.setData({ quotaGiftBusy: false })
+        }
+      },
+    })
   },
   trackPageEvent(this: any, mode: string) { void trackClientEvent('page_view', { mode }).catch(() => {}) },
   async syncCloudData(this: any) {

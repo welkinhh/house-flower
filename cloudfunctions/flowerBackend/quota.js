@@ -41,16 +41,36 @@ function reservationId() {
   return `quota_${Date.now().toString(36)}_${crypto.randomBytes(8).toString('hex')}`
 }
 
-function normalizeQuota(doc, date = new Date()) {
+function quotaAvailability(doc, user = {}) {
   const used = Math.max(0, Number(doc && doc.used) || 0)
   const reserved = Math.max(0, Number(doc && doc.reserved) || 0)
-  const limit = DAILY_QUOTA_LIMIT
+  const bonusBalance = Math.max(0, Number(user && user.bonusQuotaBalance) || 0)
+  const bonusReserved = Math.max(0, Number(user && user.bonusQuotaReserved) || 0)
+  return {
+    dailyRemaining: Math.max(0, DAILY_QUOTA_LIMIT - used - reserved),
+    bonusRemaining: Math.max(0, bonusBalance - bonusReserved),
+  }
+}
+
+function quotaSource(doc, user = {}) {
+  const available = quotaAvailability(doc, user)
+  if (available.dailyRemaining > 0) return 'daily'
+  if (available.bonusRemaining > 0) return 'bonus'
+  return ''
+}
+
+function normalizeQuota(doc, date = new Date(), user = {}) {
+  const used = Math.max(0, Number(doc && doc.used) || 0)
+  const reserved = Math.max(0, Number(doc && doc.reserved) || 0)
+  const available = quotaAvailability(doc, user)
   return {
     dateKey: dayKey(date),
-    limit,
+    limit: DAILY_QUOTA_LIMIT,
     used,
     reserved,
-    remaining: Math.max(0, limit - used - reserved),
+    dailyRemaining: available.dailyRemaining,
+    bonusRemaining: available.bonusRemaining,
+    remaining: available.dailyRemaining + available.bonusRemaining,
     resetsAt: nextResetAt(date),
   }
 }
@@ -61,6 +81,8 @@ module.exports = {
   nextResetAt,
   userIdFor,
   quotaId,
+  quotaAvailability,
+  quotaSource,
   reservationId,
   normalizeQuota,
 }

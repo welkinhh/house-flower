@@ -175,13 +175,13 @@ export const sceneActions = {
           sceneCompositeAssetId: result.sceneCompositeAssetId || result.referenceAssetId,
           sceneResultAssetId: result.resultAssetId, sceneGenerating: false, sceneSaved: false,
           sceneMessage: '', generationStageLabel: '', generationProgressLabel: '', generationProgressNote: '', generationProgressFillStyle: '',
-          remainingUses: quota ? quota.remaining : this.data.remainingUses, quotaReserved: quota ? quota.reserved : 0,
+          remainingUses: quota ? quota.remaining : this.data.remainingUses, bonusQuotaRemaining: quota ? quota.bonusRemaining : this.data.bonusQuotaRemaining, quotaReserved: quota ? quota.reserved : 0,
         })
         this.refreshNav()
       }).catch((error: any) => {
         logAiFailure('scene', error, String(error && error.stage || this.data.generationStageLabel || ''))
         const failureMessage = aiFailureMessage(error, '场景融合失败，请重试。')
-        void getDailyQuota().then((quota) => this.setData({ remainingUses: quota.remaining, quotaReserved: quota.reserved })).catch(() => {})
+        void getDailyQuota().then((quota) => this.setData({ remainingUses: quota.remaining, bonusQuotaRemaining: quota.bonusRemaining, quotaReserved: quota.reserved })).catch(() => {})
         this.setData({ sceneGenerating: false, generationStageLabel: '', generationProgressLabel: '', generationProgressNote: '', generationProgressFillStyle: '', sceneMessage: failureMessage })
         const toastMessage = /上传|校验|格式|大小/.test(failureMessage) ? '图片准备失败，请查看页面提示' : '融合未成功，请查看页面提示'
         wx.showToast({ title: toastMessage, icon: 'none' })

@@ -417,6 +417,17 @@ export const worksActions = {
     } })
   },
   openSettings(this: any) { this.setMode('settings', '设置') },
+  openPrivacyGuide(this: any) {
+    const wxApi = wx as any
+    const openPrivacyContract = wxApi.openPrivacyContract
+    if (typeof openPrivacyContract !== 'function') {
+      wx.showToast({ title: '完整指引暂不可用，请稍后再试', icon: 'none' })
+      return
+    }
+    openPrivacyContract({
+      fail: () => wx.showToast({ title: '完整指引暂不可用，请稍后再试', icon: 'none' }),
+    })
+  },
   workLongPress(this: any, event: any) {
     const work = (this.data.visibleWorks || [])[Number(event.currentTarget.dataset.index)]
     if (!work || this.data.selectingWorks) return

@@ -86,7 +86,7 @@ function showGeneratedFlowerResult(page: any, pending: PendingFlowerGeneration, 
     ...(showNow ? { mode: 'generationResult', topCaption: '拾光成花' } : {}),
   }, () => {
     if (showNow) page.refreshNav()
-    void getDailyQuota().then((quota) => page.setData({ remainingUses: quota.remaining, quotaReserved: quota.reserved })).catch(() => {})
+    void getDailyQuota().then((quota) => page.setData({ remainingUses: quota.remaining, bonusQuotaRemaining: quota.bonusRemaining, quotaReserved: quota.reserved })).catch(() => {})
   })
 }
 
@@ -106,7 +106,7 @@ async function handleFlowerGenerationFailure(page: any, error: any, taskId: stri
     generationProgressFillStyle: '',
     inspirationMessage: failureMessage,
   })
-  void getDailyQuota().then((quota) => page.setData({ remainingUses: quota.remaining, quotaReserved: quota.reserved })).catch(() => {})
+  void getDailyQuota().then((quota) => page.setData({ remainingUses: quota.remaining, bonusQuotaRemaining: quota.bonusRemaining, quotaReserved: quota.reserved })).catch(() => {})
 }
 
 function persistImage(path: string, done: (savedPath: string) => void): void {
@@ -404,13 +404,13 @@ export const creationActions = {
       this.setData({
         mode: 'recognitionResult', topCaption: '识花成单', replicaCandidates: rows,
         replicaNotes: result.notes, sourceFileID: result.fileID, replicaAssetId: result.assetId, identifying: false, replicaDemo: false,
-        recognitionSaved: false, replicaMessage: '', remainingUses: quota ? quota.remaining : this.data.remainingUses, quotaReserved: quota ? quota.reserved : 0,
+        recognitionSaved: false, replicaMessage: '', remainingUses: quota ? quota.remaining : this.data.remainingUses, bonusQuotaRemaining: quota ? quota.bonusRemaining : this.data.bonusQuotaRemaining, quotaReserved: quota ? quota.reserved : 0,
       })
       this.refreshNav()
     }).catch(async (error: any) => {
       logAiFailure('recognition', error, String(this.data.recognitionStageLabel || ''))
       const failureMessage = aiFailureMessage(error, '识花失败，请稍后重试。')
-      void getDailyQuota().then((quota) => this.setData({ remainingUses: quota.remaining, quotaReserved: quota.reserved })).catch(() => {})
+      void getDailyQuota().then((quota) => this.setData({ remainingUses: quota.remaining, bonusQuotaRemaining: quota.bonusRemaining, quotaReserved: quota.reserved })).catch(() => {})
       const visionDisabled = error && String(error.message || '').indexOf('识花视觉模型') >= 0
       this.setData({
         identifying: false, recognitionStageLabel: '', replicaMessage: failureMessage, replicaDemo: false,

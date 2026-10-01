@@ -334,6 +334,7 @@
       <view wx:else class="header-uses">
         <text class="uses-label">今日剩余次数</text>
         <text class="uses-num">{{remainingUses}}</text>
+        <text wx:if="{{bonusQuotaRemaining > 0}}" class="uses-bonus">含赠送 {{bonusQuotaRemaining}} 次</text>
       </view>
     </view>
     <!-- 下划线 tab：作品集 / 花历 -->
@@ -470,6 +471,15 @@
         <text class="chev">›</text>
       </button>
 
+      <view class="privacy-guide">
+        <view class="privacy-guide-heading">
+          <text class="privacy-guide-title">隐私保护说明</text>
+          <button class="privacy-guide-link" bindtap="openPrivacyGuide" hover-class="none">查看完整指引 ›</button>
+        </view>
+        <text class="privacy-guide-copy">你主动选择用于花束生成或场景合成的照片会上传至腾讯云，并由腾讯混元图生图服务处理。昵称、头像、保存的作品和花历会同步到云端。</text>
+        <text class="privacy-guide-copy">未保存任务的临时图片会在完成 24 小时后清理；仅在你点击“保存图片”时写入相册。你可以在本页申请删除账号及相关云端数据。</text>
+      </view>
+
       <button class="btn primary settings-save" bindtap="saveProfile">保存</button>
       <button class="btn outline settings-sync" bindtap="syncLocalWorks">同步本机作品</button>
       <button wx:if="{{isAdmin}}" class="btn outline settings-sync" bindtap="openAdminPanel">运营数据</button>
@@ -487,7 +497,27 @@
         <button class="admin-range {{adminRange === 90 ? 'active' : ''}}" data-range="90" bindtap="selectAdminRange">90 天</button>
       </view>
     </view>
-    <view wx:if="{{adminSummary}}" class="admin-scroll">
+    <view class="admin-scroll">
+      <view class="admin-gift-card">
+        <view class="section-head"><text class="section-title">赠送 AI 次数</text><text class="section-note">仅管理员可用</text></view>
+        <text class="admin-gift-note">赠送次数不会每日重置；每日额度用完后再使用。用户 ID 可从作品页点击头像查看。</text>
+        <label class="admin-gift-field">
+          <text>用户 ID</text>
+          <input value="{{quotaGiftUserId}}" bindinput="updateQuotaGiftUserId" maxlength="32" placeholder="输入完整用户 ID" disabled="{{quotaGiftBusy}}" />
+        </label>
+        <view class="admin-gift-row">
+          <label class="admin-gift-field admin-gift-count">
+            <text>赠送次数</text>
+            <input type="number" value="{{quotaGiftCount}}" bindinput="updateQuotaGiftCount" placeholder="1" disabled="{{quotaGiftBusy}}" />
+          </label>
+          <label class="admin-gift-field admin-gift-reason">
+            <text>赠送原因（可选）</text>
+            <input value="{{quotaGiftReason}}" bindinput="updateQuotaGiftReason" maxlength="120" placeholder="例如：活动奖励" disabled="{{quotaGiftBusy}}" />
+          </label>
+        </view>
+        <button class="btn primary admin-gift-submit" bindtap="grantQuotaGift" loading="{{quotaGiftBusy}}" disabled="{{quotaGiftBusy}}">{{quotaGiftBusy ? '处理中…' : '确认赠送'}}</button>
+      </view>
+      <block wx:if="{{adminSummary}}">
       <view class="admin-grid">
         <view class="admin-card"><text>新增用户</text><text class="admin-number">{{adminSummary.overview.newUsers}}</text></view>
         <view class="admin-card"><text>活跃用户</text><text class="admin-number">{{adminSummary.overview.activeUsers}}</text></view>
@@ -508,8 +538,9 @@
         <text wx:if="{{!adminSummary.preferences.length}}" class="admin-muted">暂无足够数据</text>
       </view>
       <text wx:if="{{adminSummary.truncated}}" class="admin-muted">数据量较大，当前显示最近一部分记录。</text>
+      </block>
+      <view wx:else class="admin-loading">正在读取运营数据…</view>
     </view>
-    <view wx:else class="admin-loading">正在读取运营数据…</view>
   </view>
 
   <!-- ============ 11. 作品详情 ============ -->
