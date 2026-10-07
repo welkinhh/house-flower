@@ -192,7 +192,7 @@ export const sceneActions = {
       if (!previewPath || !sourcePath) { wx.showToast({ title: '图片未能持久保存，请稍后重试', icon: 'none' }); return }
       const now = Date.now()
       const work: WorkRecord = {
-        id: String(now), kind: 'scene', title: String(page.data.sceneTitle || '生活场景') + ' · 花作',
+        id: String(now), kind: 'scene', category: 'bouquet', title: String(page.data.sceneTitle || '生活场景') + ' · 花作',
         previewPath, sourcePath, fileID: page.data.sceneResultFileID, previewAssetId: page.data.sceneResultAssetId, sourceAssetId: page.data.sceneSourceAssetId,
         sceneSourceFileID: page.data.sceneSourceFileID, sceneBouquetAssetId: page.data.sceneBouquetAssetId,
         sceneCompositeAssetId: page.data.sceneCompositeAssetId,

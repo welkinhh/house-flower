@@ -1,7 +1,7 @@
 <view class="app-shell mode-{{mode}}">
 
   <!-- 顶部导航：返回 + 居中标题 -->
-  <view wx:if="{{mode !== 'home' && mode !== 'inspirationList' && mode !== 'works' && mode !== 'generationResult'}}" class="topbar">
+  <view wx:if="{{mode !== 'home' && mode !== 'portfolio' && mode !== 'generationResult'}}" class="topbar">
     <button class="back-button" bindtap="goBack" aria-label="返回">
       <view class="icon-back"></view>
     </button>
@@ -14,6 +14,7 @@
     <view class="home-veil"></view>
     <view wx:if="{{!editorialAssetsReady}}" class="home-image-status">{{editorialAssetsLoading ? '正在加载高清图片…' : '高清图片暂不可用，请检查网络后重试'}}</view>
     <view class="hero-head">
+      <button class="hero-settings" bindtap="openSettings" aria-label="设置">⚙</button>
       <text class="hero-brand">{{brand.shopName}}</text>
       <view class="hero-slogan">
         <text>{{brand.slogan}}</text>
@@ -33,7 +34,7 @@
     <view wx:if="{{!isAdmin && featuredWorks.length}}" class="home-featured">
       <view class="section-head">
         <text class="section-title">精选作品</text>
-        <text class="section-note" bindtap="changeTab" data-id="works">查看全部 ›</text>
+        <text class="section-note" bindtap="changeTab" data-id="portfolio">查看全部 ›</text>
       </view>
       <view class="featured-grid">
         <view wx:for="{{featuredWorks}}" wx:key="id" class="featured-card" data-index="{{index}}" bindtap="openFeaturedWork">
@@ -280,84 +281,42 @@
     <button class="link-save" bindtap="saveScene">保存到作品集</button>
   </scroll-view>
 
-  <!-- ============ 8. 灵感 ============ -->
-  <view wx:if="{{mode === 'inspirationList'}}" class="screen inspiration-screen">
-    <view class="bn-wrap">
-      <swiper class="bn-swiper" autoplay circular interval="3500" duration="420" current="{{bannerCurrent}}" bindchange="onBannerChange">
-        <swiper-item wx:for="{{inspirationBanners}}" wx:key="id">
-          <view class="bn" data-id="{{item.caseId}}" bindtap="openInspirationCase">
-            <image wx:if="{{editorialAssetsReady && item.path}}" src="{{item.path}}" mode="aspectFill" lazy-load="true" />
-            <view class="bn-veil"></view>
-            <view class="bn-tx">
-              <text class="bn-title">{{item.title}}</text>
-              <text class="bn-sub">{{item.sub}}</text>
-            </view>
-          </view>
-        </swiper-item>
-      </swiper>
-      <view class="bn-dots">
-        <view wx:for="{{inspirationBanners}}" wx:key="id" wx:for-index="dotIndex" class="bn-dot {{bannerCurrent === dotIndex ? 'on' : ''}}"></view>
-      </view>
-    </view>
-
-    <view class="insp-tabs">
-      <button wx:for="{{inspirationCategories}}" wx:key="id" class="insp-tab {{inspirationCategory === item.id ? 'active' : ''}}" data-id="{{item.id}}" bindtap="selectInspirationCategory">{{item.label}}</button>
-    </view>
-
-    <scroll-view scroll-y enhanced show-scrollbar="false" class="insp-feed">
-      <view wx:if="{{editorialAssetsReady}}" class="wf-grid">
-        <button wx:for="{{inspirationItems}}" wx:key="id" class="wf-card" data-id="{{item.id}}" bindtap="openInspirationCase">
-          <view class="wf-img-frame"><image src="{{item.path}}" mode="aspectFill" lazy-load="true" /></view>
-          <view class="wf-tx">
-            <text class="wf-name">{{item.title}}</text>
-            <text class="wf-cat">{{item.categoryLabel}}</text>
-          </view>
-        </button>
-      </view>
-      <view wx:if="{{!editorialAssetsReady}}" class="material-empty">{{editorialAssetsLoading ? '正在加载高清图片…' : '高清图片暂不可用，请检查网络后重试'}}</view>
-      <view wx:elif="{{!inspirationItems.length}}" class="material-empty">这个分类还没有内容，换一个看看</view>
-    </scroll-view>
-  </view>
-
-  <!-- 灵感详情：模糊背景 + 成品预览 + 高清原图入口 -->
-  <view wx:if="{{showInspirationDetail}}" class="modal-mask inspiration-detail-mask" catchtap="closeInspirationDetail">
-    <view class="detail-card" catchtap="stopPropagation">
-      <button class="modal-close detail-close" bindtap="closeInspirationDetail" aria-label="关闭">×</button>
-      <image wx:if="{{editorialAssetsReady}}" class="detail-image" src="{{selectedInspiration.resultPath}}" mode="aspectFit" bindtap="previewImage" data-path="{{selectedInspiration.resultPath}}" show-menu-by-longpress="true" />
-      <view class="detail-copy">
-        <text class="detail-kicker">{{selectedInspiration.categoryLabel}}</text>
-        <text class="detail-title">{{selectedInspiration.title}}</text>
-        <text class="detail-desc">{{selectedInspiration.description}}</text>
-        <text class="detail-viewer-hint">图片已加载高清版本，轻触可继续放大</text>
-        <view class="detail-actions">
-          <button class="btn outline" bindtap="generateInspirationList"><view class="list-icon"></view>生成清单</button>
-          <button class="btn primary" bindtap="saveInspirationToWorks" disabled="{{selectedInspiration.saved}}"><view class="save-icon"></view>{{selectedInspiration.saved ? '已保存到作品集' : '保存到作品集'}}</button>
-        </view>
-      </view>
-    </view>
-  </view>
-
-  <!-- ============ 9. 我的作品 ============ -->
-  <view wx:if="{{mode === 'works'}}" class="screen works-screen">
+  <!-- ============ 9. 作品集（统一门面） ============ -->
+  <view wx:if="{{mode === 'portfolio'}}" class="screen works-screen">
     <view class="works-header">
-      <view class="avatar-button" bindtap="openSettings">
-        <image wx:if="{{editorialAssetsReady || userProfile.avatarAssetId}}" class="avatar-image" src="{{userProfile.avatarUrl}}" mode="aspectFill" />
-      </view>
       <view class="header-copy">
-        <text class="header-name">{{userProfile.name}}</text>
-        <text class="header-id">ID {{userProfile.id}}</text>
+        <text class="header-name">{{brand.shopName}}</text>
+        <text class="header-id">{{portfolioItems.length}} 件作品</text>
       </view>
       <button wx:if="{{selectingWorks}}" class="header-action" bindtap="toggleWorkSelectionMode">取消</button>
-      <view wx:else class="header-uses">
+      <view wx:elif="{{isAdmin}}" class="header-uses">
         <text class="uses-label">今日剩余次数</text>
         <text class="uses-num">{{remainingUses}}</text>
-        <text wx:if="{{bonusQuotaRemaining > 0}}" class="uses-bonus">含赠送 {{bonusQuotaRemaining}} 次</text>
       </view>
     </view>
+
+    <!-- 店主操作条：角色门控，顾客不可见 -->
+    <view wx:if="{{isAdmin}}" class="pf-toolbar">
+      <button class="pf-tool" bindtap="startUploadWork"><text class="pf-tool-ico">＋</text><text>上传实拍</text></button>
+      <button class="pf-tool" bindtap="openCreationSheet"><text class="pf-tool-ico">✿</text><text>AI 创作</text></button>
+      <button class="pf-tool" bindtap="toggleWorkSelectionMode"><text class="pf-tool-ico">☰</text><text>管理</text></button>
+    </view>
+
+    <view class="pf-search-row">
+      <input class="pf-search" value="{{portfolioSearch}}" bindinput="searchPortfolio" placeholder="搜索作品名称或备注" placeholder-class="pf-search-ph" />
+      <button wx:if="{{portfolioSearch}}" class="pf-search-clear" bindtap="clearPortfolioSearch" aria-label="清空">×</button>
+    </view>
+
+    <scroll-view scroll-x enhanced show-scrollbar="false" class="pf-tabs">
+      <view class="pf-tabs-inner">
+        <button wx:for="{{portfolioCategories}}" wx:key="id" class="pf-tab {{portfolioCategory === item.id ? 'active' : ''}}" data-id="{{item.id}}" bindtap="selectPortfolioCategory">{{item.label}}</button>
+      </view>
+    </scroll-view>
+
     <!-- 作品集 -->
     <view wx:if="{{worksView === 'collection'}}" class="collection-view">
       <scroll-view scroll-y enhanced show-scrollbar="false" class="works-scroll" bindscrolltolower="loadMoreWorks">
-        <view wx:if="{{recentTasks.length}}" class="recovery-list">
+        <view wx:if="{{isAdmin && recentTasks.length}}" class="recovery-list">
           <view class="recovery-heading-row"><text class="recovery-heading">创作进度</text><text wx:if="{{recentTasks.length > 2}}" class="recovery-scroll-hint">滑动查看更多</text></view>
           <scroll-view scroll-y enhanced show-scrollbar="false" class="recovery-scroll {{recentTasks.length > 2 ? 'scroll-limited' : ''}}">
             <view wx:for="{{recentTasks}}" wx:key="taskId" class="recovery-row">
@@ -367,12 +326,13 @@
             </view>
           </scroll-view>
         </view>
-        <view wx:if="{{visibleWorks.length}}" class="works-grid">
-          <view wx:for="{{visibleWorks}}" wx:key="id" class="work-card {{item.selected ? 'selected' : ''}}">
+        <view wx:if="{{portfolioItems.length}}" class="works-grid">
+          <view wx:for="{{portfolioItems}}" wx:key="id" class="work-card {{item.selected ? 'selected' : ''}}">
             <view class="work-image-wrap" data-index="{{index}}" bindtap="openWork" bindlongpress="workLongPress">
-          <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" class="work-image" lazy-load="true" />
+              <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" class="work-image" lazy-load="true" />
               <view wx:else class="work-image-empty"><text>{{brand.shopName}}</text></view>
               <view class="work-veil"></view>
+              <view class="work-cat-chip">{{item.categoryLabel}}</view>
               <view class="work-tx">
                 <text class="work-title">{{item.title}}</text>
                 <text class="work-date">{{item.dateLabel}}</text>
@@ -382,8 +342,14 @@
           </view>
         </view>
         <view wx:else class="works-empty">
-          <text class="empty-title">从第一束花开始</text>
-          <text class="empty-sub">保存的花束、场景和清单会留在这里。</text>
+          <block wx:if="{{isAdmin}}">
+            <text class="empty-title">上架第一件作品</text>
+            <text class="empty-sub">上传实拍照片，或用 AI 创作生成花束图。</text>
+          </block>
+          <block wx:else>
+            <text class="empty-title">作品即将上架</text>
+            <text class="empty-sub">这家店还在准备中，过些时候再来看看。</text>
+          </block>
         </view>
         <view wx:if="{{cloudWorksLoading || cloudWorksHasMore}}" class="works-load-note">{{cloudWorksLoading ? '正在加载作品…' : '继续上滑加载更多'}}</view>
       </scroll-view>
@@ -391,7 +357,7 @@
       <view wx:if="{{selectingWorks}}" class="select-bar">
         <text class="select-count">已选 {{selectedWorkIds.length}} 件</text>
         <view class="select-actions">
-          <button class="link-button" bindtap="toggleSelectAllWorks">{{selectedWorkIds.length === visibleWorks.length ? '取消全选' : '全选'}}</button>
+          <button class="link-button" bindtap="toggleSelectAllWorks">{{selectedWorkIds.length === portfolioItems.length ? '取消全选' : '全选'}}</button>
           <button class="delete-button" bindtap="deleteSelectedWorks" disabled="{{!selectedWorkIds.length}}">删除</button>
         </view>
       </view>
@@ -500,8 +466,8 @@
       <image wx:if="{{currentWork.previewPath}}" class="hero-image square-output" src="{{currentWork.previewPath}}" mode="aspectFit" bindtap="openWorkImageViewer" />
       <view class="detail-heading">
         <text class="detail-title">{{currentWork.title}}</text>
-        <text class="detail-sub">{{currentWork.kindLabel}} · {{currentWork.dateLabel}}</text>
-        <button class="detail-more" bindtap="workMore" aria-label="更多作品操作">···</button>
+        <text class="detail-sub">{{currentWork.categoryLabel}} · {{currentWork.kindLabel}} · {{currentWork.dateLabel}}</text>
+        <button wx:if="{{isAdmin}}" class="detail-more" bindtap="workMore" aria-label="更多作品操作">···</button>
       </view>
       <view wx:if="{{currentWork.showSource}}" class="source-block">
         <view class="section-head">
@@ -553,8 +519,8 @@
       </view>
     </view>
     <view class="action-row">
-      <button wx:if="{{currentWork.rows.length}}" class="btn outline" bindtap="downloadSavedMaterials"><view class="list-icon"></view>导出清单</button>
-      <button wx:else class="btn outline" bindtap="recognizeSavedWork"><view class="list-icon"></view>生成清单</button>
+      <button wx:if="{{isAdmin && currentWork.rows.length}}" class="btn outline" bindtap="downloadSavedMaterials"><view class="list-icon"></view>导出清单</button>
+      <button wx:if="{{isAdmin && !currentWork.rows.length}}" class="btn outline" bindtap="recognizeSavedWork"><view class="list-icon"></view>生成清单</button>
       <button class="btn primary" bindtap="downloadWorkImage"><view class="download-glyph">↓</view>下载图片</button>
     </view>
   </view>
@@ -565,7 +531,7 @@
   </view>
 
   <!-- 底部导航：常驻（创作页不消失） -->
-  <view wx:if="{{mode === 'home' || mode === 'inspirationList' || mode === 'works' || mode === 'inspiration' || mode === 'recognition' || mode === 'scene'}}" class="bottom-nav" aria-label="{{brand.shopName}}导航">
+  <view wx:if="{{mode === 'home' || mode === 'portfolio' || mode === 'inspiration' || mode === 'recognition' || mode === 'scene'}}" class="bottom-nav" aria-label="{{brand.shopName}}导航">
     <button wx:for="{{navItems}}" wx:key="id" class="nav-item {{item.active ? 'active' : ''}}" data-id="{{item.id}}" bindtap="changeTab">
       <view class="nav-icon nav-{{item.glyph}}"></view>
       <text>{{item.label}}</text>

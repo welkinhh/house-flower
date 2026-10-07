@@ -448,6 +448,24 @@ button::after { border: 0; }
   letter-spacing: 2rpx;
 }
 
+.hero-settings {
+  position: absolute;
+  top: -8rpx;
+  right: 24rpx;
+  width: 64rpx;
+  height: 64rpx;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 250, 243, 0.7);
+  color: #6f6259;
+  font-size: 30rpx;
+  line-height: 64rpx;
+}
+
+.hero-settings::after { border: none; }
+
 .hero-slogan {
   display: flex;
   max-width: 460rpx;
@@ -1862,6 +1880,123 @@ button::after { border: 0; }
   font-size: 17rpx;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ---------------- 作品集：店主操作条 / 搜索 / 业务分类 ---------------- */
+.pf-toolbar {
+  display: flex;
+  gap: 12rpx;
+  padding: 4rpx 0 14rpx;
+}
+
+.pf-tool {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8rpx;
+  height: 76rpx;
+  margin: 0;
+  padding: 0;
+  border: 1rpx solid #e2d5c8;
+  border-radius: 18rpx;
+  background: #fffdf9;
+  color: #51473f;
+  font-size: 24rpx;
+  line-height: 1;
+}
+
+.pf-tool::after { border: none; }
+
+.pf-tool-ico {
+  color: #b07a5e;
+  font-size: 26rpx;
+  line-height: 1;
+}
+
+.pf-search-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 14rpx;
+}
+
+.pf-search {
+  flex: 1 1 auto;
+  height: 72rpx;
+  padding: 0 64rpx 0 24rpx;
+  border: 1rpx solid #e6ddd4;
+  border-radius: 16rpx;
+  background: #fffdf9;
+  color: #40372f;
+  font-size: 25rpx;
+}
+
+.pf-search-ph { color: #a89a8e; }
+
+.pf-search-clear {
+  position: absolute;
+  right: 10rpx;
+  top: 50%;
+  width: 48rpx;
+  height: 48rpx;
+  margin: 0;
+  padding: 0;
+  transform: translateY(-50%);
+  border: none;
+  border-radius: 50%;
+  background: #efe6dc;
+  color: #7c6d61;
+  font-size: 30rpx;
+  line-height: 48rpx;
+}
+
+.pf-search-clear::after { border: none; }
+
+.pf-tabs {
+  width: 100%;
+  margin-bottom: 12rpx;
+  white-space: nowrap;
+}
+
+.pf-tabs-inner {
+  display: inline-flex;
+  gap: 12rpx;
+  padding-bottom: 4rpx;
+}
+
+.pf-tab {
+  flex: 0 0 auto;
+  height: 58rpx;
+  margin: 0;
+  padding: 0 26rpx;
+  border: 1rpx solid #e2d5c8;
+  border-radius: 29rpx;
+  background: #fffdf9;
+  color: #6f6259;
+  font-size: 24rpx;
+  line-height: 56rpx;
+}
+
+.pf-tab::after { border: none; }
+
+.pf-tab.active {
+  border-color: #b07a5e;
+  background: #b07a5e;
+  color: #fffaf3;
+}
+
+.work-cat-chip {
+  position: absolute;
+  z-index: 2;
+  top: 12rpx;
+  left: 12rpx;
+  padding: 4rpx 14rpx;
+  border-radius: 20rpx;
+  background: rgba(255, 250, 243, 0.88);
+  color: #7c5b46;
+  font-size: 19rpx;
+  line-height: 1.4;
 }
 
 .work-card.selected .work-image-wrap {

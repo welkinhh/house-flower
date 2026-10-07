@@ -1,5 +1,5 @@
 import { EDITORIAL_ASSETS } from '../../data/editorial-assets'
-import { PROFILE_KEY, WORKS_KEY, dayKey, readWorks, saveWork, type WorkRecord } from '../../utils/houseflower-data'
+import { PROFILE_KEY, WORKS_KEY, DEFAULT_WORK_CATEGORY, PORTFOLIO_CATEGORIES, PORTFOLIO_CATEGORY_LABEL, dayKey, readWorks, saveWork, type WorkRecord } from '../../utils/houseflower-data'
 import { completeBackendUpload, deleteCloudWork, prepareBackendUpload, requestAccountDeletion, saveCloudWork, updateRemoteProfile } from '../../utils/backend'
 
 function uploadLocalAsset(path: string, purpose = 'work-cover'): Promise<string> {
@@ -83,43 +83,41 @@ export const worksActions = {
       icon: failedCount ? 'none' : 'success',
     })
   },
-  async saveInspirationToWorks(this: any) {
-    const item = this.data.selectedInspiration
-    if (!item || !item.resultPath) return
-    const now = Date.now()
-    const record: WorkRecord = {
-      id: String(now), kind: 'bouquet', title: String(item.title || '灵感花作'),
-      previewPath: String(item.resultPath), sourcePath: String(item.sourcePath || item.path || ''),
-      createdAt: now, dateKey: dayKey(new Date(now)),
-      sourceKey: 'inspiration-gallery|' + String(item.id),
-    }
-    try {
-      const works = saveWork(record)
-      this.setData({
-        works,
-        selectedInspiration: { ...item, saved: true },
-      })
-      this.refreshWorks()
-      const saved = works.find((work) => work.sourceKey === record.sourceKey) || record
-      try {
-        const editorialPaths = editorialPathsForWork(record)
-        const remote = await saveCloudWork({
-          kind: record.kind,
-          title: record.title,
-          sourceKey: record.sourceKey,
-          metadata: { createdAt: record.createdAt, previewPath: editorialPaths && editorialPaths.previewPath, sourcePath: editorialPaths && editorialPaths.sourcePath },
-        })
-        const synced = readWorks().map((work) => work.id === saved.id ? { ...work, cloudWorkId: remote.workId, cloudRevision: remote.revision, cloudSyncPending: false } : work)
-        wx.setStorageSync(WORKS_KEY, synced)
-        this.setData({ works: synced })
-        wx.showToast({ title: '已保存到作品集', icon: 'success' })
-      } catch {
-        const pending = readWorks().map((work) => work.id === saved.id ? { ...work, cloudSyncPending: true } : work)
-        wx.setStorageSync(WORKS_KEY, pending)
-        this.setData({ works: pending })
-        wx.showToast({ title: '已保存到本机，云端同步待重试', icon: 'none' })
-      }
-    } catch { wx.showToast({ title: '保存失败，请重试', icon: 'none' }) }
+  async startUploadWork(this: any) {
+    if (!this.data.isAdmin) { wx.showToast({ title: '仅店铺管理员可上传作品', icon: 'none' }); return }
+    const page = this
+    wx.chooseImage({
+      count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'],
+      success: async (result: any) => {
+        const path = result.tempFilePaths && result.tempFilePaths[0]
+        if (!path) return
+        const now = Date.now()
+        const work: WorkRecord = {
+          id: String(now), kind: 'bouquet', category: DEFAULT_WORK_CATEGORY,
+          title: '店铺作品', previewPath: path, sourcePath: path,
+          createdAt: now, dateKey: dayKey(new Date(now)), sourceKey: 'upload|' + now,
+        }
+        try {
+          const works = saveWork(work)
+          page.setData({ works }, () => page.refreshWorks())
+          const assetId = await uploadLocalAsset(path, 'work-cover').catch(() => '')
+          const remote = page.data.backendReady
+            ? await saveCloudWork({
+              kind: work.kind, title: work.title, sourceKey: work.sourceKey,
+              previewAssetId: assetId, metadata: { createdAt: work.createdAt, category: work.category },
+            }).catch(() => null)
+            : null
+          if (remote) {
+            const synced = readWorks().map((item: WorkRecord) => item.id === work.id
+              ? { ...item, cloudWorkId: remote.workId, cloudRevision: remote.revision, previewAssetId: assetId, cloudSyncPending: false }
+              : item)
+            wx.setStorageSync(WORKS_KEY, synced)
+            page.setData({ works: synced }, () => page.refreshWorks())
+          }
+          wx.showToast({ title: '已添加到作品集', icon: 'success' })
+        } catch { wx.showToast({ title: '添加失败，请重试', icon: 'none' }) }
+      },
+    })
   },
   changeWorksFilter(this: any, event: any) {
     this.setData({ worksFilter: String(event.currentTarget.dataset.id || 'all'), selectedWorkIds: [] }, () => this.refreshWorks())
@@ -160,7 +158,8 @@ export const worksActions = {
     })
   },
   openWork(this: any, event: any) {
-    const work = this.data.visibleWorks[Number(event.currentTarget.dataset.index)]
+    const list = this.data.mode === 'portfolio' ? (this.data.portfolioItems || []) : (this.data.visibleWorks || [])
+    const work = list[Number(event.currentTarget.dataset.index)]
     if (!work) return
     if (this.data.selectingWorks) {
       const ids: string[] = (this.data.selectedWorkIds || []).slice()
@@ -172,7 +171,9 @@ export const worksActions = {
     }
     const sourcePath = work.sourcePath || ''
     this.setData({ currentWork: {
-      ...work, rows: work.rows ? JSON.parse(JSON.stringify(work.rows)) : [],
+      ...work,
+      categoryLabel: PORTFOLIO_CATEGORY_LABEL[work.category || 'bouquet'] || '花束',
+      rows: work.rows ? JSON.parse(JSON.stringify(work.rows)) : [],
       showSource: Boolean(sourcePath && sourcePath !== work.previewPath),
       note: String(work.note || ''), noteLength: String(work.note || '').length,
     }, showWorkImageViewer: false })
@@ -210,13 +211,26 @@ export const worksActions = {
       this.setData({ works: pending, currentWork: { ...updated, cloudSyncPending: true } })
     }
   },
+  setWorkCategory(this: any, category: string) {
+    const current: WorkRecord | null = this.data.currentWork
+    if (!current) return
+    const updated: WorkRecord = { ...current, category: String(category || DEFAULT_WORK_CATEGORY) }
+    const local = readWorks().map((item) => item.id === updated.id ? updated : item)
+    wx.setStorageSync(WORKS_KEY, local)
+    this.setData({ works: local, currentWork: updated })
+    this.refreshWorks()
+    wx.showToast({ title: '分类已更新', icon: 'success' })
+  },
   workMore(this: any, event: any) {
     const index = event && event.currentTarget && event.currentTarget.dataset ? Number(event.currentTarget.dataset.index) : -1
-    const work: WorkRecord | null = index >= 0 ? this.data.visibleWorks[index] : this.data.currentWork
+    const list = this.data.mode === 'portfolio' ? (this.data.portfolioItems || []) : (this.data.visibleWorks || [])
+    const work: WorkRecord | null = index >= 0 ? list[index] : this.data.currentWork
     if (!work) return
     const page = this
+    const isOwner = this.data.isAdmin
+    const items = isOwner ? ['重命名', '改分类', '删除'] : ['重命名', '删除']
     wx.showActionSheet({
-      itemList: ['重命名', '删除'],
+      itemList: items,
       success: (result) => {
         if (result.tapIndex === 0) {
           wx.showModal({
@@ -246,6 +260,21 @@ export const worksActions = {
           })
           return
         }
+        if (isOwner && result.tapIndex === 1) {
+          const options = PORTFOLIO_CATEGORIES.filter((item) => item.id !== 'all')
+          wx.showActionSheet({
+            itemList: options.map((item) => item.label),
+            success: (sheet) => {
+              const picked = options[sheet.tapIndex]
+              if (!picked) return
+              if (page.data.mode !== 'workDetail' || !page.data.currentWork || page.data.currentWork.id !== work.id) {
+                page.setData({ currentWork: { ...work, category: picked.id } })
+              }
+              page.setWorkCategory(picked.id)
+            },
+          })
+          return
+        }
         wx.showModal({
           title: '删除这件作品？', content: '删除后，作品图片会一并移除。',
           success: async (modal) => {
@@ -256,7 +285,7 @@ export const worksActions = {
             }
             const works = readWorks().filter((item) => item.id !== work.id)
             wx.setStorageSync(WORKS_KEY, works)
-            page.setData({ works, currentWork: null, mode: 'works', topCaption: '作品' }, () => page.refreshWorks())
+            page.setData({ works, currentWork: null, mode: 'portfolio', topCaption: '作品集' }, () => page.refreshWorks())
           },
         })
       },
@@ -275,7 +304,8 @@ export const worksActions = {
     })
   },
   workLongPress(this: any, event: any) {
-    const work = (this.data.visibleWorks || [])[Number(event.currentTarget.dataset.index)]
+    const list = this.data.mode === 'portfolio' ? (this.data.portfolioItems || []) : (this.data.visibleWorks || [])
+    const work = list[Number(event.currentTarget.dataset.index)]
     if (!work || this.data.selectingWorks) return
     this.setData({ selectingWorks: true, selectedWorkIds: [work.id] }, () => this.refreshWorks())
     try { wx.vibrateShort({ type: 'light' }) } catch {}

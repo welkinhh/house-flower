@@ -3,6 +3,7 @@ export type WorkRecord = {
   id: string
   kind: WorkKind
   kindLabel?: string
+  category?: string
   title: string
   previewPath: string
   sourcePath?: string
@@ -33,6 +34,22 @@ export const DATES_KEY = 'houseflower.dates'
 export const PROFILE_KEY = 'houseflower.profile'
 export const USES_KEY = 'houseflower.remainingUses'
 export const DEFAULT_USES = 10
+
+// 作品集业务分类（花店门面语言）
+export const DEFAULT_WORK_CATEGORY = 'bouquet'
+export const PORTFOLIO_CATEGORIES = [
+  { id: 'all', label: '全部' },
+  { id: 'bouquet', label: '花束' },
+  { id: 'basket', label: '花篮' },
+  { id: 'wedding', label: '婚礼' },
+  { id: 'sympathy', label: '探病' },
+  { id: 'opening', label: '开业' },
+  { id: 'gift', label: '送礼' },
+]
+export const PORTFOLIO_CATEGORY_LABEL: Record<string, string> = {
+  all: '全部', bouquet: '花束', basket: '花篮', wedding: '婚礼',
+  sympathy: '探病', opening: '开业', gift: '送礼',
+}
 
 export function dayKey(date: Date): string {
   return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')

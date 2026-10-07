@@ -1,6 +1,7 @@
 import { EDITORIAL_ASSETS } from '../../data/editorial-assets'
 import {
   DEFAULT_USES, PROFILE_KEY, USES_KEY,
+  DEFAULT_WORK_CATEGORY, PORTFOLIO_CATEGORIES, PORTFOLIO_CATEGORY_LABEL,
   dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readWorks,
   type WorkRecord,
 } from '../../utils/houseflower-data'
@@ -21,56 +22,9 @@ const HOME_ENTRIES = [
 ]
 const NAV_ITEMS = [
   { id: 'home', label: '首页', glyph: 'home' },
-  { id: 'inspirationList', label: '灵感', glyph: 'inspiration' },
-  { id: 'works', label: '作品', glyph: 'works' },
+  { id: 'portfolio', label: '作品集', glyph: 'works' },
 ]
-const INSPIRATION_CATEGORIES = [
-  { id: 'all', label: '全部' }, { id: 'film', label: '电影' }, { id: 'music', label: '音乐' },
-  { id: 'art', label: '绘画' }, { id: 'nature', label: '自然' },
-]
-const CATEGORY_LABELS: Record<string, string> = { all: '全部', film: '电影', music: '音乐', art: '绘画', nature: '自然' }
 const TASK_RECOVERY_WINDOW_MS = 24 * 60 * 60 * 1000
-function inspirationCase(id: keyof typeof EDITORIAL_ASSETS.inspirationCases, category: string, title: string, description: string) {
-  const assets = EDITORIAL_ASSETS.inspirationCases[id]
-  return { id, category, title, description, path: assets.reference, resultPath: assets.flower }
-}
-
-const INSPIRATION_CASES = [
-  // 电影：8 个原创意境图，加上展示案例《楚门的世界》。
-  inspirationCase('titanic', 'film', '泰坦尼克号', '海洋蓝与暖金，把远行、相遇和告别编进花束。'),
-  inspirationCase('green-book', 'film', '绿皮书', '橄榄绿、奶油白与爵士路途的温暖色调。'),
-  inspirationCase('grand-budapest', 'film', '布达佩斯大饭店', '粉色建筑、雪山与精致几何包装。'),
-  inspirationCase('pursuit-happyness', 'film', '当幸福来敲门', '城市晨光里的金橙色，表现坚持与希望。'),
-  inspirationCase('blindspotting', 'film', '盲点', '奥克兰街景的赭红与青绿，表现友情和韧性。'),
-  inspirationCase('les-choristes', 'film', '放牛班的春天', '冬日教室的奶油白与浅蓝，温柔而有力量。'),
-  inspirationCase('truman', 'film', '楚门的世界', '走向天光的一刻，以蓝白和日光金表现自由。'),
-  inspirationCase('cinema-paradiso', 'film', '天堂电影院', '老影院的酒红与琥珀光，收住怀旧的温度。'),
-  inspirationCase('legend-1900', 'film', '海上钢琴师', '钢琴、海面和靛蓝夜色，带一点香槟金。'),
-  // 音乐：周杰伦《Jay》保留在上方展示案例，音乐分类使用 6 位不同歌手。
-  inspirationCase('thriller', 'music', 'Michael Jackson · Thriller', '舞台聚光下的黑白、红与钴蓝。'),
-  inspirationCase('folklore', 'music', 'Taylor Swift · folklore', '雾林灰绿与象牙白，安静而有故事感。'),
-  inspirationCase('black-tangerine', 'music', '陶喆 · 黑色柳丁', '炭黑与橙红的强烈节奏，转成现代花束。'),
-  inspirationCase('u87', 'music', '陈奕迅 · U87', '香港雨夜、银灰和低饱和的港风夜色。'),
-  inspirationCase('floating', 'music', '王菲 · 浮躁', '雨雾绿、银灰与轻微迷离的层次。'),
-  inspirationCase('dandan-youqing', 'music', '邓丽君 · 淡淡幽情', '月下庭院、象牙白和浅银蓝的古典气息。'),
-  // 绘画：两幅公有领域藏品和用户指定的《星夜》。
-  inspirationCase('starry-night', 'art', '梵高 · 星夜', '群青和月光金，旋转的夜色化作花束。'),
-  inspirationCase('great-wave', 'art', '葛饰北斋 · 神奈川冲浪里', '靛蓝浪潮与象牙白泡沫的花材配色。'),
-  inspirationCase('japanese-bridge', 'art', '莫奈 · 日本桥', '睡莲绿、浅紫和粉色水光的印象派花园。'),
-  // 自然：三个自然景观，加春芽、夏塘、秋叶、冬雪四季主题。
-  inspirationCase('golden-mountain', 'nature', '日照金山', '晨光镀过山脊，花束以奶油白和暖金回应。'),
-  inspirationCase('po-pin-chau', 'nature', '麦理浩径 · 破边洲', '海蓝与六角岩柱的灰褐色，清爽而有力量。'),
-  inspirationCase('meadow', 'nature', '高山草甸', '露珠、野花和新绿组成轻盈的田野花束。'),
-  inspirationCase('spring-buds', 'nature', '春芽', '嫩绿新叶、白色花苞和浅粉色的初春气息。'),
-  inspirationCase('summer-pond', 'nature', '夏塘', '荷叶、粉荷与水面晚霞的清凉配色。'),
-  inspirationCase('autumn-leaves', 'nature', '秋叶', '枫红、银杏金和深酒红的秋日层次。'),
-  inspirationCase('winter-snow', 'nature', '冬雪', '雪白山茶、松针绿和一点莓果红。'),
-]
-const INSPIRATION_BANNERS = [
-  { id: 'bn-titanic', caseId: 'titanic', title: '泰坦尼克号', sub: '海上夜色里的蓝与金', path: EDITORIAL_ASSETS.inspirationCases.titanic.reference },
-  { id: 'bn-starry', caseId: 'starry-night', title: '星夜花束', sub: '把旋转的夜空化作花束', path: EDITORIAL_ASSETS.inspirationCases['starry-night'].reference },
-  { id: 'bn-golden-mountain', caseId: 'golden-mountain', title: '日照金山', sub: '把晨光留下来', path: EDITORIAL_ASSETS.inspirationCases['golden-mountain'].reference },
-]
 const INSPIRATION_EXAMPLES = [
   { id: 'truman', assetKey: 'case-truman-reference', title: '电影 · 楚门的世界', description: '走向天光的一刻，开成一束向阳的花。', path: EDITORIAL_ASSETS.showcases.truman.input, resultPath: EDITORIAL_ASSETS.showcases.truman.result },
   { id: 'jay', assetKey: 'case-jay-reference', title: '专辑 · 周杰伦《Jay》', description: '把暗红、黑色和琥珀金转化成一束花。', path: EDITORIAL_ASSETS.showcases.jay.input, resultPath: EDITORIAL_ASSETS.showcases.jay.result },
@@ -151,12 +105,6 @@ function resolveEditorialWork(work: any, urls: Record<string, string>): any {
   return resolveEditorialValue(work, urls)
 }
 
-function galleryResultPath(item: any): string {
-  if (item && item.resultPath) return item.resultPath
-  const index = INSPIRATION_CASES.findIndex((entry) => entry.id === item.id)
-  return EDITORIAL_ASSETS.inspirationBouquets[(Math.max(0, index)) % EDITORIAL_ASSETS.inspirationBouquets.length]
-}
-
 function taskRecoveryDeadline(task: any): number {
   const value = task && (task.completedAt || task.updatedAt || task.createdAt)
   const timestamp = value instanceof Date ? value.getTime() : new Date(value).getTime()
@@ -226,11 +174,11 @@ function mergeCloudWorks(localWorks: WorkRecord[], remoteWorks: any[], urls: Rec
 // 首次进入且本地没有作品时，写入 5 个示例作品，方便查看作品集排版（可长按删除）
 const DEMO_SEED_KEY = 'houseflower.demoSeeded'
 const DEMO_WORKS = [
-  { title: '柔粉的告白', path: EDITORIAL_ASSETS.inspirationBouquets[0], daysAgo: 3 },
-  { title: '春日来信', path: EDITORIAL_ASSETS.inspirationBouquets[1], daysAgo: 9 },
-  { title: '午后阳光', path: EDITORIAL_ASSETS.inspirationBouquets[2], daysAgo: 16 },
-  { title: '一帧安静', path: EDITORIAL_ASSETS.inspirationGarden, daysAgo: 24 },
-  { title: '窗边的春日', path: EDITORIAL_ASSETS.scenes[0].path, daysAgo: 31 },
+  { title: '柔粉的告白', path: EDITORIAL_ASSETS.inspirationBouquets[0], daysAgo: 3, category: 'bouquet' },
+  { title: '春日来信', path: EDITORIAL_ASSETS.inspirationBouquets[1], daysAgo: 9, category: 'bouquet' },
+  { title: '午后阳光', path: EDITORIAL_ASSETS.inspirationBouquets[2], daysAgo: 16, category: 'basket' },
+  { title: '一帧安静', path: EDITORIAL_ASSETS.inspirationGarden, daysAgo: 24, category: 'wedding' },
+  { title: '窗边的春日', path: EDITORIAL_ASSETS.scenes[0].path, daysAgo: 31, category: 'gift' },
 ]
 
 function seedDemoWorks(): WorkRecord[] {
@@ -242,7 +190,7 @@ function seedDemoWorks(): WorkRecord[] {
     const demo: WorkRecord[] = DEMO_WORKS.map((item, index) => {
       const created = new Date(now - item.daysAgo * 86400000)
       return {
-        id: 'demo-' + (index + 1), kind: 'bouquet', title: item.title,
+        id: 'demo-' + (index + 1), kind: 'bouquet', category: item.category, title: item.title,
         previewPath: item.path, sourcePath: item.path,
         fileID: '', sourceFileID: '', createdAt: created.getTime(),
         dateKey: dayKey(created), sourceKey: 'demo|' + index,
@@ -271,10 +219,7 @@ Page({
     isAdmin: false, subscriptionTemplates: { date: '', task: '' }, adminRange: 30, adminSummary: null as any,
     quotaGiftUserId: '', quotaGiftCount: '1', quotaGiftReason: '', quotaGiftBusy: false,
     inspirationExamples: INSPIRATION_EXAMPLES, recognitionExamples: RECOGNITION_EXAMPLES,
-    inspirationBanners: INSPIRATION_BANNERS, bannerCurrent: 0,
-    inspirationCategories: INSPIRATION_CATEGORIES, inspirationCategory: 'all', inspirationSearch: '',
-    inspirationItems: INSPIRATION_CASES.map((item) => ({ ...item, categoryLabel: CATEGORY_LABELS[item.category], sourcePath: item.path, resultPath: galleryResultPath(item) })),
-    showInspirationDetail: false, selectedInspiration: null as any,
+    portfolioCategory: 'all', portfolioSearch: '', portfolioItems: [] as WorkRecord[], portfolioCategories: PORTFOLIO_CATEGORIES,
     showWorkImageViewer: false,
     inspirationPath: '', inspirationAssetKey: '', inspirationMessage: '',
     generationPreviewPath: '', generationSourcePath: '', generationFileID: '', sourceFileID: '', generationAssetId: '', generationSourceAssetId: '',
@@ -388,16 +333,6 @@ Page({
     const selectedScene = sceneOptions.find((scene: any) => scene.id === this.data.selectedSceneId) || sceneOptions[0]
     const profile = this.data.userProfile || DEFAULT_PROFILE
     const currentWork = this.data.currentWork ? resolveEditorialWork(this.data.currentWork, urls) : this.data.currentWork
-    const selectedCase = this.data.selectedInspiration
-      ? INSPIRATION_CASES.find((item) => item.id === this.data.selectedInspiration.id)
-      : null
-    const selectedInspiration = selectedCase ? {
-      ...resolve(selectedCase),
-      sourcePath: resolveEditorialPath(selectedCase.path, urls),
-      resultPath: resolveEditorialPath(galleryResultPath(selectedCase), urls),
-      categoryLabel: CATEGORY_LABELS[selectedCase.category] || '灵感',
-      saved: Boolean(this.data.selectedInspiration.saved),
-    } : this.data.selectedInspiration
     this.setData({
       editorialAssetUrls: urls,
       editorialAssetsReady: true,
@@ -407,7 +342,6 @@ Page({
       homeEntries: this.data.isAdmin ? resolve(HOME_ENTRIES) : [],
       inspirationExamples: resolve(INSPIRATION_EXAMPLES),
       recognitionExamples: resolve(RECOGNITION_EXAMPLES),
-      inspirationBanners: resolve(INSPIRATION_BANNERS),
       sceneOptions,
       scenePath: this.data.selectedSceneId === 'custom' ? this.data.scenePath : selectedScene && selectedScene.path || '',
       sceneTitle: this.data.selectedSceneId === 'custom' ? this.data.sceneTitle : selectedScene && selectedScene.name || '',
@@ -417,12 +351,10 @@ Page({
       },
       works: (this.data.works || []).map((work: any) => resolveEditorialWork(work, urls)),
       visibleWorks: (this.data.visibleWorks || []).map((work: any) => resolveEditorialWork(work, urls)),
-      selectedInspiration,
       currentWork,
       inspirationPath: this.data.inspirationAssetKey ? urls[this.data.inspirationAssetKey] || '' : resolveEditorialPath(this.data.inspirationPath, urls),
       replicaPath: this.data.replicaAssetKey ? urls[this.data.replicaAssetKey] || '' : resolveEditorialPath(this.data.replicaPath, urls),
     }, () => {
-      this.refreshInspiration()
       this.refreshWorks()
     })
   },
@@ -605,7 +537,7 @@ Page({
     }).exec()
   },
   setMode(this: any, mode: string, title: string) {
-    const active = ['home', 'inspirationList', 'works'].includes(mode) ? mode : 'home'
+    const active = ['home', 'portfolio'].includes(mode) ? mode : 'home'
     this.setData({
       mode, topCaption: title,
       navItems: NAV_ITEMS.map((item) => ({ ...item, active: item.id === active })),
@@ -614,13 +546,12 @@ Page({
   },
   changeTab(this: any, event: any) {
     const id = String(event.currentTarget.dataset.id || 'home')
-    if (id === 'works') {
-      this.setMode('works', '作品')
+    if (id === 'portfolio') {
+      this.setMode('portfolio', '作品集')
       this.refreshWorks()
       if (this.data.backendReady) void this.syncCloudData()
       return
     }
-    if (id === 'inspirationList') { this.setMode('inspirationList', '灵感'); this.refreshInspiration(); return }
     this.setMode('home', this.data.brand.shopName)
   },
   openEntry(this: any, event: any) {
@@ -650,8 +581,8 @@ Page({
       if (mode === 'generationResult') { this.clearPendingFlowerGeneration(); this.setMode('inspiration', '拾光成花') }
       else if (mode === 'recognitionResult') this.setMode('recognition', '识花成单')
       else if (mode === 'sceneResult') { this.setMode('scene', '花映生活'); this.captureSceneRect() }
-      else if (mode === 'workDetail') { this.setMode('works', '作品'); this.refreshWorks() }
-      else if (mode === 'settings') { this.setMode('works', '作品') }
+      else if (mode === 'workDetail') { this.setMode('portfolio', '作品集'); this.refreshWorks() }
+      else if (mode === 'settings') { this.setMode('portfolio', '作品集') }
       else this.setMode('home', this.data.brand.shopName)
     }
     const unsaved = (mode === 'generationResult' && !this.data.generatedSaved)
@@ -674,78 +605,34 @@ Page({
   },
   refreshNav(this: any) {
     const mode = String(this.data.mode || 'home')
-    const active = ['home', 'inspirationList', 'works'].includes(mode) ? mode : 'home'
+    const active = ['home', 'portfolio'].includes(mode) ? mode : 'home'
     this.setData({ navItems: NAV_ITEMS.map((item) => ({ ...item, active: item.id === active })) })
   },
-  refreshInspiration(this: any) {
-    const category = this.data.inspirationCategory || 'all'
-    const query = String(this.data.inspirationSearch || '').trim().toLowerCase()
-    const urls = this.data.editorialAssetUrls || {}
-    const items = INSPIRATION_CASES
-      .filter((item) => (category === 'all' || item.category === category)
-        && (!query || (item.title + item.description + (CATEGORY_LABELS[item.category] || '')).toLowerCase().indexOf(query) >= 0))
-        .map((item) => ({
-          ...item,
-          path: resolveEditorialPath(item.path, urls),
-          sourcePath: resolveEditorialPath(item.path, urls),
-          resultPath: resolveEditorialPath(galleryResultPath(item), urls),
-          categoryLabel: CATEGORY_LABELS[item.category] || '灵感',
-        }))
-    this.setData({ inspirationItems: items })
+  // ---- 作品集（统一门面：店主与顾客同看一套作品） ----
+  refreshPortfolio(this: any) {
+    const category = this.data.portfolioCategory || 'all'
+    const query = String(this.data.portfolioSearch || '').trim().toLowerCase()
+    const items = (this.data.visibleWorks || [])
+      .filter((work: any) => (category === 'all' || (work.category || DEFAULT_WORK_CATEGORY) === category)
+        && (!query || (work.title + ' ' + (work.note || '')).toLowerCase().indexOf(query) >= 0))
+      .map((work: any) => ({ ...work, categoryLabel: PORTFOLIO_CATEGORY_LABEL[work.category || DEFAULT_WORK_CATEGORY] || '花束' }))
+    this.setData({ portfolioItems: items })
   },
-  onBannerChange(this: any, event: any) {
-    if (event && event.detail && typeof event.detail.current === 'number') {
-      this.setData({ bannerCurrent: event.detail.current })
-    }
-  },
-  searchInspiration(this: any, event: any) {
-    this.setData({ inspirationSearch: String(event.detail.value || '') }, () => this.refreshInspiration())
-  },
-  selectInspirationCategory(this: any, event: any) {
+  selectPortfolioCategory(this: any, event: any) {
     const category = String(event.currentTarget.dataset.id || 'all')
-    void trackClientEvent('inspiration_category', { category }).catch(() => {})
-    this.setData({ inspirationCategory: category }, () => this.refreshInspiration())
+    this.setData({ portfolioCategory: category }, () => this.refreshPortfolio())
   },
-  openInspirationCase(this: any, event: any) {
-    if (!this.data.editorialAssetsReady) return
-    const item = (this.data.inspirationItems || []).find((entry: any) => entry.id === String(event.currentTarget.dataset.id))
-    if (item) this.setData({
-      selectedInspiration: {
-        ...item,
-        categoryLabel: CATEGORY_LABELS[item.category] || '灵感',
-        saved: readWorks().some((work) => work.sourceKey === 'inspiration-gallery|' + item.id),
-      },
-      showInspirationDetail: true,
-    })
-    if (item) void trackClientEvent('inspiration_open', { category: item.category, caseId: item.id, title: item.title }).catch(() => {})
+  searchPortfolio(this: any, event: any) {
+    this.setData({ portfolioSearch: String(event.detail.value || '') }, () => this.refreshPortfolio())
   },
-  closeInspirationDetail(this: any) { this.setData({ showInspirationDetail: false }) },
+  clearPortfolioSearch(this: any) {
+    this.setData({ portfolioSearch: '' }, () => this.refreshPortfolio())
+  },
+  openCreationSheet(this: any) {
+    if (!this.data.isAdmin) return
+    this.changeTab({ currentTarget: { dataset: { id: 'home' } } })
+  },
   stopPropagation() {},
-  useInspirationCase(this: any) {
-    const item = this.data.selectedInspiration
-    if (!item) return
-    const source = (EDITORIAL_ASSETS.inspirationCases as Record<string, { reference: string; flower: string }>)[String(item.id)]
-    void trackClientEvent('inspiration_use', { category: item.category, caseId: item.id, title: item.title }).catch(() => {})
-    this.setData({
-      showInspirationDetail: false, inspirationPath: item.path, inspirationAssetKey: source ? editorialAssetKey(source.reference) : '',
-      generationPreviewPath: '', generationSourcePath: '', generationFileID: '', sourceFileID: '',
-      generatedSaved: false, bouquetTitle: item.title + ' · 花束', inspirationMessage: '',
-    })
-    this.setMode('inspiration', '拾光成花')
-  },
-  generateInspirationList(this: any) {
-    const item = this.data.selectedInspiration
-    if (!item || !item.resultPath) return
-    const source = (EDITORIAL_ASSETS.inspirationCases as Record<string, { reference: string; flower: string }>)[String(item.id)]
-    this.setData({
-      showInspirationDetail: false,
-      replicaPath: item.resultPath, replicaAssetKey: source ? editorialAssetKey(source.flower) : '', replicaCandidates: [], replicaNotes: [], replicaAssetId: '',
-      replicaSampleId: 'hand-bouquet', replicaParentWorkId: '', replicaDemo: false,
-      recognitionSaved: false, replicaMessage: '',
-    })
-    this.setMode('recognition', '识花成单')
-    this.refreshNav()
-  },
   openWorkImageViewer(this: any) {
     const work = this.data.currentWork
     if (work && work.previewPath) this.setData({ showWorkImageViewer: true })
@@ -853,6 +740,7 @@ Page({
     })
     this.setData({ visibleWorks, workCount: visibleWorks.length, recentTasks, featuredWorks: visibleWorks.slice(0, 6) })
     this.scheduleRecentTaskExpiry()
+    this.refreshPortfolio()
   },
   scheduleRecentTaskExpiry(this: any) {
     if (this._recentTaskExpiryTimer) clearTimeout(this._recentTaskExpiryTimer)
@@ -887,10 +775,8 @@ Page({
   applyRoleUI(this: any) {
     const isAdmin = this.data.isAdmin
     const mode = String(this.data.mode || 'home')
-    const active = ['home', 'inspirationList', 'works'].includes(mode) ? mode : 'home'
-    const navItems = NAV_ITEMS
-      .filter((item: any) => isAdmin || item.id !== 'inspirationList')
-      .map((item: any) => ({ ...item, active: item.id === active }))
+    const active = ['home', 'portfolio'].includes(mode) ? mode : 'home'
+    const navItems = NAV_ITEMS.map((item: any) => ({ ...item, active: item.id === active }))
     const homeEntries = isAdmin
       ? (this.data.homeEntries && this.data.homeEntries.length ? this.data.homeEntries : resolveEditorialValue(HOME_ENTRIES, this.data.editorialAssetUrls))
       : []

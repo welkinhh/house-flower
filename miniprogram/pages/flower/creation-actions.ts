@@ -310,7 +310,7 @@ export const creationActions = {
       if (!previewPath || !sourcePath) { wx.showToast({ title: '图片未能持久保存，请稍后重试', icon: 'none' }); return }
       const now = Date.now()
       const work: WorkRecord = {
-        id: String(now), kind: 'bouquet', title: String(page.data.bouquetTitle || '生活画面 · 花束'),
+        id: String(now), kind: 'bouquet', category: 'bouquet', title: String(page.data.bouquetTitle || '生活画面 · 花束'),
         previewPath, sourcePath, fileID: page.data.generationFileID, sourceFileID: page.data.sourceFileID,
         previewAssetId: page.data.generationAssetId, sourceAssetId: page.data.generationSourceAssetId,
         createdAt: now, dateKey: dayKey(new Date(now)),
@@ -454,6 +454,7 @@ export const creationActions = {
     this.setData({ replicaCandidates: rows, recognitionSaved: false })
   },
   stepSavedQuantity(this: any, event: any) {
+    if (!this.data.isAdmin) return
     const index = Number(event.currentTarget.dataset.index)
     const delta = Number(event.currentTarget.dataset.delta || 0)
     const current = this.data.currentWork
@@ -486,6 +487,7 @@ export const creationActions = {
     const field = String(event.currentTarget.dataset.field || '')
     if (!['name', 'colorLabel', 'unit'].includes(field)) return
     const saved = this.data.mode === 'workDetail' && this.data.currentWork
+    if (saved && !this.data.isAdmin) { wx.showToast({ title: '仅店铺管理员可编辑', icon: 'none' }); return }
     const sourceRows = saved ? this.data.currentWork.rows || [] : this.data.replicaCandidates || []
     const row = sourceRows[index]
     if (!row) return
@@ -542,6 +544,7 @@ export const creationActions = {
       const parent = (page.data.works || []).find((item: WorkRecord) => item.id === page.data.replicaParentWorkId)
       const work: WorkRecord = {
         ...(parent || {}), id: parent ? parent.id : String(now), kind: parent ? parent.kind : 'bouquet',
+        category: parent ? (parent.category || 'bouquet') : 'bouquet',
         title: parent ? parent.title : '照片花作', previewPath: parent ? parent.previewPath : savedPath,
         sourcePath: parent ? parent.sourcePath : savedPath,
         fileID: parent ? parent.fileID : page.data.sourceFileID,
@@ -579,6 +582,7 @@ export const creationActions = {
     })
   },
   editSavedQuantity(this: any, event: any) {
+    if (!this.data.isAdmin) { wx.showToast({ title: '仅店铺管理员可编辑用量', icon: 'none' }); return }
     const index = Number(event.currentTarget.dataset.index)
     const current = this.data.currentWork
     const row = current && current.rows && current.rows[index]
@@ -692,7 +696,7 @@ export const creationActions = {
     })
     Promise.all([load(artworkPath), ...rows.map((row) => load(row.assetPath || ''))]).then((images) => {
       ctx.fillStyle = '#f8f4ee'; ctx.fillRect(0, 0, width, height)
-      ctx.fillStyle = '#302b27'; ctx.font = '20px sans-serif'; ctx.textAlign = 'left'; ctx.fillText('House花生 · ' + (demo ? '示例清单' : '花材清单'), 24, 30)
+      ctx.fillStyle = '#302b27'; ctx.font = '20px sans-serif'; ctx.textAlign = 'left'; ctx.fillText((this.data.brand && this.data.brand.shopName || '花店') + ' · ' + (demo ? '示例清单' : '花材清单'), 24, 30)
       ctx.fillStyle = '#95877c'; ctx.font = '12px sans-serif'; ctx.fillText(new Date().toLocaleDateString(), 24, 50)
       const art = images[0]
       if (art) {
