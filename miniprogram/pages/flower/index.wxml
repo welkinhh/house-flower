@@ -340,12 +340,6 @@
         <text wx:if="{{bonusQuotaRemaining > 0}}" class="uses-bonus">含赠送 {{bonusQuotaRemaining}} 次</text>
       </view>
     </view>
-    <!-- 下划线 tab：作品集 / 花历 -->
-    <view class="line-tabs">
-      <button class="line-tab {{worksView === 'collection' ? 'active' : ''}}" data-id="collection" bindtap="selectWorksTab">作品集</button>
-      <button class="line-tab {{worksView === 'calendar' ? 'active' : ''}}" data-id="calendar" bindtap="selectWorksTab">花历</button>
-    </view>
-
     <!-- 作品集 -->
     <view wx:if="{{worksView === 'collection'}}" class="collection-view">
       <scroll-view scroll-y enhanced show-scrollbar="false" class="works-scroll" bindscrolltolower="loadMoreWorks">
@@ -389,66 +383,6 @@
       </view>
     </view>
 
-    <!-- 花历 -->
-    <view wx:if="{{worksView === 'calendar'}}" class="calendar-view">
-      <view class="month-bar">
-        <button class="month-nav" bindtap="previousMonth">‹</button>
-        <view class="month-choice">
-          <button class="month-year-button" bindtap="showCalendarPicker">{{calendarYearLabel}}年</button>
-          <button class="month-number-button" bindtap="showCalendarPicker">{{calendarMonthNumber}}月</button>
-        </view>
-        <button class="month-nav" bindtap="nextMonth">›</button>
-      </view>
-      <view class="weekdays">
-        <text wx:for="{{weekdays}}" wx:key="*this">{{item}}</text>
-      </view>
-      <view class="calendar-grid">
-        <view wx:for="{{calendarDays}}" wx:key="dateKey" class="cal-cell {{item.selected ? 'is-selected' : ''}} {{item.isToday ? 'is-today' : ''}} {{item.inMonth ? '' : 'is-blank'}}" data-date="{{item.dateKey}}" bindtap="selectCalendarDate">
-          <text class="cal-num">{{item.inMonth ? item.day : ''}}</text>
-          <image wx:if="{{editorialAssetsReady && item.inMonth && item.previewPath}}" class="cal-thumb" src="{{item.previewPath}}" mode="aspectFill" lazy-load="true" />
-          <view wx:if="{{item.inMonth && item.hasEvent}}" class="cal-event"></view>
-        </view>
-      </view>
-
-      <scroll-view scroll-y enhanced show-scrollbar="false" class="date-works">
-        <view class="dw-head">
-          <text class="dw-date">{{selectedDateLabel}}</text>
-          <view class="dw-head-actions">
-            <text class="dw-count">{{selectedDateWorks.length}} 件作品</text>
-            <button class="dw-add-date" bindtap="addImportantDate">＋ 记日子</button>
-          </view>
-        </view>
-        <view wx:for="{{selectedDateEvents}}" wx:key="id" class="date-event-row" data-id="{{item.id}}" bindtap="editImportantDate">
-          <view class="date-event-dot"></view>
-          <text class="date-event-title">{{item.title}}</text>
-          <text wx:if="{{item.repeatYearly}}" class="date-event-repeat">每年</text>
-          <text class="date-event-edit">编辑 ›</text>
-        </view>
-        <view wx:for="{{selectedDateWorks}}" wx:key="id" class="dw-card" data-id="{{item.id}}" bindtap="openCalendarWork">
-          <image wx:if="{{editorialAssetsReady && item.previewPath}}" class="dw-thumb" src="{{item.previewPath}}" mode="aspectFill" lazy-load="true" />
-          <view class="dw-copy">
-            <text class="dw-title">{{item.title}}</text>
-            <text class="dw-meta">{{item.dateLabel}} · {{item.kindLabel}}</text>
-            <text class="dw-go">查看作品 →</text>
-          </view>
-        </view>
-        <view wx:if="{{!selectedDateWorks.length}}" class="calendar-empty">这一天还没有保存作品</view>
-      </scroll-view>
-    </view>
-  </view>
-
-  <view wx:if="{{showCalendarPicker}}" class="modal-mask calendar-picker-mask" catchtap="cancelCalendarPicker">
-    <view class="month-picker-card" catchtap="stopPropagation">
-      <view class="month-picker-head">
-        <button bindtap="cancelCalendarPicker">取消</button>
-        <text>选择年月</text>
-        <button class="month-picker-confirm" bindtap="confirmCalendarPicker">确定</button>
-      </view>
-      <picker-view class="month-picker-view" indicator-style="height: 44px;" value="{{calendarPickerValue}}" bindchange="changeCalendarPicker">
-        <picker-view-column><view wx:for="{{calendarYears}}" wx:key="*this" class="month-picker-item">{{item}}年</view></picker-view-column>
-        <picker-view-column><view wx:for="{{calendarMonths}}" wx:key="*this" class="month-picker-item">{{item}}月</view></picker-view-column>
-      </picker-view>
-    </view>
   </view>
 
   <!-- ============ 10. 设置 ============ -->
@@ -479,7 +413,7 @@
           <text class="privacy-guide-title">隐私保护说明</text>
           <button class="privacy-guide-link" bindtap="openPrivacyGuide" hover-class="none">查看完整指引 ›</button>
         </view>
-        <text class="privacy-guide-copy">你主动选择用于花束生成或场景合成的照片会上传至腾讯云，并由腾讯混元图生图服务处理。昵称、头像、保存的作品和花历会同步到云端。</text>
+        <text class="privacy-guide-copy">你主动选择用于花束生成或场景合成的照片会上传至腾讯云，并由腾讯混元图生图服务处理。昵称、头像、保存的作品会同步到云端。</text>
         <text class="privacy-guide-copy">未保存任务的临时图片会在完成 24 小时后清理；仅在你点击“保存图片”时写入相册。你可以在本页申请删除账号及相关云端数据。</text>
       </view>
 
@@ -596,43 +530,6 @@
   <view wx:if="{{showWorkImageViewer && currentWork}}" class="modal-mask work-image-viewer" catchtap="closeWorkImageViewer">
     <button class="modal-close viewer-close" bindtap="closeWorkImageViewer" aria-label="关闭">×</button>
     <image class="viewer-image" src="{{currentWork.previewPath}}" mode="aspectFit" catchtap="stopPropagation" />
-  </view>
-
-  <!-- ============ 弹层：重要日子编辑 ============ -->
-  <view wx:if="{{showEventEditor}}" class="modal-mask" catchtap="closeEventEditor">
-    <view class="editor-card" catchtap="stopPropagation">
-      <view class="editor-head">
-        <text class="editor-title">{{editingEventId ? '编辑重要日子' : '添加重要日子'}}</text>
-        <button class="modal-close plain" bindtap="closeEventEditor">×</button>
-      </view>
-      <label class="editor-field">
-        <text>名称</text>
-        <input value="{{eventTitle}}" bindinput="updateEventTitle" placeholder="生日、纪念日……" maxlength="30" placeholder-class="title-placeholder" />
-      </label>
-      <label class="editor-field">
-        <text>日期</text>
-        <input value="{{eventDate}}" bindinput="updateEventDate" placeholder="YYYY-MM-DD" maxlength="10" placeholder-class="title-placeholder" />
-      </label>
-      <label class="editor-field">
-        <text>备注</text>
-        <input value="{{eventNote}}" bindinput="updateEventNote" placeholder="写一句提醒自己的话" maxlength="60" placeholder-class="title-placeholder" />
-      </label>
-      <label class="editor-field row">
-        <text>每年重复</text>
-        <switch checked="{{eventRepeats}}" bindchange="toggleEventRepeat" color="#bd7d7d" />
-      </label>
-      <picker mode="selector" range="{{eventWorkLabels}}" value="{{eventWorkIndex}}" bindchange="chooseEventWork">
-        <view class="editor-picker">
-          <text>关联作品</text>
-          <text class="picker-value">{{eventWorkLabels[eventWorkIndex] || '不关联'}}</text>
-        </view>
-      </picker>
-      <view class="action-row">
-        <button wx:if="{{editingEventId}}" class="btn outline" bindtap="deleteImportantDate">删除</button>
-        <button wx:if="{{subscriptionTemplates.date}}" class="btn outline" bindtap="requestDateSubscription">订阅提醒</button>
-        <button class="btn primary" bindtap="saveImportantDate">保存日子</button>
-      </view>
-    </view>
   </view>
 
   <!-- 底部导航：常驻（创作页不消失） -->

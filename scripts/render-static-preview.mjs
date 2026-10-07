@@ -335,7 +335,6 @@ async function drawWorks(c) {
   c.text(236, y + 40, '10', 15, '#3b342e', 400, 'Georgia,serif', 'end')
   c.line(12, y + 56, 238, y + 56)
   c.text(73, y + 75, '作品集', 8, '#3b342e', 600, 'Microsoft YaHei,sans-serif', 'middle')
-  c.text(181, y + 75, '花历', 8, '#9a8b7e', 400, 'Microsoft YaHei,sans-serif', 'middle')
   c.line(44, y + 83, 102, y + 83, '#3b342e', 2)
   const tiles = [
     ['bouquet-ivory-sample.webp', '柔粉的告白', '2026.09.27'], ['bouquet-peach-sample.webp', '春日来信', '2026.09.21'], ['bouquet-home.webp', '午后阳光', '2026.09.14'],
@@ -353,40 +352,6 @@ async function drawWorks(c) {
   c.bottomNav('作品')
 }
 
-async function drawCalendar(c) {
-  const y = c.miniBar('', false)
-  await c.image('bouquet-home.webp', 12, y + 9, 38, 38, 'cover', 19)
-  c.text(57, y + 25, '花生用户', 9, '#3b342e', 500, 'Songti SC,serif')
-  c.text(57, y + 39, 'ID 0001', 6.5, '#a3948a')
-  c.text(236, y + 20, '今日剩余次数', 5.5, '#9a8b7e', 400, 'Microsoft YaHei,sans-serif', 'end')
-  c.text(236, y + 40, '10', 15, '#3b342e', 400, 'Georgia,serif', 'end')
-  c.line(12, y + 56, 238, y + 56)
-  c.text(73, y + 75, '作品集', 8, '#9a8b7e', 400, 'Microsoft YaHei,sans-serif', 'middle')
-  c.text(181, y + 75, '花历', 8, '#3b342e', 600, 'Microsoft YaHei,sans-serif', 'middle')
-  c.line(152, y + 83, 209, y + 83, '#3b342e', 2)
-  c.text(29, y + 106, '‹', 12, '#8a7c6f')
-  c.text(125, y + 106, '2026年　9月⌄', 10, '#3b342e', 500, 'Songti SC,serif', 'middle')
-  c.text(221, y + 106, '›', 12, '#8a7c6f')
-  const week = ['日', '一', '二', '三', '四', '五', '六']
-  week.forEach((d, i) => c.text(28 + i * 32, y + 126, d, 6, '#b3a497', 400, 'Microsoft YaHei,sans-serif', 'middle'))
-  const dates = ['', '', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '30']
-  for (let i = 0; i < 35; i += 1) {
-    const row = Math.floor(i / 7), col = i % 7
-    const x = 28 + col * 32, dy = y + 145 + row * 25
-    if (i === 31) c.rect(x - 10, dy - 13, 20, 20, '#bd7d7d', 10)
-    const label = dates[i] || ''
-    c.text(x, dy, label, 7.5, i === 31 ? '#fffdf9' : '#796f65', 400, 'Georgia,serif', 'middle')
-    if ([7, 15, 22, 28].includes(i)) c.rect(x - 2, dy + 4, 4, 4, '#bd7d7d', 2)
-  }
-  c.line(12, y + 274, 238, y + 274)
-  c.text(13, y + 291, '接下来的日子', 9, '#4c4239', 500, 'Songti SC,serif')
-  c.text(236, y + 291, '+ 添加', 7, '#a96663', 400, 'Microsoft YaHei,sans-serif', 'end')
-  c.text(15, y + 310, '还没有提醒的日子，点「添加」记录', 6.5, '#a3948a')
-  c.line(12, y + 339, 238, y + 339)
-  c.text(14, y + 357, '9 月 30 日的作品', 8, '#4c4239', 400, 'Songti SC,serif')
-  c.text(14, y + 382, '这一天还没有保存作品', 6.5, '#a3948a')
-  c.bottomNav('作品')
-}
 
 async function drawProfile(c) {
   const y = c.miniBar('设置')
@@ -425,7 +390,6 @@ const sheets = [
   { n: 4, title: '作品与记录', pages: [
     { title: '灵感详情', draw: drawGalleryDetail },
     { title: '作品集', draw: drawWorks, nav: true },
-    { title: '花历', draw: drawCalendar, nav: true },
     { title: '个人资料', draw: drawProfile, nav: true },
   ] },
 ]

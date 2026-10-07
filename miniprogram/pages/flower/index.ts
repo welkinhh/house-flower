@@ -1,10 +1,10 @@
 import { EDITORIAL_ASSETS } from '../../data/editorial-assets'
 import {
   DEFAULT_USES, PROFILE_KEY, USES_KEY,
-  dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readDates, readWorks,
+  dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readWorks,
   type WorkRecord,
 } from '../../utils/houseflower-data'
-import { bootstrapBackend, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudDates, listCloudWorks, saveCloudDate, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
+import { bootstrapBackend, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudWorks, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
 import { AI_VISION_ENABLED, LOCAL_DEMO_MODE } from '../../utils/cloud-env'
 import { flowerAssetForName } from '../../utils/flower-materials'
 import { creationActions } from './creation-actions'
@@ -264,17 +264,6 @@ Page({
     works: [] as WorkRecord[], visibleWorks: [] as WorkRecord[], workCount: 0,
     recentTasks: [] as any[], currentRecoveredTaskId: '', resumingTaskId: '',
     cloudWorksOffset: 0, cloudWorksHasMore: false, cloudWorksLoading: false,
-    importantDates: [] as any[], calendarMonth: dayKey(new Date()).slice(0, 7),
-    calendarMonthLabel: '', calendarYearLabel: String(new Date().getFullYear()),
-    calendarMonthNumber: new Date().getMonth() + 1,
-    showCalendarPicker: false, calendarYears: [] as number[],
-    calendarMonths: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-    calendarPickerValue: [0, new Date().getMonth()],
-    weekdays: ['日', '一', '二', '三', '四', '五', '六'],
-    calendarDays: [] as any[], selectedDate: dayKey(new Date()), selectedDateWorks: [] as any[],
-    todayKey: dayKey(new Date()),
-    showEventEditor: false, editingEventId: '', eventTitle: '', eventDate: dayKey(new Date()), eventNote: '',
-    eventRepeats: false, eventWorkId: '', eventWorkIndex: 0, eventWorkLabels: ['不关联'], eventWorkIds: [''],
     showProfileEditor: false, userProfile: DEFAULT_PROFILE, remainingUses: DEFAULT_USES, bonusQuotaRemaining: 0,
     quotaDateKey: '', quotaLimit: DEFAULT_USES, quotaReserved: 0, quotaResetsAt: '', backendReady: false, visionAvailable: AI_VISION_ENABLED,
     isAdmin: false, subscriptionTemplates: { date: '', task: '' }, adminRange: 30, adminSummary: null as any,
@@ -309,17 +298,15 @@ Page({
     if (typeof uses !== 'number') uses = wx.getStorageSync('flower.remainingUses')
     this.setData({
       works,
-      importantDates: readDates(),
       remainingUses: typeof uses === 'number' ? Math.max(0, uses) : DEFAULT_USES,
       bonusQuotaRemaining: 0,
       userProfile: profile && profile.name ? { ...profile, avatarUrl: migrateMiniProgramAssetPath(profile.avatarUrl || '') || DEFAULT_PROFILE.avatarUrl } : DEFAULT_PROFILE,
-    }, () => { this.refreshWorks(); this.refreshCalendar() })
+    }, () => { this.refreshWorks() })
     try { wx.setNavigationBarTitle({ title: 'House花生' }) } catch {}
   },
   onShow(this: any) {
     this._quotaPageVisible = true
     this.refreshWorks()
-    this.refreshTodayCalendar()
     void this.refreshBackendSession()
     void this.refreshEditorialAssets()
     void this.restorePendingGeneration()
@@ -347,20 +334,8 @@ Page({
     const delay = Math.max(1000, resetAt - Date.now() + 1000)
     this._quotaRefreshTimer = setTimeout(() => {
       this._quotaRefreshTimer = null
-      this.refreshTodayCalendar()
       void this.refreshBackendSession()
     }, delay)
-  },
-  refreshTodayCalendar(this: any) {
-    const today = dayKey(new Date())
-    if (today === this.data.todayKey) return
-    const followsToday = String(this.data.selectedDate || '') === String(this.data.todayKey || '')
-    const updates: Record<string, any> = { todayKey: today }
-    if (followsToday) {
-      updates.selectedDate = today
-      updates.calendarMonth = today.slice(0, 7)
-    }
-    this.setData(updates, () => this.refreshCalendar())
   },
   async refreshBackendSession(this: any) {
     if (this._backendSessionRefreshing) return
@@ -544,12 +519,11 @@ Page({
     if (this._cloudSyncRefreshing) return
     this._cloudSyncRefreshing = true
     try {
-      const [worksResult, datesResult, tasksResult] = await Promise.allSettled([
-        listCloudWorks(30, 0), listCloudDates(), listBackendTasks(20),
+      const [worksResult, tasksResult] = await Promise.allSettled([
+        listCloudWorks(30, 0), listBackendTasks(20),
       ])
       const remotePage = worksResult.status === 'fulfilled'
         ? worksResult.value : { works: [], nextOffset: 0, hasMore: false }
-      const remoteDates = datesResult.status === 'fulfilled' ? datesResult.value : null
       const tasksAvailable = tasksResult.status === 'fulfilled'
       const taskRows = tasksAvailable ? tasksResult.value : []
       const remoteWorks = remotePage.works
@@ -588,39 +562,9 @@ Page({
         cloudWorksOffset: remotePage.nextOffset || 0,
         cloudWorksHasMore: remotePage.hasMore,
       })
-      const deletedDateIds = new Set((remoteDates || []).filter((date: any) => date.deletedAt).map((date: any) => date.id))
-      const dates = readDates().filter((date: any) =>
-        (!date.cloudDateId || !deletedDateIds.has(date.cloudDateId))
-        && !deletedDateIds.has(date.id))
-      ;(remoteDates || []).forEach((remote: any) => {
-        if (remote.deletedAt) return
-        const match = dates.find((item: any) => item.cloudDateId === remote.id || item.id === remote.id)
-        const linkedWork = remote.workId ? merged.find((work: any) => work.cloudWorkId === remote.workId) : null
-        const incoming = { ...remote, id: match ? match.id : 'cloud-' + remote.id, cloudDateId: remote.id, cloudWorkId: remote.workId || '', workId: linkedWork ? linkedWork.id : '' }
-        if (match && match.cloudSyncPending) {
-          match.cloudDateId = remote.id
-          match.cloudWorkId = remote.workId || match.cloudWorkId || ''
-        }
-        else if (match) Object.assign(match, incoming)
-        else dates.push(incoming)
-      })
-      for (let index = 0; index < dates.length; index += 1) {
-        const date = dates[index]
-        if (date.cloudDateId && !date.cloudSyncPending) continue
-        const linkedWork = date.workId ? merged.find((work: any) => work.id === date.workId) : null
-        if (date.workId && !linkedWork?.cloudWorkId) continue
-        try {
-          const remote = await saveCloudDate({ ...date, workId: linkedWork ? linkedWork.cloudWorkId : '' })
-          dates[index] = { ...date, cloudDateId: remote.id, cloudSyncPending: false }
-        } catch {
-          dates[index] = { ...date, cloudSyncPending: true }
-        }
-      }
       wx.setStorageSync('houseflower.works', merged)
-      wx.setStorageSync('houseflower.dates', dates)
-      this.setData({ works: merged, importantDates: dates, recentTasks })
+      this.setData({ works: merged, recentTasks })
       this.refreshWorks()
-      this.refreshCalendar()
     } catch {
       // Cloud sync is additive; local works remain available when the backend is offline.
     } finally {
@@ -636,27 +580,8 @@ Page({
       const assetIds = activeWorks.flatMap((work: any) => [work.previewAssetId, work.sourceAssetId, ...(work.assetIds || []), work.metadata && work.metadata.sceneBouquetAssetId, work.metadata && work.metadata.sceneCompositeAssetId]).filter(Boolean)
       const urls = assetIds.length ? await getCloudAssetUrls(assetIds) : {}
       const merged = mergeCloudWorks(readWorks(), page.works, urls)
-      const dates = readDates().map((date: any) => {
-        if (!date.cloudWorkId) return date
-        const linked = merged.find((work: any) => work.cloudWorkId === date.cloudWorkId)
-        return linked ? { ...date, workId: linked.id } : date
-      })
-      for (let index = 0; index < dates.length; index += 1) {
-        const date = dates[index]
-        if (date.cloudDateId && !date.cloudSyncPending) continue
-        const linkedWork = date.workId ? merged.find((work: any) => work.id === date.workId) : null
-        if (date.workId && !linkedWork?.cloudWorkId) continue
-        try {
-          const remote = await saveCloudDate({ ...date, id: date.cloudDateId || date.id, workId: linkedWork ? linkedWork.cloudWorkId : '' })
-          dates[index] = { ...date, cloudDateId: remote.id, cloudWorkId: linkedWork ? linkedWork.cloudWorkId : '', cloudSyncPending: false }
-        } catch {
-          dates[index] = { ...date, cloudSyncPending: true }
-        }
-      }
       wx.setStorageSync('houseflower.works', merged)
-      wx.setStorageSync('houseflower.dates', dates)
       this.setData({
-        importantDates: dates,
         works: merged,
         cloudWorksOffset: page.nextOffset || Number(this.data.cloudWorksOffset || 0),
         cloudWorksHasMore: page.hasMore,
@@ -923,7 +848,6 @@ Page({
     })
     this.setData({ visibleWorks, workCount: visibleWorks.length, recentTasks })
     this.scheduleRecentTaskExpiry()
-    this.refreshCalendar()
   },
   scheduleRecentTaskExpiry(this: any) {
     if (this._recentTaskExpiryTimer) clearTimeout(this._recentTaskExpiryTimer)
