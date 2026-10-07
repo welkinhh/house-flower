@@ -1,8 +1,9 @@
-// 店铺品牌配置（B 端白标）。云端 shops 集合按 shopId 隔离，MVP 固定 default 单店。
-// 顾客端读 brand 做门面展示；老板(isAdmin)可自助改 logo/店名/简介/联系方式。
+// 店铺品牌配置（M1 源码交付模式）：品牌烧进本地配置文件，
+// 交付前由你（或客户按指引）修改 brand.config.ts 后重新上传，不再走云端。
+
+import { SHOP_BRAND_CONFIG } from './brand.config'
 
 export type ShopBrand = {
-  shopId: string
   shopName: string
   logoAssetId: string
   logoUrl: string
@@ -12,10 +13,7 @@ export type ShopBrand = {
   slogan: string
 }
 
-export const DEFAULT_SHOP_ID = 'default'
-
 export const DEFAULT_BRAND: ShopBrand = {
-  shopId: DEFAULT_SHOP_ID,
   shopName: '花店名称',
   logoAssetId: '',
   logoUrl: '',
@@ -28,7 +26,6 @@ export const DEFAULT_BRAND: ShopBrand = {
 export function normalizeBrand(raw: Partial<ShopBrand> | null | undefined): ShopBrand {
   const source = raw || {}
   return {
-    shopId: String(source.shopId || DEFAULT_SHOP_ID),
     shopName: String(source.shopName || DEFAULT_BRAND.shopName),
     logoAssetId: String(source.logoAssetId || ''),
     logoUrl: String(source.logoUrl || ''),
@@ -37,4 +34,9 @@ export function normalizeBrand(raw: Partial<ShopBrand> | null | undefined): Shop
     contactPhone: String(source.contactPhone || ''),
     slogan: String(source.slogan || DEFAULT_BRAND.slogan),
   }
+}
+
+// M1：品牌直接来自本地配置 brand.config.ts，无云端请求、无多租户隔离。
+export function getLocalBrand(): ShopBrand {
+  return normalizeBrand(SHOP_BRAND_CONFIG)
 }

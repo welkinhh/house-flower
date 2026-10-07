@@ -4,9 +4,9 @@ import {
   dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readWorks,
   type WorkRecord,
 } from '../../utils/houseflower-data'
-import { bootstrapBackend, completeBackendUpload, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, getShopBrand, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudWorks, prepareBackendUpload, saveShopBrand, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
+import { bootstrapBackend, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudWorks, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
 import { AI_VISION_ENABLED, LOCAL_DEMO_MODE } from '../../utils/cloud-env'
-import { DEFAULT_BRAND, DEFAULT_SHOP_ID, type ShopBrand } from '../../utils/brand'
+import { DEFAULT_BRAND, getLocalBrand, type ShopBrand } from '../../utils/brand'
 import { flowerAssetForName } from '../../utils/flower-materials'
 import { creationActions } from './creation-actions'
 import { sceneActions } from './scene-actions'
@@ -257,8 +257,7 @@ function seedDemoWorks(): WorkRecord[] {
 Page({
   data: {
     mode: 'home', topCaption: DEFAULT_BRAND.shopName, homeHero: EDITORIAL_ASSETS.homeHero,
-    brand: DEFAULT_BRAND, featuredWorks: [] as WorkRecord[], showBrandSettings: false,
-    brandSettings: { shopName: '', intro: '', contactWechat: '', contactPhone: '', slogan: '', logoAssetId: '', logoUrl: '' }, brandLogoUploading: false,
+    brand: DEFAULT_BRAND, featuredWorks: [] as WorkRecord[],
     editorialAssetsReady: false, editorialAssetsLoading: true, editorialAssetUrls: {} as Record<string, string>,
     inspirationHero: EDITORIAL_ASSETS.inspirationGarden, homeEntries: HOME_ENTRIES,
     navItems: NAV_ITEMS.map((item) => ({ ...item, active: item.id === 'home' })),
@@ -871,25 +870,15 @@ Page({
       this.refreshWorks()
     }, Math.max(250, nextExpiry - Date.now() + 50))
   },
-  // ---- 店铺品牌（B 端白标） ----
-  async loadShopBrand(this: any) {
-    try {
-      const brand = await getShopBrand(DEFAULT_SHOP_ID)
-      await this.applyShopBrand(brand)
-    } catch {
-      await this.applyShopBrand(DEFAULT_BRAND)
-    }
+  // ---- 店铺品牌（M1 源码交付：品牌来自本地配置 brand.config.ts） ----
+  loadShopBrand(this: any) {
+    this.applyShopBrand(getLocalBrand())
   },
-  async applyShopBrand(brand: ShopBrand) {
-    const logoAssetId = brand.logoAssetId || ''
-    let logoUrl = brand.logoUrl || ''
-    if (logoAssetId && !logoUrl) {
-      try { const urls = await getCloudAssetUrls([logoAssetId]); logoUrl = urls[logoAssetId] || '' } catch {}
-    }
-    const merged = { ...DEFAULT_BRAND, ...brand, logoAssetId, logoUrl }
+  applyShopBrand(brand: ShopBrand) {
+    const merged = { ...DEFAULT_BRAND, ...brand }
     this.setData({ brand: merged })
     if (this.data.editorialAssetsReady) {
-      this.setData({ homeHero: (logoUrl || resolveEditorialPath(EDITORIAL_ASSETS.homeHero, this.data.editorialAssetUrls)) as any })
+      this.setData({ homeHero: (merged.logoUrl || resolveEditorialPath(EDITORIAL_ASSETS.homeHero, this.data.editorialAssetUrls)) as any })
     }
     try { wx.setNavigationBarTitle({ title: merged.shopName }) } catch {}
     if (this.data.mode === 'home') this.setData({ topCaption: merged.shopName })
@@ -938,60 +927,6 @@ Page({
     const phone = this.data.brand.contactPhone || ''
     if (!phone) return
     wx.makePhoneCall({ phoneNumber: phone, fail: () => {} })
-  },
-  openBrandSettings(this: any) {
-    if (!this.data.isAdmin) { wx.showToast({ title: '仅店铺管理员可设置品牌', icon: 'none' }); return }
-    const b = this.data.brand
-    this.setData({
-      brandSettings: {
-        shopName: b.shopName, intro: b.intro, contactWechat: b.contactWechat,
-        contactPhone: b.contactPhone, slogan: b.slogan, logoAssetId: b.logoAssetId, logoUrl: b.logoUrl,
-      },
-    }, () => this.setMode('brandSettings', '品牌设置'))
-  },
-  updateBrandField(this: any, event: any) {
-    const field = String(event.currentTarget.dataset.field || '')
-    if (!field) return
-    this.setData({ ['brandSettings.' + field]: String(event.detail.value || '') })
-  },
-  async chooseBrandLogo(this: any) {
-    if (this.data.brandLogoUploading) return
-    const page = this
-    wx.chooseImage({
-      count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'],
-      success: async (res: any) => {
-        const path = res.tempFilePaths && res.tempFilePaths[0]
-        if (!path) return
-        page.setData({ brandLogoUploading: true })
-        try {
-          const extension = path.indexOf('.png') >= 0 ? 'png' : 'jpg'
-          const prepared = await prepareBackendUpload('brand-logo', extension)
-          const uploaded = await wx.cloud.uploadFile({ cloudPath: prepared.cloudPath, filePath: path })
-          await completeBackendUpload(prepared.assetId, uploaded.fileID)
-          page.setData({ brandSettings: { ...page.data.brandSettings, logoAssetId: prepared.assetId, logoUrl: path } })
-          wx.showToast({ title: 'logo 已选，记得保存', icon: 'none' })
-        } catch { wx.showToast({ title: 'logo 上传失败，请重试', icon: 'none' }) }
-        finally { page.setData({ brandLogoUploading: false }) }
-      },
-    })
-  },
-  async saveBrandSettings(this: any) {
-    const s = this.data.brandSettings
-    if (!String(s.shopName || '').trim()) { wx.showToast({ title: '店铺名称不能为空', icon: 'none' }); return }
-    wx.showLoading({ title: '保存中' })
-    try {
-      const brand = await saveShopBrand({
-        shopId: DEFAULT_SHOP_ID, shopName: s.shopName, intro: s.intro,
-        contactWechat: s.contactWechat, contactPhone: s.contactPhone, slogan: s.slogan, logoAssetId: s.logoAssetId,
-      })
-      await this.applyShopBrand(brand)
-      wx.hideLoading()
-      wx.showToast({ title: '品牌已更新', icon: 'success' })
-      this.setMode('settings', '设置')
-    } catch (error: any) {
-      wx.hideLoading()
-      wx.showToast({ title: error && error.message ? error.message : '保存失败，请重试', icon: 'none' })
-    }
   },
   ...creationActions,
   ...sceneActions,

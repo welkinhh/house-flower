@@ -433,30 +433,8 @@
 
       <button class="btn primary settings-save" bindtap="saveProfile">保存</button>
       <button class="btn outline settings-sync" bindtap="syncLocalWorks">同步本机作品</button>
-      <button wx:if="{{isAdmin}}" class="btn outline settings-sync" bindtap="openBrandSettings">品牌设置</button>
       <button wx:if="{{isAdmin}}" class="btn outline settings-sync" bindtap="openAdminPanel">运营数据</button>
       <button class="settings-danger" bindtap="deleteAccount">删除账号</button>
-    </view>
-  </view>
-
-  <!-- ============ 11b. 品牌设置（老板） ============ -->
-  <view wx:if="{{mode === 'brandSettings'}}" class="screen settings-screen">
-    <view class="settings-card">
-      <button class="settings-avatar" bindtap="chooseBrandLogo">
-        <image wx:if="{{brandSettings.logoUrl}}" src="{{brandSettings.logoUrl}}" mode="aspectFill" />
-        <view wx:else class="avatar-edit">上传 Logo</view>
-        <view wx:if="{{brandSettings.logoUrl}}" class="avatar-edit">更换</view>
-      </button>
-      <text class="settings-hint">店铺 Logo（建议正方形）</text>
-
-      <label class="editor-field"><text>店铺名称</text><input value="{{brandSettings.shopName}}" data-field="shopName" bindinput="updateBrandField" maxlength="40" placeholder="例如：花漾时光" /></label>
-      <label class="editor-field"><text>标语</text><input value="{{brandSettings.slogan}}" data-field="slogan" bindinput="updateBrandField" maxlength="60" placeholder="一句品牌标语" /></label>
-      <label class="editor-field"><text>微信</text><input value="{{brandSettings.contactWechat}}" data-field="contactWechat" bindinput="updateBrandField" maxlength="60" placeholder="顾客复制联系的微信号" /></label>
-      <label class="editor-field"><text>电话</text><input value="{{brandSettings.contactPhone}}" data-field="contactPhone" bindinput="updateBrandField" maxlength="30" placeholder="顾客拨打电话" /></label>
-      <label class="editor-field editor-field-area"><text>店铺简介</text><textarea value="{{brandSettings.intro}}" data-field="intro" bindinput="updateBrandField" maxlength="200" placeholder="一句话介绍你的花店" /></label>
-
-      <button class="btn primary settings-save" loading="{{brandLogoUploading}}" bindtap="saveBrandSettings">保存品牌</button>
-      <button class="settings-danger" bindtap="goBack">取消</button>
     </view>
   </view>
 
