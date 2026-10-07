@@ -5,12 +5,16 @@ const { normalizeMaterialRows } = require('./record-validation')
 const EDITORIAL_ASSET_FILE_IDS = require('./editorial-assets.json')
 const {
   DAILY_QUOTA_LIMIT,
+  WELCOME_QUOTA_PERSONAL,
+  WELCOME_QUOTA_SHOP,
+  welcomeQuotaFor,
   dayKey,
   userIdFor,
   quotaId,
   quotaSource,
   normalizeQuota,
 } = require('./quota')
+const { RECHARGE_PLANS, RECHARGE_PLAN_IDS, findRechargePlan, paymentConfig, publicOrder, toPublicPlan } = require('./recharge')
 
 cloud.init({
   env: cloud.DYNAMIC_CURRENT_ENV,
@@ -31,6 +35,46 @@ function adminOpenIds() {
 
 function isAdmin(identity) {
   return adminOpenIds().includes(identity.openid)
+}
+
+// A shop is a personal account the operator has upgraded from the backend panel,
+// plus the operator's own openid. Only these accounts receive the 30-use pack.
+async function isShopAccount(identity, user = null) {
+  if (adminOpenIds().includes(identity.openid)) return true
+  const record = user || (await readDocument('users', identity.userId).catch(() => null))
+  return Boolean(record && record.accountType === 'shop')
+}
+
+// Free generations are granted exactly once per account. The grant id is derived
+// from the user id, so a redeploy or a retry can never hand out a second pack.
+function welcomeGrantId(userId, tier) {
+  return `welcome_${crypto.createHash('sha256').update(`welcome:${userId}:${tier}`).digest('hex').slice(0, 40)}`
+}
+
+async function grantWelcomeQuota(identity, user) {
+  const shop = await isShopAccount(identity, user)
+  const tier = shop ? 'shop' : 'personal'
+  const count = welcomeQuotaFor(shop)
+  const grantDocId = welcomeGrantId(identity.userId, tier)
+  const now = new Date()
+  let granted = false
+  await db.runTransaction(async (transaction) => {
+    granted = false
+    const prior = await readDocument('quota_ledger', grantDocId, transaction)
+    if (prior) return
+    const userRef = transaction.collection('users').doc(identity.userId)
+    const userResult = await userRef.get()
+    const target = userResult && userResult.data
+    if (!target || target.status !== 'active') throw new BackendError('ACCOUNT_UNAVAILABLE', '账号当前不可使用，请稍后重试。')
+    const currentBalance = Math.max(0, Number(target.bonusQuotaBalance) || 0)
+    await userRef.update({ data: { bonusQuotaBalance: currentBalance + count, welcomeQuotaTier: tier, welcomeQuotaGrantedAt: now, updatedAt: now } })
+    await transaction.collection('quota_ledger').doc(grantDocId).set({ data: {
+      ownerId: identity.userId, actorId: 'system', entryType: 'welcome', amount: count,
+      reason: tier === 'shop' ? '花店欢迎额度' : '个人欢迎额度', tier, createdAt: now,
+    } })
+    granted = true
+  })
+  return { tier, count, granted }
 }
 
 function requestId() {
@@ -154,12 +198,17 @@ async function bootstrap(identity, id) {
   requireIdentity(identity, id)
   const user = await getOrCreateUser(identity)
   if (user && user.status && user.status !== 'active') throw new BackendError('ACCOUNT_UNAVAILABLE', '账号删除流程已开始，当前不可继续操作。')
+  const welcome = await grantWelcomeQuota(identity, user)
+  const latest = await readDocument('users', identity.userId)
   await db.collection('users').doc(identity.userId).update({ data: { lastSeenAt: new Date() } }).catch(() => {})
   const quota = await getQuota(identity.userId)
   return ok({
     user: { userId: identity.userId, nickname: user.nickname || '', avatarAssetId: user.avatarAssetId || '', status: user.status || 'active' },
     quota,
     isAdmin: isAdmin(identity),
+    accountType: welcome.tier,
+    welcomeQuota: { tier: welcome.tier, total: welcome.count, granted: welcome.granted, personal: WELCOME_QUOTA_PERSONAL, shop: WELCOME_QUOTA_SHOP },
+    recharge: { plans: RECHARGE_PLANS.map(toPublicPlan), payment: paymentConfig() },
     subscriptionTemplates: { date: String(process.env.SUBSCRIBE_TEMPLATE_DATE || ''), task: String(process.env.SUBSCRIBE_TEMPLATE_TASK || '') },
   }, id)
 }
@@ -925,6 +974,108 @@ async function deleteDate(event, identity, id) {
   return ok({ id: dateId, deleted: true }, id)
 }
 
+// ---- 充值（次数包） ----
+// Orders are created locally and stay `pending` until a payment provider (or the
+// operator from the backend panel) confirms them. The client is never trusted to
+// mark its own order paid.
+async function createRechargeOrder(event, identity, id) {
+  requireIdentity(identity, id)
+  const planId = ensureString(event.planId, '充值套餐', 40)
+  if (!RECHARGE_PLAN_IDS.includes(planId)) throw new BackendError('INVALID_INPUT', '请选择有效的充值套餐。')
+  const plan = findRechargePlan(planId)
+  const clientKey = ensureIdempotencyKey(event.requestKey)
+  const orderKey = crypto.createHash('sha256').update(`${identity.userId}:${clientKey}`).digest('hex').slice(0, 40)
+  const id2 = `recharge_${orderKey}`
+  const now = new Date()
+  const payment = paymentConfig()
+  let order = await readDocument('recharge_orders', id2)
+  if (order) {
+    if (order.planId !== planId) throw new BackendError('IDEMPOTENCY_CONFLICT', '这个订单编号已用于其他套餐，请重新提交。')
+    return ok({ order: publicOrder(order), payment, quota: await getQuota(identity.userId) }, id)
+  }
+  const record = {
+    orderId: id2, ownerId: identity.userId, ownerOpenId: identity.openid,
+    planId, planLabel: plan.label, uses: plan.uses, amountFen: plan.amountFen,
+    status: 'pending', paymentEnabled: payment.enabled,
+    transactionId: '', creditedUses: 0, createdAt: now, updatedAt: now,
+  }
+  try {
+    await db.collection('recharge_orders').doc(id2).set({ data: record })
+    order = record
+  } catch (error) {
+    const retry = await readDocument('recharge_orders', id2)
+    if (!retry) throw error
+    order = retry
+  }
+  await recordEvent(identity, 'recharge_order_created', { planId, amountFen: plan.amountFen }).catch(() => {})
+  return ok({ order: publicOrder(order), payment, quota: await getQuota(identity.userId) }, id)
+}
+
+async function listRechargeOrders(event, identity, id) {
+  requireIdentity(identity, id)
+  const limit = Math.max(1, Math.min(20, Number(event.limit) || 10))
+  const query = await db.collection('recharge_orders').where({ ownerId: identity.userId }).orderBy('createdAt', 'desc').limit(limit).get().catch(() => ({ data: [] }))
+  return ok({ orders: (query.data || []).map(publicOrder), payment: paymentConfig(), quota: await getQuota(identity.userId) }, id)
+}
+
+// Operator-side confirmation. This is the only path that credits purchased uses
+// while the merchant account is not yet live: the operator verifies the transfer
+// out of band, then credits here. The ledger entry keeps it idempotent.
+async function confirmRechargeOrder(event, identity, id) {
+  requireIdentity(identity, id)
+  if (!isAdmin(identity)) throw new BackendError('FORBIDDEN', '当前账号没有核销充值订单的权限。')
+  const orderIdValue = ensureString(event.orderId, '订单 ID', 80)
+  const order = await readDocument('recharge_orders', orderIdValue)
+  if (!order) throw new BackendError('NOT_FOUND', '充值订单不存在。')
+  if (order.status === 'credited' || order.status === 'refunded') throw new BackendError('STATE_CONFLICT', '该订单已处理完成。')
+  const grantDocId = `recharge_${crypto.createHash('sha256').update(`${orderIdValue}:${order.planId}`).digest('hex').slice(0, 40)}`
+  const uses = Math.max(0, Number(order.uses) || 0)
+  const now = new Date()
+  let alreadyCredited = false
+  await db.runTransaction(async (transaction) => {
+    alreadyCredited = false
+    const prior = await readDocument('quota_ledger', grantDocId, transaction)
+    if (prior) { alreadyCredited = true; return }
+    const currentOrder = await readDocument('recharge_orders', orderIdValue, transaction)
+    if (!currentOrder) throw new BackendError('NOT_FOUND', '充值订单不存在。')
+    if (currentOrder.status === 'credited') { alreadyCredited = true; return }
+    const userRef = transaction.collection('users').doc(order.ownerId)
+    const userResult = await userRef.get()
+    const target = userResult && userResult.data
+    if (!target || target.status !== 'active') throw new BackendError('ACCOUNT_UNAVAILABLE', '该用户账号当前不可使用。')
+    const currentBalance = Math.max(0, Number(target.bonusQuotaBalance) || 0)
+    await userRef.update({ data: { bonusQuotaBalance: currentBalance + uses, updatedAt: now } })
+    await transaction.collection('recharge_orders').doc(orderIdValue).update({ data: {
+      status: 'credited', creditedUses: uses, transactionId: String(event.transactionId || '').slice(0, 80),
+      creditedAt: now, creditedBy: identity.userId, updatedAt: now,
+    } })
+    await transaction.collection('quota_ledger').doc(grantDocId).set({ data: {
+      ownerId: order.ownerId, actorId: identity.userId, entryType: 'recharge',
+      amount: uses, reason: `充值 ${order.planLabel}`, orderId: orderIdValue, planId: order.planId, createdAt: now,
+    } })
+  })
+  await recordEvent(identity, 'recharge_order_credited', { orderId: orderIdValue, uses }).catch(() => {})
+  return ok({ orderId: orderIdValue, alreadyCredited, quota: await getQuota(order.ownerId) }, id)
+}
+
+// Upgrading an account to a shop grants the larger welcome pack on the next
+// bootstrap, so downgrading never removes uses a paying customer already owns.
+async function setShopAccount(event, identity, id) {
+  requireIdentity(identity, id)
+  if (!isAdmin(identity)) throw new BackendError('FORBIDDEN', '当前账号没有开通花店的权限。')
+  const targetUserId = ensureString(event.userId, '用户 ID', 64)
+  if (!/^[a-f0-9]{32}$/i.test(targetUserId)) throw new BackendError('INVALID_INPUT', '请输入完整的 32 位用户 ID。')
+  const enabled = event.shop !== false
+  const current = await readDocument('users', targetUserId)
+  if (!current || current.status !== 'active') throw new BackendError('NOT_FOUND', '用户不存在或账号当前不可用。')
+  const patch = enabled
+    ? { accountType: 'shop', shopActivatedAt: new Date() }
+    : { accountType: 'personal', shopDeactivatedAt: new Date() }
+  await db.collection('users').doc(targetUserId).update({ data: { ...patch, updatedAt: new Date() } })
+  const welcome = enabled ? await grantWelcomeQuota({ userId: targetUserId, openid: current.openId || '' }, { accountType: 'shop' }) : null
+  return ok({ userId: targetUserId, accountType: enabled ? 'shop' : 'personal', welcome, quota: await getQuota(targetUserId) }, id)
+}
+
 async function updateProfile(event, identity, id) {
   requireIdentity(identity, id)
   const nickname = String(event.nickname || '').trim().slice(0, 40)
@@ -970,6 +1121,10 @@ exports.main = async (event, context) => {
     if (action === 'save-subscription') return await saveSubscription(event, identity, id)
     if (action === 'track-event') return await trackEvent(event, identity, id)
     if (action === 'grant-bonus-quota') return await grantBonusQuota(event, identity, id)
+    if (action === 'create-recharge-order') return await createRechargeOrder(event, identity, id)
+    if (action === 'list-recharge-orders') return await listRechargeOrders(event, identity, id)
+    if (action === 'confirm-recharge-order') return await confirmRechargeOrder(event, identity, id)
+    if (action === 'set-shop-account') return await setShopAccount(event, identity, id)
     if (action === 'admin-summary') return await adminSummary(event, identity, id)
     if (action === 'list-works') return await listWorks(event, identity, id)
     if (action === 'save-work') return await saveWorkRecord(event, identity, id)

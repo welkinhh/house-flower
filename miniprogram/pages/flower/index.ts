@@ -5,8 +5,8 @@ import {
   dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readWorks,
   type WorkRecord,
 } from '../../utils/houseflower-data'
-import { bootstrapBackend, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudWorks, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
-import { AI_VISION_ENABLED, LOCAL_DEMO_MODE } from '../../utils/cloud-env'
+import { bootstrapBackend, confirmRechargeOrder, createRechargeOrder, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudWorks, listRechargeOrders, setShopAccount, trackClientEvent, waitForBackendTask, type DailyQuota, type PaymentConfig } from '../../utils/backend'
+import { AI_VISION_ENABLED, LOCAL_DEMO_MODE, RECHARGE_PLANS, WELCOME_QUOTA_SHOP } from '../../utils/cloud-env'
 import { DEFAULT_BRAND, getLocalBrand, type ShopBrand } from '../../utils/brand'
 import { flowerAssetForName } from '../../utils/flower-materials'
 import { creationActions } from './creation-actions'
@@ -218,8 +218,13 @@ Page({
     quotaDateKey: '', quotaLimit: DEFAULT_USES, quotaReserved: 0, quotaResetsAt: '', backendReady: false, visionAvailable: AI_VISION_ENABLED,
     isAdmin: false, subscriptionTemplates: { date: '', task: '' }, adminRange: 30, adminSummary: null as any,
     quotaGiftUserId: '', quotaGiftCount: '1', quotaGiftReason: '', quotaGiftBusy: false,
+    shopUserId: '', shopBusy: false,
+    rechargeOrderId: '', rechargeTransactionId: '', rechargeConfirmBusy: false,
     inspirationExamples: INSPIRATION_EXAMPLES, recognitionExamples: RECOGNITION_EXAMPLES,
     portfolioCategory: 'all', portfolioSearch: '', portfolioItems: [] as WorkRecord[], portfolioCategories: PORTFOLIO_CATEGORIES,
+    accountType: 'personal' as 'personal' | 'shop', welcomeQuota: null as any,
+    rechargePlans: RECHARGE_PLANS, rechargeOrders: [] as any[], paymentConfig: { enabled: false, mchId: '', notice: '' } as PaymentConfig,
+    rechargeBusy: false, rechargeNotice: '',
     showWorkImageViewer: false,
     inspirationPath: '', inspirationAssetKey: '', inspirationMessage: '',
     generationPreviewPath: '', generationSourcePath: '', generationFileID: '', sourceFileID: '', generationAssetId: '', generationSourceAssetId: '',
@@ -311,6 +316,10 @@ Page({
         quotaResetsAt: quota.resetsAt,
         userProfile: remoteProfile,
         isAdmin: Boolean(session.isAdmin),
+        accountType: session.accountType === 'shop' ? 'shop' : 'personal',
+        welcomeQuota: session.welcomeQuota || null,
+        rechargePlans: (session.recharge && session.recharge.plans && session.recharge.plans.length ? session.recharge.plans : RECHARGE_PLANS) as any,
+        paymentConfig: (session.recharge && session.recharge.payment) || this.data.paymentConfig,
         subscriptionTemplates: session.subscriptionTemplates || { date: '', task: '' },
       }, () => {
         this.scheduleQuotaRefresh()
@@ -339,7 +348,7 @@ Page({
       editorialAssetsLoading: false,
       homeHero: resolve(EDITORIAL_ASSETS.homeHero),
       inspirationHero: resolve(EDITORIAL_ASSETS.inspirationGarden),
-      homeEntries: this.data.isAdmin ? resolve(HOME_ENTRIES) : [],
+      homeEntries: resolve(HOME_ENTRIES),
       inspirationExamples: resolve(INSPIRATION_EXAMPLES),
       recognitionExamples: resolve(RECOGNITION_EXAMPLES),
       sceneOptions,
@@ -405,6 +414,51 @@ Page({
     this._quotaGiftGrantId = ''
     this.setData({ quotaGiftUserId: String(event.detail.value || '') })
   },
+  updateShopUserId(this: any, event: any) {
+    this.setData({ shopUserId: String(event.detail.value || '').trim() })
+  },
+  updateRechargeOrderId(this: any, event: any) {
+    this.setData({ rechargeOrderId: String(event.detail.value || '').trim() })
+  },
+  updateRechargeTransactionId(this: any, event: any) {
+    this.setData({ rechargeTransactionId: String(event.detail.value || '').trim() })
+  },
+  async upgradeShopAccount(this: any) {
+    await this.applyShopAccount(true)
+  },
+  async downgradeShopAccount(this: any) {
+    await this.applyShopAccount(false)
+  },
+  async applyShopAccount(this: any, shop: boolean) {
+    if (this.data.shopBusy) return
+    const userId = String(this.data.shopUserId || '')
+    if (!/^[a-f0-9]{32}$/i.test(userId)) { wx.showToast({ title: '请输入完整的 32 位用户 ID', icon: 'none' }); return }
+    this.setData({ shopBusy: true })
+    try {
+      const response = await setShopAccount(userId, shop)
+      const count = response.welcome ? response.welcome.count : WELCOME_QUOTA_SHOP
+      wx.showToast({ title: shop ? `已设为花店，赠送 ${count} 次` : '已改回个人账号', icon: 'none' })
+    } catch (error: any) {
+      wx.showToast({ title: error && error.message ? error.message : '操作失败，请重试', icon: 'none' })
+    } finally {
+      this.setData({ shopBusy: false })
+    }
+  },
+  async confirmRechargeOrder(this: any) {
+    if (this.data.rechargeConfirmBusy) return
+    const orderId = String(this.data.rechargeOrderId || '')
+    if (!/^recharge_[a-f0-9]{40}$/.test(orderId)) { wx.showToast({ title: '订单 ID 格式不正确', icon: 'none' }); return }
+    this.setData({ rechargeConfirmBusy: true })
+    try {
+      const response = await confirmRechargeOrder(orderId, String(this.data.rechargeTransactionId || ''))
+      wx.showToast({ title: response.alreadyCredited ? '该订单已到账' : '已到账，请通知用户', icon: 'success' })
+      this.setData({ rechargeOrderId: '', rechargeTransactionId: '' })
+    } catch (error: any) {
+      wx.showToast({ title: error && error.message ? error.message : '核销失败，请检查订单 ID', icon: 'none' })
+    } finally {
+      this.setData({ rechargeConfirmBusy: false })
+    }
+  },
   updateQuotaGiftCount(this: any, event: any) {
     this._quotaGiftGrantId = ''
     this.setData({ quotaGiftCount: String(event.detail.value || '') })
@@ -452,6 +506,60 @@ Page({
     })
   },
   trackPageEvent(this: any, mode: string) { void trackClientEvent('page_view', { mode }).catch(() => {}) },
+  // ---- 充值（次数包） ----
+  openRecharge(this: any) {
+    this.setData({ mode: 'recharge', topCaption: '充值次数' }, () => { this.refreshNav(); this.trackPageEvent('recharge') })
+    void this.refreshRechargeOrders()
+  },
+  async refreshRechargeOrders(this: any) {
+    if (this.data.mode !== 'recharge') return
+    try {
+      const data = await listRechargeOrders(10)
+      this.setData({ rechargeOrders: data.orders || [], paymentConfig: data.payment || this.data.paymentConfig })
+    } catch {
+      // The catalogue is static, so a failed refresh only means the order list is
+      // stale; the page stays usable and the user can retry.
+    }
+  },
+  chooseRechargePlan(this: any, event: any) {
+    const planId = String(event.currentTarget.dataset.id || '')
+    const plan = (this.data.rechargePlans || []).find((item: any) => item.id === planId)
+    if (!plan) return
+    this.buyRechargePlan(plan)
+  },
+  async buyRechargePlan(this: any, plan: any) {
+    if (this.data.rechargeBusy) return
+    const payment = this.data.paymentConfig || { enabled: false, notice: '' }
+    if (!payment.enabled) {
+      // Never fake a successful purchase. Say plainly what is missing and stop.
+      wx.showModal({
+        title: '充值暂未开通',
+        content: payment.notice || '充值收款尚未开通，请先联系店主。开通后此处可直接购买次数。',
+        showCancel: false,
+        confirmText: '知道了',
+      })
+      return
+    }
+    const page = this
+    wx.showModal({
+      title: `确认购买 ${plan.label}？`,
+      content: `应付 ¥${(plan.amountFen / 100).toFixed(2)}，到账后可生成 ${plan.uses} 次，约为 ¥${plan.unitPrice}/次。`,
+      confirmText: '去支付',
+      success: async (result) => {
+        if (!result.confirm) return
+        page.setData({ rechargeBusy: true })
+        try {
+          const response = await createRechargeOrder(plan.id)
+          page.setData({ paymentConfig: response.payment || payment, rechargeOrders: [response.order, ...(page.data.rechargeOrders || [])] })
+          wx.showToast({ title: '订单已创建，等待支付', icon: 'none' })
+        } catch (error: any) {
+          wx.showToast({ title: error && error.message ? error.message : '下单失败，请重试', icon: 'none' })
+        } finally {
+          page.setData({ rechargeBusy: false })
+        }
+      },
+    })
+  },
   async syncCloudData(this: any) {
     if (this._cloudSyncRefreshing) return
     this._cloudSyncRefreshing = true
@@ -583,6 +691,7 @@ Page({
       else if (mode === 'sceneResult') { this.setMode('scene', '花映生活'); this.captureSceneRect() }
       else if (mode === 'workDetail') { this.setMode('portfolio', '作品集'); this.refreshWorks() }
       else if (mode === 'settings') { this.setMode('portfolio', '作品集') }
+      else if (mode === 'recharge') { this.setMode('portfolio', '作品集') }
       else this.setMode('home', this.data.brand.shopName)
     }
     const unsaved = (mode === 'generationResult' && !this.data.generatedSaved)
@@ -629,7 +738,6 @@ Page({
     this.setData({ portfolioSearch: '' }, () => this.refreshPortfolio())
   },
   openCreationSheet(this: any) {
-    if (!this.data.isAdmin) return
     this.changeTab({ currentTarget: { dataset: { id: 'home' } } })
   },
   stopPropagation() {},
@@ -773,13 +881,13 @@ Page({
     this.applyRoleUI()
   },
   applyRoleUI(this: any) {
-    const isAdmin = this.data.isAdmin
     const mode = String(this.data.mode || 'home')
     const active = ['home', 'portfolio'].includes(mode) ? mode : 'home'
     const navItems = NAV_ITEMS.map((item: any) => ({ ...item, active: item.id === active }))
-    const homeEntries = isAdmin
-      ? (this.data.homeEntries && this.data.homeEntries.length ? this.data.homeEntries : resolveEditorialValue(HOME_ENTRIES, this.data.editorialAssetUrls))
-      : []
+    // Everyone can create now, so the three creation entries are never gated.
+    const homeEntries = this.data.homeEntries && this.data.homeEntries.length
+      ? this.data.homeEntries
+      : resolveEditorialValue(HOME_ENTRIES, this.data.editorialAssetUrls)
     this.setData({ navItems, homeEntries })
   },
   copyWechat(this: any) {

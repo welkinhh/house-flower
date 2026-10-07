@@ -454,7 +454,6 @@ export const creationActions = {
     this.setData({ replicaCandidates: rows, recognitionSaved: false })
   },
   stepSavedQuantity(this: any, event: any) {
-    if (!this.data.isAdmin) return
     const index = Number(event.currentTarget.dataset.index)
     const delta = Number(event.currentTarget.dataset.delta || 0)
     const current = this.data.currentWork
@@ -487,7 +486,6 @@ export const creationActions = {
     const field = String(event.currentTarget.dataset.field || '')
     if (!['name', 'colorLabel', 'unit'].includes(field)) return
     const saved = this.data.mode === 'workDetail' && this.data.currentWork
-    if (saved && !this.data.isAdmin) { wx.showToast({ title: '仅店铺管理员可编辑', icon: 'none' }); return }
     const sourceRows = saved ? this.data.currentWork.rows || [] : this.data.replicaCandidates || []
     const row = sourceRows[index]
     if (!row) return
@@ -582,7 +580,6 @@ export const creationActions = {
     })
   },
   editSavedQuantity(this: any, event: any) {
-    if (!this.data.isAdmin) { wx.showToast({ title: '仅店铺管理员可编辑用量', icon: 'none' }); return }
     const index = Number(event.currentTarget.dataset.index)
     const current = this.data.currentWork
     const row = current && current.rows && current.rows[index]

@@ -1,4 +1,4 @@
-import { BACKEND_FUNCTION_NAME, CLOUDBASE_ENV_ID, DAILY_AI_QUOTA_LIMIT } from './cloud-env'
+import { BACKEND_FUNCTION_NAME, CLOUDBASE_ENV_ID, DAILY_AI_QUOTA_LIMIT, type RechargePlan } from './cloud-env'
 
 export type AiTaskType = 'bouquet' | 'recognition' | 'scene'
 
@@ -11,6 +11,20 @@ export type DailyQuota = {
   bonusRemaining: number
   remaining: number
   resetsAt: string
+}
+
+export type PaymentConfig = { enabled: boolean; mchId: string; notice: string }
+export type WelcomeQuota = { tier: 'personal' | 'shop'; total: number; granted: boolean; personal: number; shop: number }
+export type RechargeOrder = {
+  orderId: string
+  planId: string
+  planLabel: string
+  uses: number
+  amountFen: number
+  status: string
+  creditedUses: number
+  createdAt: number | string
+  paidAt: number | string | null
 }
 
 export type BackendUser = {
@@ -38,7 +52,15 @@ export class BackendRequestError extends Error {
   }
 }
 
-export type BackendSession = { user: BackendUser; quota: DailyQuota; isAdmin: boolean; subscriptionTemplates: { date: string; task: string } }
+export type BackendSession = {
+  user: BackendUser
+  quota: DailyQuota
+  isAdmin: boolean
+  accountType: 'personal' | 'shop'
+  welcomeQuota: WelcomeQuota
+  recharge: { plans: RechargePlan[]; payment: PaymentConfig }
+  subscriptionTemplates: { date: string; task: string }
+}
 export type CloudWork = { id?: string; workId?: string; kind: 'bouquet' | 'scene' | 'materials'; title: string; previewAssetId?: string; sourceAssetId?: string; assetIds?: string[]; sourceKey?: string; rows?: any[]; metadata?: Record<string, unknown>; expectedRevision?: number }
 
 let initialized = false
@@ -75,7 +97,6 @@ async function callBackend<T>(data: Record<string, unknown>): Promise<T> {
 export function defaultQuota(): DailyQuota {
   return { dateKey: '', limit: DAILY_AI_QUOTA_LIMIT, used: 0, reserved: 0, dailyRemaining: DAILY_AI_QUOTA_LIMIT, bonusRemaining: 0, remaining: DAILY_AI_QUOTA_LIMIT, resetsAt: '' }
 }
-
 export async function bootstrapBackend(): Promise<BackendSession> {
   return callBackend<BackendSession>({ action: 'bootstrap' })
 }
@@ -246,4 +267,25 @@ export async function getAdminSummary(range = 30): Promise<any> {
 
 export async function grantBonusQuota(userId: string, count: number, reason = '', grantId = randomKey('gift')): Promise<{ userId: string; count: number; alreadyGranted: boolean; quota: DailyQuota }> {
   return callBackend({ action: 'grant-bonus-quota', userId, count, reason, grantId })
+}
+
+/**
+ * Creates a pending order. The order is NOT credited here: purchased uses only
+ * land once a payment provider (or the operator) confirms the transaction, so a
+ * client can never grant itself generations.
+ */
+export async function createRechargeOrder(planId: string, requestKey = randomKey('recharge')): Promise<{ order: RechargeOrder; payment: PaymentConfig; quota: DailyQuota }> {
+  return callBackend({ action: 'create-recharge-order', planId, requestKey })
+}
+
+export async function listRechargeOrders(limit = 10): Promise<{ orders: RechargeOrder[]; payment: PaymentConfig; quota: DailyQuota }> {
+  return callBackend({ action: 'list-recharge-orders', limit })
+}
+
+export async function confirmRechargeOrder(orderId: string, transactionId = ''): Promise<{ orderId: string; alreadyCredited: boolean; quota: DailyQuota }> {
+  return callBackend({ action: 'confirm-recharge-order', orderId, transactionId })
+}
+
+export async function setShopAccount(userId: string, shop: boolean): Promise<{ userId: string; accountType: string; welcome: { tier: string; count: number; granted: boolean } | null; quota: DailyQuota }> {
+  return callBackend({ action: 'set-shop-account', userId, shop })
 }

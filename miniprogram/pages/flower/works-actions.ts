@@ -228,11 +228,15 @@ export const worksActions = {
     if (!work) return
     const page = this
     const isOwner = this.data.isAdmin
-    const items = isOwner ? ['重命名', '改分类', '删除'] : ['重命名', '删除']
+    // Deleting a shared portfolio entry is an owner action, so it is the only
+    // item non-owners lose. Resolving by action name keeps the delete branch
+    // from being reachable through a shifted tapIndex.
+    const items = isOwner ? ['重命名', '改分类', '删除'] : ['重命名']
     wx.showActionSheet({
       itemList: items,
       success: (result) => {
-        if (result.tapIndex === 0) {
+        const action = items[Number(result.tapIndex)] || ''
+        if (action === '重命名') {
           wx.showModal({
             title: '重命名作品', content: '', editable: true, placeholderText: work.title,
             success: async (modal: any) => {
@@ -260,7 +264,7 @@ export const worksActions = {
           })
           return
         }
-        if (isOwner && result.tapIndex === 1) {
+        if (action === '改分类') {
           const options = PORTFOLIO_CATEGORIES.filter((item) => item.id !== 'all')
           wx.showActionSheet({
             itemList: options.map((item) => item.label),
@@ -275,6 +279,7 @@ export const worksActions = {
           })
           return
         }
+        if (action !== '删除') return
         wx.showModal({
           title: '删除这件作品？', content: '删除后，作品图片会一并移除。',
           success: async (modal) => {
@@ -304,6 +309,8 @@ export const worksActions = {
     })
   },
   workLongPress(this: any, event: any) {
+    // Bulk delete is an owner action, so long-press must not arm it for others.
+    if (!this.data.isAdmin) return
     const list = this.data.mode === 'portfolio' ? (this.data.portfolioItems || []) : (this.data.visibleWorks || [])
     const work = list[Number(event.currentTarget.dataset.index)]
     if (!work || this.data.selectingWorks) return

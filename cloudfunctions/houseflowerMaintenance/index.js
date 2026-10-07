@@ -5,6 +5,8 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV, timeout: 15000 })
 const db = cloud.database()
 const _ = db.command
 
+// `recharge_orders` is deliberately absent: it is a paid purchase record and must
+// survive account deletion so refunds and disputes can still be settled.
 const COLLECTIONS_BY_OWNER = ['works', 'recognitions', 'important_dates', 'ai_tasks', 'quota_ledger', 'daily_quotas', 'asset_refs', 'analytics_events', 'subscription_records', 'notification_jobs']
 const COLLECTIONS_BY_ASSET = ['assets']
 const PENDING_ASSET_AGE = DAY_MS

@@ -32,13 +32,13 @@
       </button>
     </view>
 
-    <!-- 顾客视角：三个创作入口仅店主可见，给一个进入作品集的导航卡 -->
-    <view wx:if="{{!isAdmin}}" class="home-portfolio-entry" bindtap="changeTab" data-id="portfolio">
-      <view class="hp-copy">
-        <text class="hp-title">{{brand.shopName}} · 作品集</text>
-        <text class="hp-sub">看看这家店做了什么花</text>
+    <!-- 充值入口：任何人都能创作，次数用完就地充值 -->
+    <view class="home-quota-entry" bindtap="openRecharge">
+      <view class="hq-copy">
+        <text class="hq-title">剩余 {{remainingUses}} 次 · {{welcomeQuota.tier === 'shop' ? '花店账号免费 30 次' : '个人账号免费 5 次'}}</text>
+        <text class="hq-sub">次数不会每日清零，用完可充值</text>
       </view>
-      <view class="hp-arrow">→</view>
+      <view class="hq-arrow">→</view>
     </view>
   </view>
 
@@ -283,17 +283,28 @@
         <text class="header-id">{{portfolioItems.length}} 件作品</text>
       </view>
       <button wx:if="{{selectingWorks}}" class="header-action" bindtap="toggleWorkSelectionMode">取消</button>
-      <view wx:elif="{{isAdmin}}" class="header-uses">
-        <text class="uses-label">今日剩余次数</text>
+      <view wx:else class="header-uses">
+        <text class="uses-label">剩余次数</text>
         <text class="uses-num">{{remainingUses}}</text>
       </view>
     </view>
 
-    <!-- 店主操作条：角色门控，顾客不可见 -->
+    <!-- 额度条：免费额度用完后引导充值，任何人都可见 -->
+    <view class="quota-bar">
+      <view class="quota-bar-copy">
+        <text class="quota-bar-title">{{welcomeQuota.tier === 'shop' ? '花店账号' : '个人账号'}} · 免费 {{welcomeQuota.total}} 次</text>
+        <text class="quota-bar-note">{{remainingUses > 0 ? '免费次数用完后再充值，次数不会每日清零' : '免费次数已用完，充值后可继续创作'}}</text>
+      </view>
+      <button class="quota-bar-btn" bindtap="openRecharge">充值</button>
+    </view>
+
+    <!-- 店主操作条：作品管理类操作仅店主可见；AI 创作对所有人开放 -->
     <view wx:if="{{isAdmin}}" class="pf-toolbar">
       <button class="pf-tool" bindtap="startUploadWork"><text class="pf-tool-ico">＋</text><text>上传实拍</text></button>
-      <button class="pf-tool" bindtap="openCreationSheet"><text class="pf-tool-ico">✿</text><text>AI 创作</text></button>
       <button class="pf-tool" bindtap="toggleWorkSelectionMode"><text class="pf-tool-ico">☰</text><text>管理</text></button>
+    </view>
+    <view wx:else class="pf-toolbar">
+      <button class="pf-tool" bindtap="openCreationSheet"><text class="pf-tool-ico">✿</text><text>AI 创作</text></button>
     </view>
 
     <view class="pf-search-row">
@@ -310,7 +321,7 @@
     <!-- 作品集 -->
     <view wx:if="{{worksView === 'collection'}}" class="collection-view">
       <scroll-view scroll-y enhanced show-scrollbar="false" class="works-scroll" bindscrolltolower="loadMoreWorks">
-        <view wx:if="{{isAdmin && recentTasks.length}}" class="recovery-list">
+        <view wx:if="{{recentTasks.length}}" class="recovery-list">
           <view class="recovery-heading-row"><text class="recovery-heading">创作进度</text><text wx:if="{{recentTasks.length > 2}}" class="recovery-scroll-hint">滑动查看更多</text></view>
           <scroll-view scroll-y enhanced show-scrollbar="false" class="recovery-scroll {{recentTasks.length > 2 ? 'scroll-limited' : ''}}">
             <view wx:for="{{recentTasks}}" wx:key="taskId" class="recovery-row">
@@ -336,14 +347,8 @@
           </view>
         </view>
         <view wx:else class="works-empty">
-          <block wx:if="{{isAdmin}}">
-            <text class="empty-title">上架第一件作品</text>
-            <text class="empty-sub">上传实拍照片，或用 AI 创作生成花束图。</text>
-          </block>
-          <block wx:else>
-            <text class="empty-title">作品即将上架</text>
-            <text class="empty-sub">这家店还在准备中，过些时候再来看看。</text>
-          </block>
+          <text class="empty-title">{{isAdmin ? '上架第一件作品' : '还没有作品'}}</text>
+          <text class="empty-sub">{{isAdmin ? '上传实拍照片，或用 AI 创作生成花束图。' : '用首页的 AI 创作生成第一束花，保存后就会出现在这里。'}}</text>
         </view>
         <view wx:if="{{cloudWorksLoading || cloudWorksHasMore}}" class="works-load-note">{{cloudWorksLoading ? '正在加载作品…' : '继续上滑加载更多'}}</view>
       </scroll-view>
@@ -398,6 +403,54 @@
     </view>
   </view>
 
+  <!-- ============ 12. 充值次数 ============ -->
+  <view wx:if="{{mode === 'recharge'}}" class="screen recharge-screen">
+    <scroll-view scroll-y enhanced show-scrollbar="false" class="recharge-scroll">
+      <view class="recharge-balance">
+        <text class="recharge-balance-label">剩余可创作次数</text>
+        <text class="recharge-balance-num">{{remainingUses}}</text>
+        <text class="recharge-balance-note">{{welcomeQuota.tier === 'shop' ? '花店账号免费 30 次' : '个人账号免费 5 次'}}，用完后可按需充值，次数不会每日清零。</text>
+      </view>
+
+      <view class="section-head">
+        <text class="section-title">选择充值包</text>
+        <text wx:if="{{!paymentConfig.enabled}}" class="section-note">收款待开通</text>
+      </view>
+      <view class="recharge-plans">
+        <button wx:for="{{rechargePlans}}" wx:key="id" class="rplan {{item.badge ? 'on' : ''}}" data-id="{{item.id}}" bindtap="chooseRechargePlan" disabled="{{rechargeBusy}}">
+          <text wx:if="{{item.badge}}" class="rplan-badge">{{item.badge}}</text>
+          <text class="rplan-uses">{{item.uses}} 次</text>
+          <text class="rplan-price">¥{{item.amountYuan}}</text>
+          <text class="rplan-unit">约 ¥{{item.unitPrice}}/次</text>
+        </button>
+      </view>
+
+      <view wx:if="{{!paymentConfig.enabled}}" class="recharge-notice">
+        <text class="recharge-notice-title">充值收款尚未开通</text>
+        <text class="recharge-notice-copy">{{paymentConfig.notice}}</text>
+      </view>
+
+      <view wx:if="{{rechargeOrders.length}}" class="recharge-orders">
+        <view class="section-head"><text class="section-title">充值记录</text></view>
+        <view wx:for="{{rechargeOrders}}" wx:key="orderId" class="rorder">
+          <view class="rorder-copy">
+            <text class="rorder-title">{{item.planLabel}}</text>
+            <text class="rorder-meta">¥{{item.amountYuan}} · {{item.statusLabel}}</text>
+          </view>
+          <text class="rorder-status {{item.status === 'credited' ? 'ok' : ''}}">{{item.statusLabel}}</text>
+        </view>
+      </view>
+
+      <view class="privacy-guide">
+        <view class="privacy-guide-heading">
+          <text class="privacy-guide-title">关于充值</text>
+        </view>
+        <text class="privacy-guide-copy">充值次数为一次性额度，不会每日清零，也不会过期。生成失败或主动取消时，次数会自动退回。</text>
+        <text class="privacy-guide-copy">iPhone 用户在小程序内购买虚拟次数可能受平台限制，部分机型无法完成支付；遇到支付失败请更换设备或联系店主协助处理。</text>
+      </view>
+    </scroll-view>
+  </view>
+
   <!-- ============ 11. 运营数据 ============ -->
   <view wx:if="{{mode === 'admin'}}" class="screen admin-screen">
     <view class="admin-range-row">
@@ -410,8 +463,35 @@
     </view>
     <view class="admin-scroll">
       <view class="admin-gift-card">
+        <view class="section-head"><text class="section-title">设为花店</text><text class="section-note">仅管理员可用</text></view>
+        <text class="admin-gift-note">花店账号首次登录会获赠 30 次，个人账号 5 次，均为一次性、不过期。降级不会收回已赠送的次数。</text>
+        <label class="admin-gift-field">
+          <text>用户 ID</text>
+          <input value="{{shopUserId}}" bindinput="updateShopUserId" maxlength="32" placeholder="输入完整用户 ID" disabled="{{shopBusy}}" />
+        </label>
+        <view class="admin-gift-row">
+          <button class="btn primary admin-gift-submit" bindtap="upgradeShopAccount" loading="{{shopBusy}}" disabled="{{shopBusy}}">设为花店（+30 次）</button>
+          <button class="btn outline admin-gift-submit" bindtap="downgradeShopAccount" disabled="{{shopBusy}}">改回个人</button>
+        </view>
+      </view>
+
+      <view class="admin-gift-card">
+        <view class="section-head"><text class="section-title">核销充值订单</text><text class="section-note">仅管理员可用</text></view>
+        <text class="admin-gift-note">收款通道尚未开通时，用户无法在线支付。收到线下转账后，在这里输入订单 ID 核销并到账次数。</text>
+        <label class="admin-gift-field">
+          <text>订单 ID</text>
+          <input value="{{rechargeOrderId}}" bindinput="updateRechargeOrderId" maxlength="80" placeholder="recharge_..." disabled="{{rechargeConfirmBusy}}" />
+        </label>
+        <label class="admin-gift-field">
+          <text>支付流水号（可选）</text>
+          <input value="{{rechargeTransactionId}}" bindinput="updateRechargeTransactionId" maxlength="80" placeholder="微信支付流水号" disabled="{{rechargeConfirmBusy}}" />
+        </label>
+        <button class="btn primary admin-gift-submit" bindtap="confirmRechargeOrder" loading="{{rechargeConfirmBusy}}" disabled="{{rechargeConfirmBusy}}">{{rechargeConfirmBusy ? '处理中…' : '确认到账'}}</button>
+      </view>
+
+      <view class="admin-gift-card">
         <view class="section-head"><text class="section-title">赠送 AI 次数</text><text class="section-note">仅管理员可用</text></view>
-        <text class="admin-gift-note">赠送次数不会每日重置；每日额度用完后再使用。用户 ID 可从作品页点击头像查看。</text>
+        <text class="admin-gift-note">赠送次数为一次性额度，不会每日重置，也不会过期。用户 ID 可从作品页点击头像查看。</text>
         <label class="admin-gift-field">
           <text>用户 ID</text>
           <input value="{{quotaGiftUserId}}" bindinput="updateQuotaGiftUserId" maxlength="32" placeholder="输入完整用户 ID" disabled="{{quotaGiftBusy}}" />
@@ -461,7 +541,7 @@
       <view class="detail-heading">
         <text class="detail-title">{{currentWork.title}}</text>
         <text class="detail-sub">{{currentWork.categoryLabel}} · {{currentWork.kindLabel}} · {{currentWork.dateLabel}}</text>
-        <button wx:if="{{isAdmin}}" class="detail-more" bindtap="workMore" aria-label="更多作品操作">···</button>
+        <button class="detail-more" bindtap="workMore" aria-label="更多作品操作">···</button>
       </view>
       <view wx:if="{{currentWork.showSource}}" class="source-block">
         <view class="section-head">
@@ -513,8 +593,8 @@
       </view>
     </view>
     <view class="action-row">
-      <button wx:if="{{isAdmin && currentWork.rows.length}}" class="btn outline" bindtap="downloadSavedMaterials"><view class="list-icon"></view>导出清单</button>
-      <button wx:if="{{isAdmin && !currentWork.rows.length}}" class="btn outline" bindtap="recognizeSavedWork"><view class="list-icon"></view>生成清单</button>
+      <button wx:if="{{currentWork.rows.length}}" class="btn outline" bindtap="downloadSavedMaterials"><view class="list-icon"></view>导出清单</button>
+      <button wx:if="{{!currentWork.rows.length}}" class="btn outline" bindtap="recognizeSavedWork"><view class="list-icon"></view>生成清单</button>
       <button class="btn primary" bindtap="downloadWorkImage"><view class="download-glyph">↓</view>下载图片</button>
     </view>
   </view>

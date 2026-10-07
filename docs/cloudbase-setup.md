@@ -23,7 +23,7 @@ AI 只由 `flowerTaskWorker` 调用。全局 AI 资源开关关闭时，worker �
 
 ## 数据库集合
 
-以下 13 个集合已创建并设为 ADMINONLY，由云函数服务端读写：
+以下 14 个集合已创建并设为 ADMINONLY，由云函数服务端读写：
 
 - `users`
 - `identities`
@@ -38,8 +38,9 @@ AI 只由 `flowerTaskWorker` 调用。全局 AI 资源开关关闭时，worker �
 - `analytics_events`
 - `subscription_records`
 - `notification_jobs`
+- `recharge_orders`（充值订单，付费凭证，不参与账号删除清理）
 
-维护函数每小时清理已申请删除账号的作品、任务、额度流水、日期和云存储文件；清理超过 24 小时仍未完成的上传记录；并在 AI 任务完成 24 小时后清理未保存作品引用的任务输入图、场景垫图和生成结果图。保存到作品集、头像或其他任务仍在使用的图片会保留。其他超过 7 天且没有任何引用的孤儿资源也会清理。2026-10-01 已核验 `flowerBackend`、`flowerTaskWorker`、`houseflowerMaintenance` 均为 Active，维护触发器为每小时运行；本轮未手动调用维护函数。
+维护函数每小时清理已申请删除账号的作品、任务、额度流水、日期和云存储文件；清理超过 24 小时仍未完成的上传记录；并在 AI 任务完成 24 小时后清理未保存作品引用的任务输入图、场景垫图和生成结果图。保存到作品集、头像或其他任务仍在使用的图片会保留。其他超过 7 天且没有任何引用的孤儿资源也会清理。`recharge_orders` 故意不在清理列表中：它是已付款凭证，账号注销后仍需保留以便退款与对账。2026-10-01 已核验 `flowerBackend`、`flowerTaskWorker`、`houseflowerMaintenance` 均为 Active，维护触发器为每小时运行；本轮未手动调用维护函数。
 
 作品和日期同步依赖 `works`、`important_dates` 的 owner 字段；AI 任务依赖 `assets` 的 `assetId/status/fileID` 字段。
 
@@ -57,6 +58,7 @@ AI 只由 `flowerTaskWorker` 调用。全局 AI 资源开关关闭时，worker �
 | `analytics_events` | `createdAt`、`eventName + createdAt`、`ownerId + createdAt` |
 | `subscription_records` | `ownerId + templateId` |
 | `notification_jobs` | `status + dueAt`、`ownerId + createdAt` |
+| `recharge_orders` | `ownerId + createdAt`、`status + createdAt` |
 
 唯一约束必须由服务端幂等键和事务逻辑共同保证。控制台索引能力与套餐差异需要在实际环境确认，不能只依赖客户端去重。
 
@@ -79,14 +81,27 @@ AI 只由 `flowerTaskWorker` 调用。全局 AI 资源开关关闭时，worker �
 
 运营和订阅需要在函数环境变量中配置：
 
-- `ADMIN_OPENIDS`：允许查看运营数据、给用户赠送次数的微信 OpenID，逗号分隔。
+- `ADMIN_OPENIDS`：允许查看运营数据、赠送次数、开通花店、核销充值订单的微信 OpenID，逗号分隔。
+- `RECHARGE_MCH_ID`：微信支付商户号。**留空时充值页会明确显示"收款待开通"，不会伪造支付成功**。微信支付强制要求营业执照，未取得前不要填写。
 - `SUBSCRIBE_TEMPLATE_DATE`：重要日子提醒模板 ID。
 - `SUBSCRIBE_TEMPLATE_TASK`：AI 任务完成模板 ID。
 - `SUBSCRIBE_FIELD_MAP_JSON`：模板字段映射，例如 `{"important_date":{"thing1":"title","time2":"date","phrase3":"note"},"ai_task":{"thing1":"title","phrase3":"note"}}`。
 
 模板 ID 和字段必须与微信公众平台实际模板一致，否则发送会失败；代码不会把模板字段写死成平台保证可用的格式。
 
-管理员可在小程序“作品 > 点击头像 > 运营数据”中给指定用户赠送一次性次数。用户 ID 使用作品页设置中显示的完整 ID；赠送次数保存在 `users.bonusQuotaBalance`，赠送记录写入已有的 `quota_ledger` 集合，不随每日额度重置，且在每日额度耗尽后使用。后端更新后需重新部署 `flowerBackend`，并上传包含管理表单的小程序版本。
+## 额度与充值模型（2026-10-07 起）
+
+免费次数改为**一次性终身额度**，不再每日重置：
+
+- 个人账号 5 次，花店账号 30 次，注册首次 `bootstrap` 时通过 `quota_ledger` 幂等发放，永久不过期。
+- `daily_quotas.limit` 置 0，每日额度池恒为空，所有消耗都走 `users.bonusQuotaBalance` 这一个永久桶。这样任务 worker 的预占 / 提交 / 释放事务逻辑一行未改，只是 `quotaSource` 恒为 `bonus`。
+- 花店身份 = `ADMIN_OPENIDS` 中的 openid ∪ `users.accountType === 'shop'`。**只由后台开通**，用户无法自助切换。管理面板「设为花店」即写 `accountType`，并立即补发 30 次；改回个人不会收回已发放的次数。
+- 充值套餐 9.9 元 / 10 次、19.9 元 / 30 次、59.9 元 / 120 次，金额以分（fen）存储与传输，避免浮点进入支付接口。
+- 订单写入 `recharge_orders`，初始状态 `pending`。**客户端永远不能自己标记已支付**——只有 `confirm-recharge-order`（需管理员）会写入 `quota_ledger` 并把 `users.bonusQuotaBalance` 加上对应次数，幂等键为订单号。
+- 收款通道未开通时的可用路径：用户下单拿到 `orderId` → 线下转账 → 管理员在「运营数据 > 核销充值订单」输入订单 ID 确认到账。这条链路不依赖商户号，可先跑通。
+- 虚拟服务合规提示：iOS 端小程序内购买虚拟次数受平台限制，充值页已内置该说明文案。
+
+管理员可在小程序「设置 > 运营数据」中给指定用户赠送一次性次数、开通花店、核销充值订单。用户 ID 使用设置页显示的完整 ID；次数保存在 `users.bonusQuotaBalance`，流水写入 `quota_ledger`。后端更新后需重新部署 `flowerBackend`，并上传包含管理表单的小程序版本。
 
 ## 2026-10-01 实际联调状态
 

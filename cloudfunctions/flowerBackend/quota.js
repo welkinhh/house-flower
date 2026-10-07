@@ -1,7 +1,17 @@
 const crypto = require('node:crypto')
 
-const DAILY_QUOTA_LIMIT = 10
+// Free AI generations are granted once per account and never reset daily.
+// The daily pool therefore stays empty and every consumption flows through the
+// permanent `users.bonusQuotaBalance` bucket, which the task worker already
+// reserves, commits and releases transactionally.
+const DAILY_QUOTA_LIMIT = 0
+const WELCOME_QUOTA_PERSONAL = 5
+const WELCOME_QUOTA_SHOP = 30
 const SHANGHAI_TIME_ZONE = 'Asia/Shanghai'
+
+function welcomeQuotaFor(isShop) {
+  return isShop ? WELCOME_QUOTA_SHOP : WELCOME_QUOTA_PERSONAL
+}
 
 function shanghaiParts(date = new Date()) {
   const formatter = new Intl.DateTimeFormat('en-US', {
@@ -41,13 +51,20 @@ function reservationId() {
   return `quota_${Date.now().toString(36)}_${crypto.randomBytes(8).toString('hex')}`
 }
 
+// The daily document is kept only because the task worker reserves, commits and
+// releases against it. Its limit is always 0 so records written before the
+// switch stop granting daily allowances the moment this deploy lands.
+function docLimit() {
+  return DAILY_QUOTA_LIMIT
+}
+
 function quotaAvailability(doc, user = {}) {
   const used = Math.max(0, Number(doc && doc.used) || 0)
   const reserved = Math.max(0, Number(doc && doc.reserved) || 0)
   const bonusBalance = Math.max(0, Number(user && user.bonusQuotaBalance) || 0)
   const bonusReserved = Math.max(0, Number(user && user.bonusQuotaReserved) || 0)
   return {
-    dailyRemaining: Math.max(0, DAILY_QUOTA_LIMIT - used - reserved),
+    dailyRemaining: Math.max(0, docLimit() - used - reserved),
     bonusRemaining: Math.max(0, bonusBalance - bonusReserved),
   }
 }
@@ -65,7 +82,7 @@ function normalizeQuota(doc, date = new Date(), user = {}) {
   const available = quotaAvailability(doc, user)
   return {
     dateKey: dayKey(date),
-    limit: DAILY_QUOTA_LIMIT,
+    limit: docLimit(),
     used,
     reserved,
     dailyRemaining: available.dailyRemaining,
@@ -77,6 +94,9 @@ function normalizeQuota(doc, date = new Date(), user = {}) {
 
 module.exports = {
   DAILY_QUOTA_LIMIT,
+  WELCOME_QUOTA_PERSONAL,
+  WELCOME_QUOTA_SHOP,
+  welcomeQuotaFor,
   dayKey,
   nextResetAt,
   userIdFor,
