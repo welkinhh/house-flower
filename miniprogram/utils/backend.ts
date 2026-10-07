@@ -1,4 +1,5 @@
 import { BACKEND_FUNCTION_NAME, CLOUDBASE_ENV_ID, DAILY_AI_QUOTA_LIMIT } from './cloud-env'
+import { DEFAULT_SHOP_ID, normalizeBrand, type ShopBrand } from './brand'
 
 export type AiTaskType = 'bouquet' | 'recognition' | 'scene'
 
@@ -246,4 +247,14 @@ export async function getAdminSummary(range = 30): Promise<any> {
 
 export async function grantBonusQuota(userId: string, count: number, reason = '', grantId = randomKey('gift')): Promise<{ userId: string; count: number; alreadyGranted: boolean; quota: DailyQuota }> {
   return callBackend({ action: 'grant-bonus-quota', userId, count, reason, grantId })
+}
+
+export async function getShopBrand(shopId: string = DEFAULT_SHOP_ID): Promise<ShopBrand> {
+  const data = await callBackend<{ brand: Partial<ShopBrand> }>({ action: 'get-shop', shopId })
+  return normalizeBrand(data.brand)
+}
+
+export async function saveShopBrand(brand: Partial<ShopBrand> & { shopId?: string }): Promise<ShopBrand> {
+  const data = await callBackend<{ brand: Partial<ShopBrand> }>({ action: 'save-shop', brand })
+  return normalizeBrand(data.brand)
 }

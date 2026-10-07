@@ -941,6 +941,71 @@ async function requestAccountDeletion(identity, id) {
   return ok({ status: 'deletion_requested' }, id)
 }
 
+// ---- 店铺品牌（B 端白标） ----
+function defaultShopDoc(shopId) {
+  const now = new Date()
+  return {
+    shopId,
+    shopName: '花店名称',
+    logoAssetId: '',
+    intro: '用心挑选每一束花，把美好送到你手上',
+    contactWechat: '',
+    contactPhone: '',
+    slogan: '把生活的点滴，一路生花',
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+async function getShop(event, identity, id) {
+  requireIdentity(identity, id)
+  const shopId = String(event.shopId || 'default').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'default'
+  let doc = await db.collection('shops').doc(shopId).get().catch(() => null)
+  if (!doc || !doc.data) {
+    const seeded = defaultShopDoc(shopId)
+    try { await db.collection('shops').doc(shopId).set({ data: seeded }) } catch (error) { /* concurrent seed is fine */ }
+    doc = await db.collection('shops').doc(shopId).get().catch(() => null)
+    if (!doc || !doc.data) return ok({ brand: seeded }, id)
+  }
+  const data = doc.data
+  return ok({
+    brand: {
+      shopId: data.shopId || shopId,
+      shopName: String(data.shopName || ''),
+      logoAssetId: String(data.logoAssetId || ''),
+      intro: String(data.intro || ''),
+      contactWechat: String(data.contactWechat || ''),
+      contactPhone: String(data.contactPhone || ''),
+      slogan: String(data.slogan || ''),
+    },
+  }, id)
+}
+
+async function saveShop(event, identity, id) {
+  requireIdentity(identity, id)
+  if (!isAdmin(identity)) throw new BackendError('FORBIDDEN', '只有店铺管理员可以修改品牌信息。', false, id)
+  const shopId = String(event.shopId || 'default').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 64) || 'default'
+  const input = event.brand || {}
+  const patch = {
+    shopName: String(input.shopName || '').trim().slice(0, 40),
+    logoAssetId: String(input.logoAssetId || '').trim().slice(0, 64),
+    intro: String(input.intro || '').trim().slice(0, 200),
+    contactWechat: String(input.contactWechat || '').trim().slice(0, 60),
+    contactPhone: String(input.contactPhone || '').trim().slice(0, 30),
+    slogan: String(input.slogan || '').trim().slice(0, 60),
+    updatedAt: new Date(),
+  }
+  if (!patch.shopName) throw new BackendError('INVALID_INPUT', '店铺名称不能为空。', false, id)
+  if (patch.logoAssetId) await ownedAssets([patch.logoAssetId], identity).catch(() => {})
+  const existing = await db.collection('shops').doc(shopId).get().catch(() => null)
+  if (existing && existing.data) {
+    await db.collection('shops').doc(shopId).update({ data: patch })
+  } else {
+    await db.collection('shops').doc(shopId).set({ data: { ...defaultShopDoc(shopId), ...patch } })
+  }
+  return ok({ brand: { shopId, ...patch } }, id)
+}
+
 async function requireActiveAccount(identity) {
   requireIdentity(identity)
   const result = await db.collection('users').doc(identity.userId).get()
@@ -976,6 +1041,8 @@ exports.main = async (event, context) => {
     if (action === 'list-dates') return await listDates(identity, id)
     if (action === 'save-date') return await saveDate(event, identity, id)
     if (action === 'delete-date') return await deleteDate(event, identity, id)
+    if (action === 'get-shop') return await getShop(event, identity, id)
+    if (action === 'save-shop') return await saveShop(event, identity, id)
     return fail('INVALID_ACTION', '不支持的后端操作。', false, id)
   } catch (error) {
     if (error instanceof BackendError) return fail(error.code, error.message, error.retryable, id)

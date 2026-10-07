@@ -2427,3 +2427,28 @@ button::after { border: 0; }
 @media (max-width: 360px) {
   .app-shell button.step-btn { width: 34rpx; }
 }
+
+/* ===== 精选作品（顾客首页门面） ===== */
+.home-featured { padding: 8rpx 28rpx 28rpx; }
+.home-featured .section-head { padding: 18rpx 0 12rpx; }
+.featured-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16rpx; }
+.featured-card { position: relative; border-radius: 18rpx; overflow: hidden; background: #efe7dd; aspect-ratio: 1 / 1; box-shadow: 0 6rpx 18rpx rgba(140, 100, 80, 0.12); }
+.featured-card image { width: 100%; height: 100%; }
+.featured-tx { position: absolute; left: 0; right: 0; bottom: 0; padding: 10rpx 12rpx; background: linear-gradient(to top, rgba(60, 40, 30, 0.62), rgba(60, 40, 30, 0)); }
+.featured-title { display: block; color: #fff; font-size: 22rpx; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.featured-date { display: block; color: rgba(255, 255, 255, 0.82); font-size: 18rpx; }
+.home-featured-empty { padding: 40rpx 28rpx; text-align: center; color: #a08c7e; font-size: 26rpx; }
+
+/* ===== 联系老板（作品详情） ===== */
+.contact-block { margin: 18rpx 28rpx 0; }
+.contact-actions { display: flex; gap: 18rpx; margin-top: 14rpx; }
+.contact-btn { flex: 1 1 0; display: flex; align-items: center; gap: 16rpx; padding: 22rpx 20rpx; background: #fff; border: 1rpx solid #e7d8cc; border-radius: 18rpx; box-shadow: 0 6rpx 16rpx rgba(140, 100, 80, 0.1); }
+.contact-glyph { flex: 0 0 auto; width: 56rpx; height: 56rpx; border-radius: 50%; background: #bd7d7d; color: #fff; font-size: 26rpx; display: flex; align-items: center; justify-content: center; }
+.contact-copy { flex: 1 1 auto; min-width: 0; text-align: left; }
+.contact-label { display: block; color: #a08c7e; font-size: 20rpx; }
+.contact-value { display: block; color: #4a3a32; font-size: 26rpx; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.contact-cta { flex: 0 0 auto; color: #bd7d7d; font-size: 24rpx; font-weight: 600; }
+
+/* ===== 品牌设置 ===== */
+.editor-field-area { flex-direction: column; align-items: stretch; }
+.editor-field-area textarea { width: 100%; min-height: 120rpx; margin-top: 10rpx; padding: 16rpx; border: 1rpx solid #e7d8cc; border-radius: 14rpx; font-size: 26rpx; background: #fbf7f2; }

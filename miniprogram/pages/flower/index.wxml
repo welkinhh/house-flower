@@ -14,14 +14,13 @@
     <view class="home-veil"></view>
     <view wx:if="{{!editorialAssetsReady}}" class="home-image-status">{{editorialAssetsLoading ? '正在加载高清图片…' : '高清图片暂不可用，请检查网络后重试'}}</view>
     <view class="hero-head">
-      <text class="hero-brand">House花生</text>
+      <text class="hero-brand">{{brand.shopName}}</text>
       <view class="hero-slogan">
-        <text>把生活的点滴</text>
-        <text>一路生花</text>
+        <text>{{brand.slogan}}</text>
       </view>
     </view>
 
-    <view class="home-entries">
+    <view class="home-entries" wx:if="{{homeEntries.length}}">
       <button wx:for="{{homeEntries}}" wx:key="id" class="hcard" data-id="{{item.id}}" bindtap="openEntry">
         <view class="hcard-frame"><image wx:if="{{editorialAssetsReady && item.path}}" src="{{item.path}}" mode="aspectFill" lazy-load="true" /></view>
         <view class="hcard-copy">
@@ -30,6 +29,21 @@
         </view>
         <view class="hcard-arrow">→</view>
       </button>
+    </view>
+    <view wx:if="{{!isAdmin && featuredWorks.length}}" class="home-featured">
+      <view class="section-head">
+        <text class="section-title">精选作品</text>
+        <text class="section-note" bindtap="changeTab" data-id="works">查看全部 ›</text>
+      </view>
+      <view class="featured-grid">
+        <view wx:for="{{featuredWorks}}" wx:key="id" class="featured-card" data-index="{{index}}" bindtap="openFeaturedWork">
+          <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" lazy-load="true" />
+          <view class="featured-tx"><text class="featured-title">{{item.title}}</text><text class="featured-date">{{item.dateLabel}}</text></view>
+        </view>
+      </view>
+    </view>
+    <view wx:if="{{!isAdmin && !featuredWorks.length}}" class="home-featured-empty">
+      <text>店铺作品即将上架，敬请期待</text>
     </view>
   </view>
 
@@ -357,7 +371,7 @@
           <view wx:for="{{visibleWorks}}" wx:key="id" class="work-card {{item.selected ? 'selected' : ''}}">
             <view class="work-image-wrap" data-index="{{index}}" bindtap="openWork" bindlongpress="workLongPress">
           <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" class="work-image" lazy-load="true" />
-              <view wx:else class="work-image-empty"><text>House花生</text></view>
+              <view wx:else class="work-image-empty"><text>{{brand.shopName}}</text></view>
               <view class="work-veil"></view>
               <view class="work-tx">
                 <text class="work-title">{{item.title}}</text>
@@ -419,8 +433,30 @@
 
       <button class="btn primary settings-save" bindtap="saveProfile">保存</button>
       <button class="btn outline settings-sync" bindtap="syncLocalWorks">同步本机作品</button>
+      <button wx:if="{{isAdmin}}" class="btn outline settings-sync" bindtap="openBrandSettings">品牌设置</button>
       <button wx:if="{{isAdmin}}" class="btn outline settings-sync" bindtap="openAdminPanel">运营数据</button>
       <button class="settings-danger" bindtap="deleteAccount">删除账号</button>
+    </view>
+  </view>
+
+  <!-- ============ 11b. 品牌设置（老板） ============ -->
+  <view wx:if="{{mode === 'brandSettings'}}" class="screen settings-screen">
+    <view class="settings-card">
+      <button class="settings-avatar" bindtap="chooseBrandLogo">
+        <image wx:if="{{brandSettings.logoUrl}}" src="{{brandSettings.logoUrl}}" mode="aspectFill" />
+        <view wx:else class="avatar-edit">上传 Logo</view>
+        <view wx:if="{{brandSettings.logoUrl}}" class="avatar-edit">更换</view>
+      </button>
+      <text class="settings-hint">店铺 Logo（建议正方形）</text>
+
+      <label class="editor-field"><text>店铺名称</text><input value="{{brandSettings.shopName}}" data-field="shopName" bindinput="updateBrandField" maxlength="40" placeholder="例如：花漾时光" /></label>
+      <label class="editor-field"><text>标语</text><input value="{{brandSettings.slogan}}" data-field="slogan" bindinput="updateBrandField" maxlength="60" placeholder="一句品牌标语" /></label>
+      <label class="editor-field"><text>微信</text><input value="{{brandSettings.contactWechat}}" data-field="contactWechat" bindinput="updateBrandField" maxlength="60" placeholder="顾客复制联系的微信号" /></label>
+      <label class="editor-field"><text>电话</text><input value="{{brandSettings.contactPhone}}" data-field="contactPhone" bindinput="updateBrandField" maxlength="30" placeholder="顾客拨打电话" /></label>
+      <label class="editor-field editor-field-area"><text>店铺简介</text><textarea value="{{brandSettings.intro}}" data-field="intro" bindinput="updateBrandField" maxlength="200" placeholder="一句话介绍你的花店" /></label>
+
+      <button class="btn primary settings-save" loading="{{brandLogoUploading}}" bindtap="saveBrandSettings">保存品牌</button>
+      <button class="settings-danger" bindtap="goBack">取消</button>
     </view>
   </view>
 
@@ -520,6 +556,24 @@
         <text class="estimate-note">照片估算结果；点击数量可微调。</text>
       </view>
     </scroll-view>
+    <view wx:if="{{brand.contactWechat || brand.contactPhone}}" class="contact-block">
+      <view class="section-head">
+        <text class="section-title">联系老板</text>
+        <text class="section-note">成交走淘宝 / 闲鱼，不经平台支付</text>
+      </view>
+      <view class="contact-actions">
+        <button wx:if="{{brand.contactWechat}}" class="contact-btn" bindtap="copyWechat">
+          <view class="contact-glyph">微</view>
+          <view class="contact-copy"><text class="contact-label">微信</text><text class="contact-value">{{brand.contactWechat}}</text></view>
+          <text class="contact-cta">复制</text>
+        </button>
+        <button wx:if="{{brand.contactPhone}}" class="contact-btn" bindtap="callPhone">
+          <view class="contact-glyph">电</view>
+          <view class="contact-copy"><text class="contact-label">电话</text><text class="contact-value">{{brand.contactPhone}}</text></view>
+          <text class="contact-cta">拨打</text>
+        </button>
+      </view>
+    </view>
     <view class="action-row">
       <button wx:if="{{currentWork.rows.length}}" class="btn outline" bindtap="downloadSavedMaterials"><view class="list-icon"></view>导出清单</button>
       <button wx:else class="btn outline" bindtap="recognizeSavedWork"><view class="list-icon"></view>生成清单</button>
@@ -533,7 +587,7 @@
   </view>
 
   <!-- 底部导航：常驻（创作页不消失） -->
-  <view wx:if="{{mode === 'home' || mode === 'inspirationList' || mode === 'works' || mode === 'inspiration' || mode === 'recognition' || mode === 'scene'}}" class="bottom-nav" aria-label="House花生导航">
+  <view wx:if="{{mode === 'home' || mode === 'inspirationList' || mode === 'works' || mode === 'inspiration' || mode === 'recognition' || mode === 'scene'}}" class="bottom-nav" aria-label="{{brand.shopName}}导航">
     <button wx:for="{{navItems}}" wx:key="id" class="nav-item {{item.active ? 'active' : ''}}" data-id="{{item.id}}" bindtap="changeTab">
       <view class="nav-icon nav-{{item.glyph}}"></view>
       <text>{{item.label}}</text>

@@ -4,8 +4,9 @@ import {
   dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readWorks,
   type WorkRecord,
 } from '../../utils/houseflower-data'
-import { bootstrapBackend, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudWorks, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
+import { bootstrapBackend, completeBackendUpload, defaultQuota, getAdminSummary, getCloudAssetDetails, getCloudAssetUrls, getEditorialAssetUrls, getShopBrand, grantBonusQuota as grantUserBonusQuota, listBackendTasks, listCloudWorks, prepareBackendUpload, saveShopBrand, trackClientEvent, waitForBackendTask, type DailyQuota } from '../../utils/backend'
 import { AI_VISION_ENABLED, LOCAL_DEMO_MODE } from '../../utils/cloud-env'
+import { DEFAULT_BRAND, DEFAULT_SHOP_ID, type ShopBrand } from '../../utils/brand'
 import { flowerAssetForName } from '../../utils/flower-materials'
 import { creationActions } from './creation-actions'
 import { sceneActions } from './scene-actions'
@@ -101,7 +102,7 @@ const RECOGNITION_EXAMPLES = [
     ],
   },
 ]
-const DEFAULT_PROFILE = { avatarUrl: EDITORIAL_ASSETS.homeHero, name: '花生用户', id: '0001' }
+const DEFAULT_PROFILE = { avatarUrl: EDITORIAL_ASSETS.homeHero, name: '花友', id: '0001' }
 const EDITORIAL_URL_CACHE_KEY = 'houseflower.editorialAssetUrls'
 
 function editorialAssetKey(value: string): string {
@@ -255,7 +256,9 @@ function seedDemoWorks(): WorkRecord[] {
 
 Page({
   data: {
-    mode: 'home', topCaption: 'House花生', homeHero: EDITORIAL_ASSETS.homeHero,
+    mode: 'home', topCaption: DEFAULT_BRAND.shopName, homeHero: EDITORIAL_ASSETS.homeHero,
+    brand: DEFAULT_BRAND, featuredWorks: [] as WorkRecord[], showBrandSettings: false,
+    brandSettings: { shopName: '', intro: '', contactWechat: '', contactPhone: '', slogan: '', logoAssetId: '', logoUrl: '' }, brandLogoUploading: false,
     editorialAssetsReady: false, editorialAssetsLoading: true, editorialAssetUrls: {} as Record<string, string>,
     inspirationHero: EDITORIAL_ASSETS.inspirationGarden, homeEntries: HOME_ENTRIES,
     navItems: NAV_ITEMS.map((item) => ({ ...item, active: item.id === 'home' })),
@@ -302,7 +305,9 @@ Page({
       bonusQuotaRemaining: 0,
       userProfile: profile && profile.name ? { ...profile, avatarUrl: migrateMiniProgramAssetPath(profile.avatarUrl || '') || DEFAULT_PROFILE.avatarUrl } : DEFAULT_PROFILE,
     }, () => { this.refreshWorks() })
-    try { wx.setNavigationBarTitle({ title: 'House花生' }) } catch {}
+    try { wx.setNavigationBarTitle({ title: this.data.brand.shopName }) } catch {}
+    void this.loadShopBrand()
+    this.applyRoleUI()
   },
   onShow(this: any) {
     this._quotaPageVisible = true
@@ -367,6 +372,7 @@ Page({
         this.scheduleQuotaRefresh()
         void this.syncCloudData()
         void this.refreshEditorialAssets()
+        this.applyRoleUI()
       })
     } catch {
       // The UI can still browse local content while the environment is not deployed.
@@ -399,7 +405,7 @@ Page({
       editorialAssetsLoading: false,
       homeHero: resolve(EDITORIAL_ASSETS.homeHero),
       inspirationHero: resolve(EDITORIAL_ASSETS.inspirationGarden),
-      homeEntries: resolve(HOME_ENTRIES),
+      homeEntries: this.data.isAdmin ? resolve(HOME_ENTRIES) : [],
       inspirationExamples: resolve(INSPIRATION_EXAMPLES),
       recognitionExamples: resolve(RECOGNITION_EXAMPLES),
       inspirationBanners: resolve(INSPIRATION_BANNERS),
@@ -616,7 +622,7 @@ Page({
       return
     }
     if (id === 'inspirationList') { this.setMode('inspirationList', '灵感'); this.refreshInspiration(); return }
-    this.setMode('home', 'House花生')
+    this.setMode('home', this.data.brand.shopName)
   },
   openEntry(this: any, event: any) {
     if (!this.data.editorialAssetsReady) { wx.showToast({ title: '正在加载高清图片，请稍候', icon: 'none' }); return }
@@ -647,7 +653,7 @@ Page({
       else if (mode === 'sceneResult') { this.setMode('scene', '花映生活'); this.captureSceneRect() }
       else if (mode === 'workDetail') { this.setMode('works', '作品'); this.refreshWorks() }
       else if (mode === 'settings') { this.setMode('works', '作品') }
-      else this.setMode('home', 'House花生')
+      else this.setMode('home', this.data.brand.shopName)
     }
     const unsaved = (mode === 'generationResult' && !this.data.generatedSaved)
       || (mode === 'recognitionResult' && !this.data.recognitionSaved)
@@ -663,7 +669,7 @@ Page({
         }
         if (mode === 'recognitionResult') this.setData({ replicaPath: '', replicaAssetKey: '', replicaCandidates: [] })
         if (mode === 'sceneResult') this.setData({ sceneBouquetPath: '', sceneResultPath: '' })
-        this.setMode('home', 'House花生')
+        this.setMode('home', this.data.brand.shopName)
       },
     })
   },
@@ -846,7 +852,7 @@ Page({
       const linked = task.type === 'recognition' ? task.inputAssetIds || [] : task.resultAssetIds || []
       return !linked.some((assetId: string) => savedAssets.has(assetId))
     })
-    this.setData({ visibleWorks, workCount: visibleWorks.length, recentTasks })
+    this.setData({ visibleWorks, workCount: visibleWorks.length, recentTasks, featuredWorks: visibleWorks.slice(0, 6) })
     this.scheduleRecentTaskExpiry()
   },
   scheduleRecentTaskExpiry(this: any) {
@@ -864,6 +870,128 @@ Page({
       this._recentTaskExpiryTimer = null
       this.refreshWorks()
     }, Math.max(250, nextExpiry - Date.now() + 50))
+  },
+  // ---- 店铺品牌（B 端白标） ----
+  async loadShopBrand(this: any) {
+    try {
+      const brand = await getShopBrand(DEFAULT_SHOP_ID)
+      await this.applyShopBrand(brand)
+    } catch {
+      await this.applyShopBrand(DEFAULT_BRAND)
+    }
+  },
+  async applyShopBrand(brand: ShopBrand) {
+    const logoAssetId = brand.logoAssetId || ''
+    let logoUrl = brand.logoUrl || ''
+    if (logoAssetId && !logoUrl) {
+      try { const urls = await getCloudAssetUrls([logoAssetId]); logoUrl = urls[logoAssetId] || '' } catch {}
+    }
+    const merged = { ...DEFAULT_BRAND, ...brand, logoAssetId, logoUrl }
+    this.setData({ brand: merged })
+    if (this.data.editorialAssetsReady) {
+      this.setData({ homeHero: (logoUrl || resolveEditorialPath(EDITORIAL_ASSETS.homeHero, this.data.editorialAssetUrls)) as any })
+    }
+    try { wx.setNavigationBarTitle({ title: merged.shopName }) } catch {}
+    if (this.data.mode === 'home') this.setData({ topCaption: merged.shopName })
+    this.applyRoleUI()
+  },
+  applyRoleUI(this: any) {
+    const isAdmin = this.data.isAdmin
+    const mode = String(this.data.mode || 'home')
+    const active = ['home', 'inspirationList', 'works'].includes(mode) ? mode : 'home'
+    const navItems = NAV_ITEMS
+      .filter((item: any) => isAdmin || item.id !== 'inspirationList')
+      .map((item: any) => ({ ...item, active: item.id === active }))
+    const homeEntries = isAdmin
+      ? (this.data.homeEntries && this.data.homeEntries.length ? this.data.homeEntries : resolveEditorialValue(HOME_ENTRIES, this.data.editorialAssetUrls))
+      : []
+    this.setData({ navItems, homeEntries })
+    this.refreshFeatured()
+  },
+  refreshFeatured(this: any) {
+    const visible = this.data.visibleWorks || []
+    this.setData({ featuredWorks: visible.slice(0, 6) })
+  },
+  openFeaturedWork(this: any, event: any) {
+    const idx = Number(event.currentTarget.dataset.index)
+    const work = (this.data.featuredWorks || [])[idx]
+    if (!work) return
+    const visibleIndex = (this.data.visibleWorks || []).findIndex((w: any) => w.id === work.id)
+    if (visibleIndex >= 0) { this.openWork({ currentTarget: { dataset: { index: visibleIndex } } }); return }
+    this.setData({
+      currentWork: {
+        ...work,
+        rows: work.rows ? JSON.parse(JSON.stringify(work.rows)) : [],
+        showSource: Boolean(work.sourcePath && work.sourcePath !== work.previewPath),
+        note: String(work.note || ''), noteLength: String(work.note || '').length,
+      },
+      showWorkImageViewer: false,
+    })
+    this.setMode('workDetail', work.title)
+  },
+  copyWechat(this: any) {
+    const wxid = this.data.brand.contactWechat || ''
+    if (!wxid) return
+    wx.setClipboardData({ data: wxid, success: () => wx.showToast({ title: '微信号已复制', icon: 'none' }) })
+  },
+  callPhone(this: any) {
+    const phone = this.data.brand.contactPhone || ''
+    if (!phone) return
+    wx.makePhoneCall({ phoneNumber: phone, fail: () => {} })
+  },
+  openBrandSettings(this: any) {
+    if (!this.data.isAdmin) { wx.showToast({ title: '仅店铺管理员可设置品牌', icon: 'none' }); return }
+    const b = this.data.brand
+    this.setData({
+      brandSettings: {
+        shopName: b.shopName, intro: b.intro, contactWechat: b.contactWechat,
+        contactPhone: b.contactPhone, slogan: b.slogan, logoAssetId: b.logoAssetId, logoUrl: b.logoUrl,
+      },
+    }, () => this.setMode('brandSettings', '品牌设置'))
+  },
+  updateBrandField(this: any, event: any) {
+    const field = String(event.currentTarget.dataset.field || '')
+    if (!field) return
+    this.setData({ ['brandSettings.' + field]: String(event.detail.value || '') })
+  },
+  async chooseBrandLogo(this: any) {
+    if (this.data.brandLogoUploading) return
+    const page = this
+    wx.chooseImage({
+      count: 1, sizeType: ['compressed'], sourceType: ['album', 'camera'],
+      success: async (res: any) => {
+        const path = res.tempFilePaths && res.tempFilePaths[0]
+        if (!path) return
+        page.setData({ brandLogoUploading: true })
+        try {
+          const extension = path.indexOf('.png') >= 0 ? 'png' : 'jpg'
+          const prepared = await prepareBackendUpload('brand-logo', extension)
+          const uploaded = await wx.cloud.uploadFile({ cloudPath: prepared.cloudPath, filePath: path })
+          await completeBackendUpload(prepared.assetId, uploaded.fileID)
+          page.setData({ brandSettings: { ...page.data.brandSettings, logoAssetId: prepared.assetId, logoUrl: path } })
+          wx.showToast({ title: 'logo 已选，记得保存', icon: 'none' })
+        } catch { wx.showToast({ title: 'logo 上传失败，请重试', icon: 'none' }) }
+        finally { page.setData({ brandLogoUploading: false }) }
+      },
+    })
+  },
+  async saveBrandSettings(this: any) {
+    const s = this.data.brandSettings
+    if (!String(s.shopName || '').trim()) { wx.showToast({ title: '店铺名称不能为空', icon: 'none' }); return }
+    wx.showLoading({ title: '保存中' })
+    try {
+      const brand = await saveShopBrand({
+        shopId: DEFAULT_SHOP_ID, shopName: s.shopName, intro: s.intro,
+        contactWechat: s.contactWechat, contactPhone: s.contactPhone, slogan: s.slogan, logoAssetId: s.logoAssetId,
+      })
+      await this.applyShopBrand(brand)
+      wx.hideLoading()
+      wx.showToast({ title: '品牌已更新', icon: 'success' })
+      this.setMode('settings', '设置')
+    } catch (error: any) {
+      wx.hideLoading()
+      wx.showToast({ title: error && error.message ? error.message : '保存失败，请重试', icon: 'none' })
+    }
   },
   ...creationActions,
   ...sceneActions,
