@@ -2563,16 +2563,22 @@ button::after { border: 0; }
   .app-shell button.step-btn { width: 34rpx; }
 }
 
-/* ===== 精选作品（顾客首页门面） ===== */
-.home-featured { padding: 8rpx 28rpx 28rpx; }
-.home-featured .section-head { padding: 18rpx 0 12rpx; }
-.featured-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16rpx; }
-.featured-card { position: relative; border-radius: 18rpx; overflow: hidden; background: #efe7dd; aspect-ratio: 1 / 1; box-shadow: 0 6rpx 18rpx rgba(140, 100, 80, 0.12); }
-.featured-card image { width: 100%; height: 100%; }
-.featured-tx { position: absolute; left: 0; right: 0; bottom: 0; padding: 10rpx 12rpx; background: linear-gradient(to top, rgba(60, 40, 30, 0.62), rgba(60, 40, 30, 0)); }
-.featured-title { display: block; color: #fff; font-size: 22rpx; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.featured-date { display: block; color: rgba(255, 255, 255, 0.82); font-size: 18rpx; }
-.home-featured-empty { padding: 40rpx 28rpx; text-align: center; color: #a08c7e; font-size: 26rpx; }
+/* ===== 顾客首页：进入作品集 ===== */
+.home-portfolio-entry {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin: 0 28rpx 32rpx;
+  padding: 30rpx 28rpx;
+  border: 1rpx solid #e6d8c9;
+  border-radius: 22rpx;
+  background: rgba(255, 253, 249, 0.92);
+  box-shadow: 0 8rpx 22rpx rgba(140, 100, 80, 0.12);
+}
+.hp-copy { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 6rpx; }
+.hp-title { color: #3b342e; font-size: 28rpx; font-weight: 600; }
+.hp-sub { color: #8a7a6c; font-size: 23rpx; }
+.hp-arrow { flex: 0 0 auto; color: #b07a5e; font-size: 30rpx; }
 
 /* ===== 联系老板（作品详情） ===== */
 .contact-block { margin: 18rpx 28rpx 0; }

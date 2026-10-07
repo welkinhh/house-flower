@@ -31,20 +31,14 @@
         <view class="hcard-arrow">→</view>
       </button>
     </view>
-    <view wx:if="{{!isAdmin && featuredWorks.length}}" class="home-featured">
-      <view class="section-head">
-        <text class="section-title">精选作品</text>
-        <text class="section-note" bindtap="changeTab" data-id="portfolio">查看全部 ›</text>
+
+    <!-- 顾客视角：三个创作入口仅店主可见，给一个进入作品集的导航卡 -->
+    <view wx:if="{{!isAdmin}}" class="home-portfolio-entry" bindtap="changeTab" data-id="portfolio">
+      <view class="hp-copy">
+        <text class="hp-title">{{brand.shopName}} · 作品集</text>
+        <text class="hp-sub">看看这家店做了什么花</text>
       </view>
-      <view class="featured-grid">
-        <view wx:for="{{featuredWorks}}" wx:key="id" class="featured-card" data-index="{{index}}" bindtap="openFeaturedWork">
-          <image wx:if="{{item.previewPath}}" src="{{item.previewPath}}" mode="aspectFill" lazy-load="true" />
-          <view class="featured-tx"><text class="featured-title">{{item.title}}</text><text class="featured-date">{{item.dateLabel}}</text></view>
-        </view>
-      </view>
-    </view>
-    <view wx:if="{{!isAdmin && !featuredWorks.length}}" class="home-featured-empty">
-      <text>店铺作品即将上架，敬请期待</text>
+      <view class="hp-arrow">→</view>
     </view>
   </view>
 

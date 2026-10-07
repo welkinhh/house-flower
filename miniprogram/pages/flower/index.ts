@@ -205,7 +205,7 @@ function seedDemoWorks(): WorkRecord[] {
 Page({
   data: {
     mode: 'home', topCaption: DEFAULT_BRAND.shopName, homeHero: EDITORIAL_ASSETS.homeHero,
-    brand: DEFAULT_BRAND, featuredWorks: [] as WorkRecord[],
+    brand: DEFAULT_BRAND,
     editorialAssetsReady: false, editorialAssetsLoading: true, editorialAssetUrls: {} as Record<string, string>,
     inspirationHero: EDITORIAL_ASSETS.inspirationGarden, homeEntries: HOME_ENTRIES,
     navItems: NAV_ITEMS.map((item) => ({ ...item, active: item.id === 'home' })),
@@ -738,7 +738,7 @@ Page({
       const linked = task.type === 'recognition' ? task.inputAssetIds || [] : task.resultAssetIds || []
       return !linked.some((assetId: string) => savedAssets.has(assetId))
     })
-    this.setData({ visibleWorks, workCount: visibleWorks.length, recentTasks, featuredWorks: visibleWorks.slice(0, 6) })
+    this.setData({ visibleWorks, workCount: visibleWorks.length, recentTasks })
     this.scheduleRecentTaskExpiry()
     this.refreshPortfolio()
   },
@@ -781,28 +781,6 @@ Page({
       ? (this.data.homeEntries && this.data.homeEntries.length ? this.data.homeEntries : resolveEditorialValue(HOME_ENTRIES, this.data.editorialAssetUrls))
       : []
     this.setData({ navItems, homeEntries })
-    this.refreshFeatured()
-  },
-  refreshFeatured(this: any) {
-    const visible = this.data.visibleWorks || []
-    this.setData({ featuredWorks: visible.slice(0, 6) })
-  },
-  openFeaturedWork(this: any, event: any) {
-    const idx = Number(event.currentTarget.dataset.index)
-    const work = (this.data.featuredWorks || [])[idx]
-    if (!work) return
-    const visibleIndex = (this.data.visibleWorks || []).findIndex((w: any) => w.id === work.id)
-    if (visibleIndex >= 0) { this.openWork({ currentTarget: { dataset: { index: visibleIndex } } }); return }
-    this.setData({
-      currentWork: {
-        ...work,
-        rows: work.rows ? JSON.parse(JSON.stringify(work.rows)) : [],
-        showSource: Boolean(work.sourcePath && work.sourcePath !== work.previewPath),
-        note: String(work.note || ''), noteLength: String(work.note || '').length,
-      },
-      showWorkImageViewer: false,
-    })
-    this.setMode('workDetail', work.title)
   },
   copyWechat(this: any) {
     const wxid = this.data.brand.contactWechat || ''
