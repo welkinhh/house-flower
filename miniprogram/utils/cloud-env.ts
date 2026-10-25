@@ -1,11 +1,10 @@
 /** Public CloudBase environment id; credentials remain server-side. */
-export const CLOUDBASE_ENV_ID = 'huasheng-d1gevhc4b9cc370ca'
+export const CLOUDBASE_ENV_ID = 'YOUR_CLOUDBASE_ENV_ID'
 
-/** The single business entry point used by the first backend rollout. */
+/** The business entry point used by the Mini Program client. */
 export const BACKEND_FUNCTION_NAME = 'flowerBackend'
 
-/** Hunyuan image generation is available; image recognition stays model-gated. */
-export const AI_RESOURCES_ENABLED = true
+/** Image recognition stays model-gated until a vision provider is configured. */
 export const AI_VISION_ENABLED = false
 
 /**

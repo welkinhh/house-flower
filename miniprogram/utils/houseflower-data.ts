@@ -17,23 +17,9 @@ export type WorkRecord = {
   note?: string
   [key: string]: any
 }
-export type ImportantDate = {
-  id: string
-  title: string
-  date: string
-  note: string
-  repeatYearly: boolean
-  workId: string
-  cloudDateId?: string
-  cloudWorkId?: string
-  cloudSyncPending?: boolean
-}
-
 export const WORKS_KEY = 'houseflower.works'
-export const DATES_KEY = 'houseflower.dates'
 export const PROFILE_KEY = 'houseflower.profile'
-export const USES_KEY = 'houseflower.remainingUses'
-export const DEFAULT_USES = 10
+export const DEFAULT_USES = 5
 
 // 作品集业务分类（花店门面语言）
 export const DEFAULT_WORK_CATEGORY = 'bouquet'
@@ -53,13 +39,6 @@ export const PORTFOLIO_CATEGORY_LABEL: Record<string, string> = {
 
 export function dayKey(date: Date): string {
   return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0')
-}
-
-export function dateFromKey(key: string): Date | null {
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ''))
-  if (!match) return null
-  const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]))
-  return date.getFullYear() === Number(match[1]) && date.getMonth() + 1 === Number(match[2]) && date.getDate() === Number(match[3]) ? date : null
 }
 
 export function formatDateLabel(value: number): string {
@@ -129,13 +108,6 @@ export function readWorks(): WorkRecord[] {
   } catch { return [] }
 }
 
-export function readDates(): ImportantDate[] {
-  try {
-    const dates = wx.getStorageSync(DATES_KEY)
-    return Array.isArray(dates) ? dates : []
-  } catch { return [] }
-}
-
 export function saveWork(work: WorkRecord): WorkRecord[] {
   const current = readWorks()
   const match = work.sourceKey ? current.find((item) => item.sourceKey === work.sourceKey) : undefined
@@ -148,37 +120,4 @@ export function saveWork(work: WorkRecord): WorkRecord[] {
   const works = [saved, ...current.filter((item) => item.id !== saved.id)]
   wx.setStorageSync(WORKS_KEY, works)
   return works
-}
-
-function eventOccurs(event: ImportantDate, key: string): boolean {
-  if (event.date === key) return true
-  const base = dateFromKey(event.date)
-  const current = dateFromKey(key)
-  return Boolean(event.repeatYearly && base && current && base.getMonth() === current.getMonth() && base.getDate() === current.getDate())
-}
-
-export function buildCalendar(month: string, works: WorkRecord[], dates: ImportantDate[], selectedDate: string): Record<string, any> {
-  const parts = String(month || dayKey(new Date()).slice(0, 7)).split('-').map(Number)
-  const year = parts[0]
-  const monthIndex = parts[1] - 1
-  const first = new Date(year, monthIndex, 1)
-  const start = new Date(year, monthIndex, 1 - first.getDay())
-  const calendarDays: any[] = []
-  const todayKey = dayKey(new Date())
-  for (let index = 0; index < 42; index += 1) {
-    const date = new Date(start.getFullYear(), start.getMonth(), start.getDate() + index)
-    const key = dayKey(date)
-    const matching = works.filter((work) => (work.dateKey || dayKey(new Date(work.createdAt))) === key)
-    calendarDays.push({
-      dateKey: key, day: date.getDate(), inMonth: date.getMonth() === monthIndex,
-      previewPath: matching[0] && matching[0].previewPath || '',
-      workCount: matching.length, hasEvent: dates.some((event) => eventOccurs(event, key)),
-      selected: key === selectedDate, isToday: key === todayKey,
-    })
-  }
-  return {
-    calendarMonthLabel: year + '年' + (monthIndex + 1) + '月',
-    calendarDays,
-    selectedDateWorks: works.filter((work) => (work.dateKey || dayKey(new Date(work.createdAt))) === selectedDate),
-  }
 }

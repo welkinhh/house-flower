@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE_DIR = ROOT / "flower-assets" / "materials" / "source"
 MINI_ASSET_DIR = ROOT / "miniprogram" / "assets" / "materials-ui"
 DATA_DIR = ROOT / "miniprogram" / "data"
-MAX_SIZE = (192, 288)
+MAX_SIZE = (160, 240)
 
 FLOWER_NAMES = {
     "carnation": ("康乃馨", "secondary"),
@@ -108,7 +108,7 @@ def build() -> None:
                 background.paste(image, mask=image.getchannel("A"))
                 image = background
             target = MINI_ASSET_DIR / f"{source.stem}.jpg"
-            image.save(target, "JPEG", quality=70, optimize=True)
+            image.save(target, "JPEG", quality=58, optimize=True)
 
         catalog.append({
             "id": source.stem,

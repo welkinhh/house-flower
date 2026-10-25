@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
-  "envId": "huasheng-d1gevhc4b9cc370ca",
+  "envId": "YOUR_CLOUDBASE_ENV_ID",
   "functionRoot": "./cloudfunctions",
   "functions": [
     {
@@ -12,7 +12,7 @@
       "memorySize": 512,
       "installDependency": true,
       "envVariables": {
-        "AI_RESOURCES_ENABLED": "true",
+        "AI_RESOURCES_ENABLED": "false",
         "AI_VISION_ENABLED": "false"
       }
     },
@@ -25,12 +25,12 @@
       "memorySize": 1024,
       "installDependency": true,
       "envVariables": {
-        "AI_RESOURCES_ENABLED": "true",
+        "AI_RESOURCES_ENABLED": "false",
         "AI_VISION_ENABLED": "false",
         "AI_IMAGE_PROVIDER": "hunyuan-image",
         "AI_IMAGE_MODEL": "HY-Image-v3.0-I2I-ToB-v1.0.1",
-        "TCB_ENV": "huasheng-d1gevhc4b9cc370ca",
-        "ENV_ID": "huasheng-d1gevhc4b9cc370ca"
+        "TCB_ENV": "YOUR_CLOUDBASE_ENV_ID",
+        "ENV_ID": "YOUR_CLOUDBASE_ENV_ID"
       },
       "triggers": [
         {

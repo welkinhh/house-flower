@@ -103,9 +103,9 @@ assert.match(backendSource, /原图超过 10 MB，请选择一张更小的原图
 const projectConfig = JSON.parse(fs.readFileSync(path.resolve('project.config.json'), 'utf8'))
 assert.equal(projectConfig.cloudfunctionRoot, 'cloudfunctions/')
 const cloudbaseConfig = JSON.parse(fs.readFileSync(path.resolve('cloudbaserc.json'), 'utf8'))
-assert.equal(cloudbaseConfig.envId, 'huasheng-d1gevhc4b9cc370ca')
+assert.equal(cloudbaseConfig.envId, 'YOUR_CLOUDBASE_ENV_ID')
 assert.equal(cloudbaseConfig.functions.find((item) => item.name === 'flowerTaskWorker').triggers[0].type, 'timer')
-assert.equal(cloudbaseConfig.functions.find((item) => item.name === 'flowerTaskWorker').envVariables.AI_RESOURCES_ENABLED, 'true')
+assert.equal(cloudbaseConfig.functions.find((item) => item.name === 'flowerTaskWorker').envVariables.AI_RESOURCES_ENABLED, 'false')
 assert.equal(cloudbaseConfig.functions.find((item) => item.name === 'flowerTaskWorker').envVariables.AI_VISION_ENABLED, 'false')
 
 console.log('backend core: OK')

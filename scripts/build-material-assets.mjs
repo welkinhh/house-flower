@@ -19,9 +19,9 @@ for (const name of names) {
   const input = path.join(sourceRoot, name + '.png')
   const output = path.join(outputRoot, name + '.jpg')
   const image = await sharp(input).rotate()
-    .resize({ width: 192, height: 288, fit: 'inside', withoutEnlargement: true })
+    .resize({ width: 160, height: 240, fit: 'inside', withoutEnlargement: true })
     .flatten({ background: '#fffdf9' })
-    .jpeg({ quality: 70, mozjpeg: true })
+    .jpeg({ quality: 58, mozjpeg: true })
     .toBuffer()
   await fs.writeFile(output, image)
   totalBytes += image.length

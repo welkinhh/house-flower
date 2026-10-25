@@ -1,18 +1,19 @@
 {
   "name": "house-flower-mini-program",
   "version": "1.0.0",
-  "description": "House花生微信小程序",
+  "description": "House Flower WeChat Mini Program for floral inspiration and shop portfolios",
   "scripts": {
     "build": "node scripts/check-miniprogram.mjs && tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "backend:test": "node scripts/test-backend-core.mjs",
-    "assets:miniprogram": "node scripts/build-editorial-cloud-assets.mjs && node scripts/build-editorial-fileids.mjs && node scripts/build-material-assets.mjs",
+    "assets:miniprogram": "node scripts/build-editorial-cloud-assets.mjs && node scripts/build-material-assets.mjs",
     "assets:cloud": "node scripts/build-editorial-cloud-assets.mjs",
-    "preview:static": "node scripts/render-static-preview.mjs"
+    "assets:map-cloud": "node scripts/build-editorial-fileids.mjs",
+    "preview:static": "node scripts/render-home-preview.mjs"
   },
   "keywords": [],
-  "author": "",
-  "license": "",
+  "author": "House Flower contributors",
+  "license": "MIT",
   "devDependencies": {
     "miniprogram-api-typings": "^2.8.3-1",
     "sharp": "^0.35.5",

@@ -1092,7 +1092,7 @@ async function requestAccountDeletion(identity, id) {
   return ok({ status: 'deletion_requested' }, id)
 }
 
-// ---- 店铺品牌（B 端白标） ----
+// ---- Account lifecycle guard ----
 async function requireActiveAccount(identity) {
   requireIdentity(identity)
   const result = await db.collection('users').doc(identity.userId).get()

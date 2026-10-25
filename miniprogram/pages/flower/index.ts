@@ -1,6 +1,6 @@
 import { EDITORIAL_ASSETS } from '../../data/editorial-assets'
 import {
-  DEFAULT_USES, PROFILE_KEY, USES_KEY,
+  DEFAULT_USES, PROFILE_KEY,
   DEFAULT_WORK_CATEGORY, PORTFOLIO_CATEGORIES, PORTFOLIO_CATEGORY_LABEL,
   dayKey, formatDateLabel, kindLabel, migrateMiniProgramAssetPath, readWorks,
   type WorkRecord,
@@ -215,7 +215,7 @@ Page({
     recentTasks: [] as any[], currentRecoveredTaskId: '', resumingTaskId: '',
     cloudWorksOffset: 0, cloudWorksHasMore: false, cloudWorksLoading: false,
     showProfileEditor: false, userProfile: DEFAULT_PROFILE, remainingUses: DEFAULT_USES, bonusQuotaRemaining: 0,
-    quotaDateKey: '', quotaLimit: DEFAULT_USES, quotaReserved: 0, quotaResetsAt: '', backendReady: false, visionAvailable: AI_VISION_ENABLED,
+    quotaDateKey: '', quotaLimit: 0, quotaReserved: 0, quotaResetsAt: '', backendReady: false, visionAvailable: AI_VISION_ENABLED,
     isAdmin: false, subscriptionTemplates: { date: '', task: '' }, adminRange: 30, adminSummary: null as any,
     quotaGiftUserId: '', quotaGiftCount: '1', quotaGiftReason: '', quotaGiftBusy: false,
     shopUserId: '', shopBusy: false,
@@ -246,11 +246,9 @@ Page({
     if (!rawWorks.length) { const seeded = seedDemoWorks(); if (seeded.length) rawWorks = seeded }
     const works = rawWorks.map((work) => ({ ...work, kindLabel: kindLabel(work.kind), dateLabel: formatDateLabel(work.createdAt) }))
     const profile = wx.getStorageSync(PROFILE_KEY)
-    let uses = wx.getStorageSync(USES_KEY)
-    if (typeof uses !== 'number') uses = wx.getStorageSync('flower.remainingUses')
     this.setData({
       works,
-      remainingUses: typeof uses === 'number' ? Math.max(0, uses) : DEFAULT_USES,
+      remainingUses: DEFAULT_USES,
       bonusQuotaRemaining: 0,
       userProfile: profile && profile.name ? { ...profile, avatarUrl: migrateMiniProgramAssetPath(profile.avatarUrl || '') || DEFAULT_PROFILE.avatarUrl } : DEFAULT_PROFILE,
     }, () => { this.refreshWorks() })
@@ -866,7 +864,7 @@ Page({
       this.refreshWorks()
     }, Math.max(250, nextExpiry - Date.now() + 50))
   },
-  // ---- 店铺品牌（M1 源码交付：品牌来自本地配置 brand.config.ts） ----
+  // ---- 本地店铺品牌设置 ----
   loadShopBrand(this: any) {
     this.applyShopBrand(getLocalBrand())
   },

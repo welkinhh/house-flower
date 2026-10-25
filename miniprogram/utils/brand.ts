@@ -1,5 +1,4 @@
-// 店铺品牌配置（M1 源码交付模式）：品牌烧进本地配置文件，
-// 交付前由你（或客户按指引）修改 brand.config.ts 后重新上传，不再走云端。
+// 品牌展示信息从本地配置读取；用户隐私和业务数据仍通过后端管理。
 
 import { SHOP_BRAND_CONFIG } from './brand.config'
 
@@ -36,7 +35,6 @@ export function normalizeBrand(raw: Partial<ShopBrand> | null | undefined): Shop
   }
 }
 
-// M1：品牌直接来自本地配置 brand.config.ts，无云端请求、无多租户隔离。
 export function getLocalBrand(): ShopBrand {
   return normalizeBrand(SHOP_BRAND_CONFIG)
 }

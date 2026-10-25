@@ -67,7 +67,7 @@ let initialized = false
 
 function ensureCloudBase(): void {
   if (!wx.cloud) throw new Error('当前微信基础库不支持云开发，请升级后重试。')
-  if (!CLOUDBASE_ENV_ID) throw new Error('尚未配置 CloudBase 环境。')
+  if (!CLOUDBASE_ENV_ID || CLOUDBASE_ENV_ID === 'YOUR_CLOUDBASE_ENV_ID') throw new Error('请先在 utils/cloud-env.ts 配置自己的 CloudBase 环境 ID。')
   if (initialized) return
   wx.cloud.init({ env: CLOUDBASE_ENV_ID })
   initialized = true
@@ -186,20 +186,6 @@ export async function listCloudWorks(limit = 30, offset = 0): Promise<{ works: a
 
 export async function deleteCloudWork(workId: string, sourceKey = ''): Promise<void> {
   await callBackend({ action: 'delete-work', workId, sourceKey })
-}
-
-export async function listCloudDates(): Promise<any[]> {
-  const data = await callBackend<{ dates: any[] }>({ action: 'list-dates' })
-  return Array.isArray(data.dates) ? data.dates : []
-}
-
-export async function saveCloudDate(date: Record<string, unknown>): Promise<any> {
-  const data = await callBackend<{ date: any }>({ action: 'save-date', date })
-  return data.date
-}
-
-export async function deleteCloudDate(id: string): Promise<void> {
-  await callBackend({ action: 'delete-date', id })
 }
 
 export async function getCloudAssetUrls(assetIds: string[]): Promise<Record<string, string>> {
